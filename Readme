@@ -1,4 +1,4 @@
-This file explains how to run the Hybrid Lagrangian-Eulerian Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) Model in a one-dimensional (1D) vertical water column. Currently, the station is specified for BATS (64.17 °W, 31.67 °N) in the subtropical northwestern Pacific.  
+This file explains how to run the Hybrid Lagrangian-Eulerian Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) Model in a one-dimensional (1D) vertical water column. Currently, the station is specified for BATS (64.17 °W, 31.67 °N) in the subtropical northwestern Atlantic.  
 
 Note that this is still in the testing phase. The total number of phytoplankton particles is kept constant and the number of cells per particle (or superindividual) can be variable. 
 
