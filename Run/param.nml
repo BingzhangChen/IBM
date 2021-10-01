@@ -1,0 +1,9 @@
+&paramlist
+   mu0 = 5.0, 
+   aI0 = 1.2, 
+   KN  = 0.5,  !KN
+   gmax= 2.0,  
+   Kp  = 0.15,  !Kp
+   mz  = 0.05,  !mz
+   wDET= 5.0,  !wDET
+/

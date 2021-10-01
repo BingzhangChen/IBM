@@ -1,0 +1,75 @@
+This file explains how to run the Hybrid Lagrangian-Eulerian Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) Model in a one-dimensional (1D) vertical water column. Currently, the station is specified for BATS (64.17 °W, 31.67 °N) in the subtropical northwestern Pacific.  
+
+Note that this is still in the testing phase. The total number of phytoplankton particles is kept constant and the number of cells per particle (or superindividual) can be variable. 
+
+*************Instructions*************************
+The codes are written in Fortran 90. The model codes have been tested in a x86_64 Red Hat linux system using intel fortran or gfortran. The code also requires a number of input files (see next section) to run.
+
+1) First, make sure ifort or gfortran has been installed on your machine. To verify, you can type "ifort -v" or "gfortran -v". The installation instructions of ifort can be found on https://software.intel.com/content/www/us/en/develop/documentation/get-started-with-fortran-compiler/top.html and those of gfortran can be found on https://fortran-lang.org/learn/os_setup/install_gfortran.
+2) Go to the directory you want to run the model (we assume that the root directory is under home directory: ~/).
+3) To download the codes, type: "git clone https://github.com/BingzhangChen/IBM.git".
+4) Type: "cd Run" to go to the working directory.
+5) Type: "vi job" to change the setting for model run: Test = 0 means a fast run, usually for a formal model run for a large number of iterations. Test = 1 means running a model for debugging, which is much slower than the fast run. The user can also modify the compiler flags depending on the purpose in the script. Also select the right fortran compiler to use. 
+6) Type "./job", the model will compile and an executable (IBM) will be generated. 
+7) There are two namelist files that you need to configure/confirm before running the model. These files can be edited by vim or whatever editor you like. First, the file "time.nml" contains three parameters defining the total number of days that the model will run (NDay_Run), time step (dtsec in seconds), and the frequency that model outputs will be saved (i.e., the model outputs will be saved at every nsave timesteps. For example, if you want the model outputs to be saved at daily interval, nsave should equal to 86400/dtsec). The file "param.nml" contains the plankton model parameters. Currently, the model is using the temperature and vertical eddy diffusivity forcing files of Stn. BATS to drive the model. Therefore, the five .dat files starting with BATS must be present.
+8) After defining all the model settings, type “./IBM” and then the model will run and some outputs will be shown on the screen. You can type “./IBM > out” to make the model outputs saved in the “out” file. The model will also generate an output file of Eulerian fields named "" and outputs of all particles every day named "".
+*************End of Instructions*************************
+
+******Metadata for essential files***********************
+The following files are located in the directory of src/:
+
+Advection_center.f90: the fortran 90 subroutine to run advection of all Eulerian fields in the model.
+
+Calc_PAR.f90: subroutine to calculate vertical light attenuation based on Chl profiles and attenuation coefficients.
+
+compute_Kv.f90: subroutine to calculate vertical profiles of eddy diffusivity based on Ross et al. MEPS (2011).
+
+Diff_center.f90: the fortran 90 subroutine to run diffusion of all Eulerian fields in the model.
+
+forcing.f90: the module file containing several subroutines providing the external forcing (temperature, light, vertical eddy diffusivity).
+
+Geider_Lag.f90: the main subroutines that model the biological components of the NPZD model including the biological part of the phytoplankton individual-based model.
+
+grid.f90: the fortran 90 module file defining the model grid. It is also the place where the vertical resolution can be changed.
+
+gridinterp.f90: a utility subroutine to interpolate observational data to the model grid.
+
+initialization.f90: the subroutine to initialize all model variables and forcing environments.
+
+IO_files.f90: a module file containing several subroutines to save model outputs to external files.
+
+lagrange.f90: a subroutine to run random walk for phytoplankton cells within the 1D vertical column following Visser (1997). 
+
+Main.f90: the main program running the model and timing the model run.
+
+Makefile: the makefile for compiling the fortran codes and generating the executable. If you generate new source files, add them here.
+
+params.f90: the module file declaring and assigning plankton model parameters.
+
+Readcsv.f90: the subroutine reading external .dat files.
+
+time_interp.f90: the subroutine interpolating from time-series observation to model time.
+
+Time_settings.f90: the module file declaring time-related variables and also containing the subroutine updating time step.
+
+timestep.f90: the main subroutine updating status of Eulerian fields and Lagrangian particles as well as advection and diffusion at each time step.
+
+tridiagonal.f90: the subroutine used in solving diffusion equations.
+
+variables.f90: the module file declaring state variables of Eulerian fields and Lagrangian particles.
+
+---------------------------------------------------------------------------
+The following files are located in the directory of Run/:
+
+BATS_temp.dat: the temperature forcing data of BATS extracted from World Ocean Atlas (WOA) 2013.
+
+BATS_temp_time.dat: the time file for the temperature forcing data of BATS. 
+
+BATS_MLD.dat: the mixed layer depth (MLD) data of BATS. 
+BATS_KV0.dat: the surface vertical eddy diffusivity data of BATS. 
+BATS_KVmax.dat: the maximal vertical eddy diffusivity data of BATS at each time point corresponding to BATS_Aks_time.dat. 
+BATS_Aks_time.dat: the time file for the vertical eddy diffusivity forcing data of BATS. 
+job: the bash script compiling the fortran files and generating the executable.
+param.nml: the namelist file containing the model parameters.
+time.nml: the namelist file controlling the parameters for model run.
+*************End of file descriptions*************************

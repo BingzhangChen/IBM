@@ -1,0 +1,5 @@
+&timelist
+   NDay_Run = 1, 
+   dtsec    = 30, 
+   nsave    = 2880, ! if save model outputs at daily frequencies, nsave = 86400/dtsec
+/

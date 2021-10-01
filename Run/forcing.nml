@@ -1,0 +1,4 @@
+&forcing
+   MLD_mean = 5, 
+   MLD_Amp  = 30, 
+/
