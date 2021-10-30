@@ -26,8 +26,8 @@ real    :: EGES  = 0.
 real    :: gbar  = 0.   
 real    :: INGES = 0.   
 real    :: Zmort = 0.   
-real,    parameter   :: GGE   = 0.30d0
-real,    parameter   :: unass = 0.24d0
+real,    parameter   :: GGE   = 0.30d0   !Zooplankton Gross Growth Efficiency
+real,    parameter   :: unass = 0.24d0   !The fraction of unassimilated food ingested by zooplankton
 
 ! cellular carbon content threshold for division (pmol)
 INTEGER, ALLOCATABLE :: index_(:)    !The indexes of particles in each grid
@@ -42,8 +42,8 @@ DO k = 1, nlev
    ZOO = t(iZOO, k)
    DET = t(iDET, k)
 
-   !Calculate total phytoplankton carbon, N, and CHL
-
+   !The codes from Line 45-88 calculate the total amount of concentrations of 
+   !phytoplankton carbon, nitrogen, and chl based on the cells present.
    PHYC= 0.d0
    PHY = 0.d0
    CHL = 0.d0
@@ -77,7 +77,6 @@ DO k = 1, nlev
          CHL  = CHL  + p_PHY(i)%num *1d-9*p_PHY(i)%Chl
       endif
    enddo
-
 
    PHYC = PHYC /Hz(k)   !Convert Unit to mmol/m^3
    PHY  = PHY  /Hz(k)   !Convert Unit to mmol/m^3
@@ -116,6 +115,11 @@ DO k = 1, nlev
    Varout(oNPP,k) = NPP_*12.     !Unit: mgC m-3 d-1
 
    ! The total amount of phytoplankton grazed by zooplankton (molN;gmax is the maximal specific ingestion rate!)
+   ! In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
+   !The ingested food by zooplankton has three fates: 
+   !1) being recycled to DIN; 2) being converted to detritus; and 3) supporting zooplankton growth. 
+   !When zooplankton die, they are converted to detritus which is recycled to DIN and also sinks.
+
    tf_z   = TEMPBOL(Ez,Temp(k))
    gbar   = PHY**2/(PHY**2 + Kp**2)
    INGES  = ZOO*gmax*tf_z*gbar
