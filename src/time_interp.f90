@@ -11,7 +11,7 @@ integer, intent(in)    :: N, time, nrow
 real   , intent(in)    :: obs_time(N), obs_data(nrow,N)
 real   , intent(out)   :: mod_data(nrow)
 
-integer, parameter     :: y_per_s = 31104000 
+integer, parameter     :: y_per_s = 31536000
 integer                :: i,j
 real                   :: timeMOD, rat
 

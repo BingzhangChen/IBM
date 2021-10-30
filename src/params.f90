@@ -28,5 +28,4 @@ real, parameter :: thetaNmax = 3d0
 
 !the value of rhochl before last sunset
 real            :: rhochl_L  = 0d0
-
 end module params

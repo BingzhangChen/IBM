@@ -6,7 +6,7 @@ USE forcing,      only : Temp, TEMPBOL
 USE grid,         only : Hz, nlev
 USE Time_setting, only : dtdays
 implicit none
-INTEGER :: k, i, j_, j, m
+INTEGER :: k, i, j
 INTEGER :: N_ = 0   !Number of particles in each grid
 real    :: NO3, PHY, PHYC, ZOO, DET, CHL
 real    :: tf_p  = 0.
