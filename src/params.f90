@@ -11,12 +11,6 @@ real :: mz      =  0d0  !Zooplankton mortality grazing coefficient
 real :: RdN     =  0d0  !Rate of detritus converting to DIN
 real :: wDET    =  0d0 ! Sinking rate of detritus
 
-! cellular carbon content threshold for division (pmol)
-real, PARAMETER :: Cdiv= 0.04d0
-
-! Subsistence cellular carbon content (pmol), below which the cell will die
-real, PARAMETER :: Cmin= 0.01d0
-
 ! Activation energy for phytoplankton growth
 real, parameter :: Ep  = 0.32d0
 

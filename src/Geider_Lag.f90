@@ -142,7 +142,7 @@ DO k = 1, nlev
    Varout(iZOO,k) = ZOO + dtdays*(pp_ZP - pp_DZ - pp_NZ)
 
    if (N_ > 0) then
-      Graz = pp_ZP/PHY  !Specific grazing rate
+      Graz = pp_ZP/PHY  !Specific mortality rate induced by zooplankton grazing (d-1)
    else
       Graz = 0d0 
    endif

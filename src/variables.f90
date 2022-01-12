@@ -62,11 +62,17 @@ TYPE Particle
     ! Number of cells per superindividual
     real    :: num = 5d9 
 
+    ! cellular carbon content threshold for division (pmol), can be used as a proxy for size
+    real :: Cdiv= 0.04d0
+    
+    ! Subsistence cellular carbon content (pmol), below which the cell will die (can be half or 1/3 of the maximal size)
+    real :: Cmin= 0.01d0
+
 END TYPE Particle
 
 !Fix the number of individuals in the system
 INTEGER, PARAMETER           :: N_PAR = 2000
-Type (Particle)              :: p_PHY(N_PAR)
+Type (Particle)                                :: p_PHY(N_PAR)
 
 CONTAINS
 

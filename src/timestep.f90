@@ -54,6 +54,7 @@ DO it = 1, Nstep+1
          call       save_particles(par_file)
       endif
    ELSE
+      ! Add calculations of total nitrogen and save to Eulerian output files
       call save_Eulerian
       call save_particles(par_file)
    ENDIF
