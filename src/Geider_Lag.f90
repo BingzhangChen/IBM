@@ -163,7 +163,7 @@ ENDDO
 
 ! If cellular carbon is above the division threshold, it divides
 DO i = 1, N_PAR
-   if (p_PHY(i)%C >= Cdiv) then  !Divide
+   if (p_PHY(i)%C >= p_PHY(i)%Cdiv) then  !Divide
       p_PHY(i)%C   = p_PHY(i)%C/2d0
       p_PHY(i)%N   = p_PHY(i)%N/2d0
       p_PHY(i)%Chl = p_PHY(i)%Chl/2d0
