@@ -102,7 +102,7 @@ zp = zp + step
 IF (zp > zlev(nlev)) THEN
       zp = 2.d0*zlev(nlev) - zp   !Reflective boundary at surface
 ELSEIF (zp < zlev(0)) THEN      !Reflective boundary at bottom
-      zi = zlev(0) + (zlev(0) - zp)
+      zp = zlev(0) + (zlev(0) - zp)
 ENDIF      
 
 !Compute new zi
