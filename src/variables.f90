@@ -13,6 +13,7 @@ integer, parameter :: iZOO = iCHL + 1
 integer, parameter :: iDET = iZOO + 1 
 integer, parameter :: nvar = iDET !Total number of state variables
 real               :: t(nvar, nlev) = 0.d0
+real               :: Ntot = 0d0  !Total nitrogen in the domain
 
 ! Define the number of sinking tracers:
 integer, parameter :: NVsinkterms =  1  ! DET
@@ -24,10 +25,10 @@ integer, parameter :: Windex(NVsinkterms) = [iDET]
 real               :: ww(0:nlev, NVsinkterms) = 0.d0
 
 !Labels for each state variable (for saving model output)
-integer, parameter :: oNPP               = nvar + 1
-integer, parameter :: Nout               = oNPP
-real               :: Varout(Nout, nlev) = 0.d0
-character(LEN=7)   :: Labelout(Nout)     = 'Unknown'
+integer, parameter   :: oNPP                       = nvar + 1   !Daily net primary production integrated over a whole day
+integer, parameter   :: Nout                        = oNPP
+real                            :: Varout(Nout, nlev) = 0.d0
+character(LEN=7)   :: Labelout(Nout)       = 'Unknown'
 
 !Particles
 !Declaration for phyto particles
@@ -68,7 +69,15 @@ TYPE Particle
     ! Subsistence cellular carbon content (pmol), below which the cell will die (can be half or 1/3 of the maximal size)
     real :: Cmin= 0.01d0
 
+    !Dead or alive
+    logical :: alive = .true.
+
 END TYPE Particle
+
+!Threshold for splitting super-individuals
+!real, parameter :: Split_threshold = 2d8     !the total carbon (pmol C) for the super-individual that can be splitted
+
+integer :: IDmax = 0 !Maximal ID number
 
 !Fix the number of individuals in the system
 INTEGER, PARAMETER           :: N_PAR = 2000

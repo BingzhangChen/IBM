@@ -45,7 +45,7 @@ end subroutine
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine create_Particle_file(fname)
 implicit none
-character(len=*), intent(in) :: fname  !Need to create multiple files for storing particles
+character(len=*), intent(in) :: fname  !Need to create multiple files for storing particles to avoid huge files
 
 open (unit=Particle_unit, file = fname, status = 'replace')
 write(Particle_unit, 102) 'Timestep','Day','Hour','ID','Grid', &
@@ -66,7 +66,7 @@ implicit none
 character(len=*), intent(in) :: fname  !The file for saving particles
 integer :: i
 
-! save data into the Eulerian file
+! save data into the particle file
 open (unit=Particle_unit, file=fname, status='old', action='write', position='append')
 do i = 1, size(p_PHY)
    write(Particle_unit, 104) it,                             &
@@ -77,7 +77,7 @@ do i = 1, size(p_PHY)
 enddo
 close(Particle_unit)
 
-104 format(I0, 1x, 2(I7, 1x), I0, 1x, I2, 1x, 8(1pe12.4, 1x))
+104 format(I0, 1x, 2(I8, 1x), I0, 1x, I3, 1x, F12.3, 1x, 7(1pe12.3, 1x))
 end subroutine
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE IO

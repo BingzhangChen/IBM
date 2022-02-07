@@ -5,5 +5,6 @@
    gmax= 2.0,  
    Kp  = 0.15,  !Kp
    mz  = 0.05,  !mz
-   wDET= 5.0,  !wDET
+   RDN = 0.1, !RDN
+   wDET= 1.0,  !wDET
 /

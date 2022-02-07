@@ -13,7 +13,7 @@ integer  :: current_day  = 0
 integer  :: current_DOY  = 0
 integer  :: current_hour = 0
 integer  :: current_year = 0
-real     :: current_sec  = 0.d0
+real       :: current_sec  = 0.d0
 
 !The current step
 integer  :: it           = 0

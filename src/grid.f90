@@ -1,5 +1,5 @@
 Module GRID
-integer, parameter :: nlev = 40  !Number of vertical layers
+integer, parameter :: nlev = 100  !Number of vertical layers
 
 real,    parameter :: hmax = 250d0  !Maximal depth (positive)
 

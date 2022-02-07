@@ -19,7 +19,7 @@ character(len=10)  :: par_file = 'Filename'
 namelist /timelist/  NDay_Run, dtsec, nsave
 
 !Namelist definition of model parameters
-namelist /paramlist/ mu0, aI0, KN, gmax, Kp, mz,RdN, wDET 
+namelist /paramlist/ mu0, aI0, KN, gmax, Kp, mz,RDN, wDET 
 
 write(6,*) 'Initialize model simulation time...'
 ! Check whether the namelist file exists.
@@ -55,14 +55,6 @@ if (rc /= 0) then
     stop
 end if
 
-!Compute detritus sinking rate
-!Initialize sinking rate (UNIT: m/s !):
-ww(:,:) = 0d0
-
-do k = 1, nlev-1
-   ww(k,:) = -wDET/dble(d_per_s)
-enddo
-
 !  open the namelist file and read initial paramter values
 open(namlst,file='param.nml',status='old',action='read')
 read(namlst,nml=paramlist)
@@ -82,6 +74,7 @@ t(iDET,:) = t(iZOO,:)
 !For lagrangian model, initialize individuals
 DO k = 1, N_PAR
    p_PHY(k)%ID = k        
+   p_PHY(k)%alive = .true.
 
    !Compute rx (randomly distributed between Z_w(0) and Z_w(nlev)
 
@@ -97,7 +90,9 @@ DO k = 1, N_PAR
    ENDDO
 ENDDO
 
-call UPDATE_PHYTO  !Initialize concentrations of phytoplankton carbon, nitrogen and Chl
+IDmax=N_par
+
+call UPDATE_PHYTO  !Initialize Eulerian concentrations of phytoplankton carbon, nitrogen and Chl
 
 !Initialiaze labels for model output
 Labelout(iNO3) = 'NO3'
