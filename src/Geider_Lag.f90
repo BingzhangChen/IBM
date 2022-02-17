@@ -353,6 +353,8 @@ real, PARAMETER   :: RN   = 0.025  !Basic N-based respiration rate at the refere
 real, PARAMETER   :: RChl = 0.025  !Basic Chl-based respiration rate at the reference temperature 15 C (d-1)
 real, PARAMETER   :: zeta = 3.0    !cost of biosynthesis (molC molN-1)
 
+real, PARAMETER   :: nx = 1.d0  !Exponent of nutrient uptake function in GMK98
+
 real :: RcT  = 0. !Temperature dependent respiration rate
 real :: RNT = 0. !Temperature dependent N-based respiration rate
 real :: RChlT = 0. !Temperature dependent Chl-based respiration rate
@@ -404,7 +406,7 @@ else
 endif
 
 ! DIN uptake rate by phytoplankton (molN/molC/d)
-VCN = Vcref * NO3/(NO3 + KN)* (QNmax-QN)/dQN  !Vcref already temperature dependent
+VCN = Vcref * NO3/(NO3 + KN)* ((QNmax-QN)/dQN)**nx  !Vcref already temperature dependent
 
 ! Changes of cellular carbon
 dC  = C*(PC - zeta*VCN - RcT)

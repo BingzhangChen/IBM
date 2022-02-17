@@ -35,7 +35,6 @@ open(namlst,file='time.nml',status='old',action='read')
 read(namlst,nml=timelist)
 close(namlst)
 
-write(6,'(A15,1x,I1)') 'Select Model ID', Model_ID
 
 !Update total number of time ! Number of time steps
 Nstep  = NDay_Run*INT(d_per_s)/INT(dtsec) 
@@ -61,6 +60,8 @@ open(namlst,file='param.nml',status='old',action='read')
 read(namlst,nml=paramlist)
 close(namlst)
 write(6,'(a)') 'Successfully initialize model parameters.'
+
+write(6,'(A15,1x,I1)') 'Select Model ID', Model_ID
 
 !Initialize state variables
 write(6,'(a)') 'Initialize state variables...'
