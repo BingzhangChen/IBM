@@ -1,7 +1,7 @@
 Module forcing
 !This module provides several analytic functions calculating temperature, surface PAR, MLD, maximal eddy diffusivity as a function of time
 use Time_setting, only: d_per_s, y_per_d, s_per_h
-use Grid,         only: nlev, Z_r, Hz
+use Grid,               only: nlev, Z_r, Hz
 implicit none
 
 private
@@ -69,7 +69,7 @@ integer,           parameter :: Neumann                           = 1
 integer,           parameter :: bot_bound                         = Neumann
 
 !Calculating diel light
-public :: diurnal_light, season, extract_WOAtemp, TEMPBOL, VERTICAL_LIGHT !Subroutines and functions
+public :: diurnal_light, season, extract_WOAtemp, VERTICAL_LIGHT !Subroutines and functions
 public :: Temp, VTemp, N_time_temp, obs_time_temp      !Scalars and vectors
 public :: PARw, PAR
 public :: w, Kv, N_time_Kv, obs_time_Kv, obs_MLD, obs_Kv0, obs_Kvmax, MLD, Kvmax, Kv0      !Scalars and vectors
@@ -207,23 +207,6 @@ call Calculate_PAR(PAR0, nlev, Hz, Chl, PAR, PARw)
 
 return
 END subroutine VERTICAL_LIGHT
-
-pure real function TEMPBOL(Ea,tC)
-implicit none
-!DESCRIPTION:
-!The temperature dependence of plankton rates are fomulated according to the Arrhenuis equation. 
-! tC: in situ temperature
-! Tr: reference temperature
-!
-!INPUT PARAMETERS:
-real, intent (in) :: Ea, tC
-
-! boltzman constant constant [ eV /K ]
-real, parameter   :: kb = 8.62d-5, Tr = 15D0
-
-TEMPBOL = exp(-(Ea/kb)*(1D0/(273.15 + tC)-1D0/(273.15 + Tr)))
-return 
-end function TEMPBOL
 
 subroutine extract_Kv
 !This subroutine extracts Kv0, Kvmax and MLD from external files and should be called only once during initialization

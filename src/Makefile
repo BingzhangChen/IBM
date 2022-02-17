@@ -7,6 +7,8 @@
 MAIN = IBM
 #Source file
 SRCS = Readcsv.f90 tridiagonal.f90\
+	multiGauss.f90\
+	Trait_functions.f90\
     Calc_PAR.f90\
 	params.f90\
 	grid.f90 gridinterp.f90 time_interp.f90\

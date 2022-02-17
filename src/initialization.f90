@@ -18,8 +18,8 @@ character(len=10)  :: par_file = 'Filename'
 !Namelist definition of time settings
 namelist /timelist/  NDay_Run, dtsec, nsave
 
-!Namelist definition of model parameters
-namelist /paramlist/ mu0, aI0, KN, gmax, Kp, mz,RDN, wDET 
+!Namelist definition of model choice and parameters
+namelist /paramlist/ Model_ID, mu0, aI0, KN, gmax, Kp, mz,RDN, wDET 
 
 write(6,*) 'Initialize model simulation time...'
 ! Check whether the namelist file exists.
@@ -35,12 +35,13 @@ open(namlst,file='time.nml',status='old',action='read')
 read(namlst,nml=timelist)
 close(namlst)
 
+write(6,'(A15,1x,I1)') 'Select Model ID', Model_ID
+
 !Update total number of time ! Number of time steps
 Nstep  = NDay_Run*INT(d_per_s)/INT(dtsec) 
 
 !Calculate dtdays
 dtdays = dtsec/d_per_s
-write(6,*) 'Successfully initialize model running time.' 
 write(6,'(A13,1x,1pe12.2,A12)') 'Timestepping: ', dtdays, 'of one day.'
 
 !==========================================================
@@ -76,11 +77,16 @@ DO k = 1, N_PAR
    p_PHY(k)%ID = k        
    p_PHY(k)%alive = .true.
 
-   !Initialize optimal temperature (Topt) to a single value
+   !Initialize optimal temperature (Topt) to 20 C
    p_PHY(k)%Topt = 20.d0
 
-   !Compute rx (randomly distributed between Z_w(0) and Z_w(nlev)
+   !Initialize ESD to 2 micron
+   p_PHY(k)%LnESD = log(2.d0)
 
+   !Initialize Iopt to 1000 umol photons m-2 s-1
+   p_PHY(k)%LnIopt = log(1d3)
+
+   !Compute rx (randomly distributed between Z_w(0) and Z_w(nlev)
    CALL RANDOM_NUMBER(cff)
    p_PHY(k)%rz = cff *(Z_w(nlev)-Z_w(0)) + Z_w(0)
 

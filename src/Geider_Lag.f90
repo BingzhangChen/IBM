@@ -2,7 +2,8 @@ SUBROUTINE BIOLOGY
 !1D lagrangian model using the model of Geider et al. L&O (1998)
 USE params
 USE state_variables
-USE forcing,           only : Temp, TEMPBOL
+USE forcing,                only : Temp
+USE Trait_functions,  only : TEMPBOL
 USE grid,                only : Hz, nlev
 USE Time_setting, only : dtdays, sec_of_day
 implicit none
@@ -92,7 +93,6 @@ DO k =  nlev, 1, -1
    PHYC = PHYC /Hz(k)   !Convert Unit to mmol/m^3
    PHY  = PHY  /Hz(k)   !Convert Unit to mmol/m^3
    CHL  = CHL  /Hz(k)   !Convert Unit to mmol/m^3
-   !write(6,*) 'Total N before  = ', PHY + ZOO + NO3 + DET
 
    ! The total amount of phytoplankton grazed by zooplankton (molN;gmax is the maximal specific ingestion rate!)
    ! In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
@@ -141,8 +141,30 @@ DO k =  nlev, 1, -1
    if (N_ > 0) then
       do j = 1, N_
          i = index_(j)
-         call GMK98_Ind(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,         &
-                        p_PHY(i)%C,    p_PHY(i)%N,   p_PHY(i)%Chl, dC_, dN_, dChl_)
+
+         SELECTCASE (Model_ID)
+         CASE(GMK98_simple)
+            call GMK98_Ind(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,         &
+                           p_PHY(i)%C,    p_PHY(i)%N,   p_PHY(i)%Chl, dC_, dN_, dChl_)
+         CASE(GMK98_Topt)
+            call GMK98_Ind_Temp(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt, &
+                           p_PHY(i)%C,    p_PHY(i)%N,   p_PHY(i)%Chl,  dC_, dN_, dChl_)
+
+         CASE(GMK98_Light)
+            stop "To be developed..."
+         CASE(GMK98_Size)
+            stop "To be developed..."
+         CASE(GMK98_SizeLight)
+            stop "To be developed..."
+         CASE(GMK98_ToptLight)
+            stop "To be developed..."
+         CASE(GMK98_ToptSize)
+            stop "To be developed..."
+         CASE(GMK98_ToptSizeLight)
+            stop "To be developed..."
+         CASE DEFAULT
+            stop "Model choice is wrong!!"
+         END SELECT
 
          uptake      = uptake + dN_ * p_PHY(i)%num 
          NPPc_(k) = NPPc_(k) + dC_ * p_PHY(i)%num *1d-9/Hz(k)*12.d0   !Unit: mgC m-3 d-1
@@ -155,14 +177,13 @@ DO k =  nlev, 1, -1
          ! If celular carbon is lower than the susbsistence threshold, it dies:
          p_PHY(i)%Cmin = 0.25d0 * p_PHY(i)%Cdiv
       
-         if (p_PHY(i)%C < p_PHY(i)%Cmin) then  ! Dies
+         if (p_PHY(i)%C < p_PHY(i)%Cmin) then  ! The superindividual Dies
             Pmort = Pmort + p_PHY(i)%N * p_PHY(i)%num !Natural mortality of phytoplankton ==> DET
             p_PHY(i)%C     = 0d0
             p_PHY(i)%N     = 0d0
             p_PHY(i)%Chl  = 0d0
             p_PHY(i)%num = 0d0
             p_PHY(i)%alive = .false.
-
          endif
       enddo
   endif
@@ -184,8 +205,8 @@ call Par2PHY
 END SUBROUTINE BIOLOGY
 
 SUBROUTINE GMK98_Ind(Temp, PAR, NO3, C, N, Chl, dC, dN, dChl)
-USE forcing, only : TEMPBOL
-USE params,  only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
+USE Trait_functions, only : TEMPBOL
+USE params,              only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
 implicit none
 
 real, intent(in)  :: Temp, PAR, NO3
@@ -284,9 +305,9 @@ return
 end subroutine GMK98_Ind
 
 !Adding optimal temperature into the Geider model
-SUBROUTINE GMK98_Ind(Temp, PAR, NO3, Topt_, C, N, Chl, dC, dN, dChl)
-USE forcing, only : TEMPBOL
-USE params,  only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
+SUBROUTINE GMK98_Ind_Temp(Temp, PAR, NO3, Topt_, C, N, Chl, dC, dN, dChl)
+USE Trait_functions, only : temp_Topt
+USE params,              only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
 implicit none
 
 real, intent(in)  :: Temp, PAR, NO3
@@ -304,9 +325,6 @@ real    :: QN    = 0.
 ! Current Chl:C ratio
 real    :: theta = 0.
 
-! Maximal specific nitrogen uptake rate (molN molC-1 d-1; Vcref = Qmax * Pcref)
-real    :: Vcref    = 0.
-
 ! Changes in the cellular nitrogen content (pmol/cell)
 real, intent(out) :: dN
 
@@ -316,6 +334,12 @@ real, intent(out) :: dC
 ! Changes in the cellular Chl content
 real, intent(out) :: dChl  
 
+!Maximal growth rate as a function of temperature under resource (nutrient and light) replete conditions
+real :: muT = 0.
+
+! Maximal specific nitrogen uptake rate as a function of temperature under resource (nutrient and light) replete conditions (molN molC-1 d-1; Vcref = Qmax * muT)
+real :: Vcref    = 0.
+
 ! DIN uptake rate by phytoplankton (molN/molC/d)
 real :: VCN = 0.
 
@@ -324,10 +348,14 @@ real :: Lno3, SI, tf_p
 
 real :: PCmax, PC, rhochl, Ik
 
-real, PARAMETER   :: Rc   = 0.025  !Basic respiration rate (d-1)
-real, PARAMETER   :: RN   = 0.025  !Basic respiration rate (d-1)
-real, PARAMETER   :: RChl = 0.025  !Basic respiration rate (d-1)
+real, PARAMETER   :: Rc   = 0.025  !Basic respiration rate at the reference temperature 15 C (d-1)
+real, PARAMETER   :: RN   = 0.025  !Basic N-based respiration rate at the reference temperature 15 C (d-1)
+real, PARAMETER   :: RChl = 0.025  !Basic Chl-based respiration rate at the reference temperature 15 C (d-1)
 real, PARAMETER   :: zeta = 3.0    !cost of biosynthesis (molC molN-1)
+
+real :: RcT  = 0. !Temperature dependent respiration rate
+real :: RNT = 0. !Temperature dependent N-based respiration rate
+real :: RChlT = 0. !Temperature dependent Chl-based respiration rate
 !End of declaration
 
 !Check input
@@ -341,18 +369,23 @@ if (C .le. 0d0) then
    return
 endif
 
-QN       = N/C
-theta    = Chl/C
-Vcref    = mu0 * QNmax
+QN      = N/C
+theta   = Chl/C
 
-!Temperature coefficient
-tf_p = TEMPBOL(Ep, Temp)  
+!Temperature coefficient (what value of mu0 should be?)
+muT    = temp_Topt(Temp, mu0, Topt_)
+Vcref  = muT * QNmax
+
+!Assume the same temperature dependence of respiration as on photosynthetic rate (long-term adaptation; Barton et al. 2020)
+RcT     = temp_Topt(Temp, Rc, Topt_)
+RNT    = temp_Topt(Temp, RN, Topt_)
+RChlT= temp_Topt(Temp, RChl, Topt_)
 
 ! N limitation
 Lno3 = (QN-QNmin)/dQN
 
 !Maximal photosynthesis rate (regulated by QN)
-PCmax = mu0 *tf_P*Lno3
+PCmax = muT*Lno3
 
 Ik = PCmax/aI0/theta
 
@@ -371,128 +404,107 @@ else
 endif
 
 ! DIN uptake rate by phytoplankton (molN/molC/d)
-VCN = Vcref * NO3/(NO3 + KN)* (QNmax-QN)/dQN*tf_p
+VCN = Vcref * NO3/(NO3 + KN)* (QNmax-QN)/dQN  !Vcref already temperature dependent
 
 ! Changes of cellular carbon
-dC  = C*(PC - zeta*VCN - Rc*tf_p)
+dC  = C*(PC - zeta*VCN - RcT)
 
 ! Changes of cellular nitrogen (pmol N /d)
-dN  = N*(VCN/QN - RN*tf_p)
+dN  = N*(VCN/QN - RNT)
 
 ! Changes of cellular Chl
-dChl= Chl*(rhochl*VCN/theta - RChl*tf_p)
+dChl= Chl*(rhochl*VCN/theta - RChlT)
 
 return
-end subroutine GMK98_Ind
+END SUBROUTINE GMK98_Ind_Temp
 
-
-subroutine Par2PHY
-use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout
+SUBROUTINE Par2PHY
+use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iESD, iIopt, NTrait, sigma, nu
 use grid,                   only : Hz, nlev
-implicit none
+use mGf90,              only : srand_mtGaus
+IMPLICIT NONE
 
 !This subroutine calculate the total amount of concentrations of 
 !phytoplankton carbon, nitrogen, and chl based on the cells present.
-real      :: PHYC, PHY, CHL
-integer :: k,i
+real      :: PHYC(nlev) = 0d0
+real      ::    PHY(nlev) = 0d0
+real      ::    CHL(nlev) = 0d0
+real      ::  nu_ = 0d0   !Basic Mutation rate
+real      :: cff = 0.d0   !Random number [0,1]
+real      :: oldtt(1) = 0.   !Scratch variable for storing the old trait
+real      :: newtt(1) = 0.   !Scratch variable for storing the new trait
+real      :: vartt(1,1) = 0.   !Variance of the mutating trait
+integer :: k,i,m
 
-do k = 1, nlev
-   PHYC= 0.d0
-   PHY = 0.d0
-   CHL = 0.d0
+!End of declaration
 
-   do i = 1, N_PAR
-      if (p_PHY(i)%iz == k) then
-         PHYC = PHYC + p_PHY(i)%num *1d-9*p_PHY(i)%C 
-         PHY  = PHY  + p_PHY(i)%num *1d-9*p_PHY(i)%N
-         CHL  = CHL  + p_PHY(i)%num *1d-9*p_PHY(i)%Chl
+PHYC(:)= 0.d0
+PHY(:) = 0.d0
+CHL(:) = 0.d0
+
+!loop through all super-individuals to convert into Eulerian concentrations
+DO i = 1, N_PAR
+   !Handle cell division and mutation
+   ! If cellular carbon is above the division threshold, it divides
+   IF (p_PHY(i)%C >= p_PHY(i)%Cdiv) THEN  !Divide
+      p_PHY(i)%C   = p_PHY(i)%C/2d0
+      p_PHY(i)%N   = p_PHY(i)%N/2d0
+      p_PHY(i)%Chl = p_PHY(i)%Chl/2d0
+      p_PHY(i)%num = p_PHY(i)%num*2d0
+
+      !Mutation
+      DO m = 1, NTrait
+           nu_ = p_PHY(i)%num*nu(m)
+           call random_number(cff)
+
+           IF (cff < nu_) THEN !Mutation occurs
+              select case(m)
+              case(iTopt)
+                  oldtt(1) = p_PHY(i)%Topt
+              case(iESD)
+                  oldtt(1) = p_PHY(i)%LnESD
+              case(iIopt)
+                  oldtt(1) = p_PHY(i)%LnIopt
+              case DEFAULT
+                  stop "Trait index wrong!"
+              end select
+
+              vartt(1,1)= sigma(m)**2   !Construct the covariance matrix for the selected trait
+
+              !A new Topt is randomly sampled from a Gaussian distribution with mean of previous Topt and SD of sigma
+              newtt = srand_mtGaus(1, oldtt, vartt)
+              select case(m)
+              case(iTopt)
+                  p_PHY(i)%Topt = newtt(1)
+              case(iESD)
+                  p_PHY(i)%LnESD = newtt(1)
+              case(iIopt)
+                  p_PHY(i)%LnIopt = newtt(1)
+              case DEFAULT
+                  stop "Trait index wrong!"
+              end select
+           ENDIF
+      ENDDO
+   ENDIF
+
+   !Calculate Eulerian concentrations of phyto C, N, and Chl for each layer
+   do k = 1, nlev
+     if (p_PHY(i)%iz == k) then
+         PHYC(k) = PHYC(k) + p_PHY(i)%num *1d-9*p_PHY(i)%C/Hz(k) 
+         PHY(k)    = PHY(k)    + p_PHY(i)%num *1d-9*p_PHY(i)%N/Hz(k)
+         CHL(k)    = CHL(k)   + p_PHY(i)%num *1d-9*p_PHY(i)%Chl/Hz(k)
+         EXIT
       endif
-
-      ! If cellular carbon is above the division threshold, it divides
-      if (p_PHY(i)%C >= p_PHY(i)%Cdiv) then  !Divide
-         p_PHY(i)%C   = p_PHY(i)%C/2d0
-         p_PHY(i)%N   = p_PHY(i)%N/2d0
-         p_PHY(i)%Chl = p_PHY(i)%Chl/2d0
-         p_PHY(i)%num = p_PHY(i)%num*2d0
-      endif
-
    enddo
+ENDDO
 
-   t(iPC, k) = PHYC /Hz(k)   !Convert Unit to mmol/m^3
-   t(iPN, k) = PHY/Hz(k)   !Convert Unit to mmol/m^3
-   t(iChl,k) = CHL/Hz(k)   !Convert Unit to mmol/m^3
+t(iPC, :) = PHYC(:)   !Convert Unit to mmol/m^3
+t(iPN, :) = PHY(:)   !Convert Unit to mmol/m^3
+t(iChl,:) = CHL(:)   !Convert Unit to mmol/m^3
 
-   Varout(iPC, k) = t(iPC, k)
-   Varout(iPN, k) = t(iPN, k)
-   Varout(iChl, k) = t(iChl, k)
-enddo
+Varout(iPC, :) = t(iPC, :)
+Varout(iPN, :) = t(iPN, :)
+Varout(iChl, :) = t(iChl, :)
+
 return
-end subroutine Par2PHY
-
-real function temp_func(tC, mumax0, Topt_) result(y)
-!Function of a rate depending on Temperature and optimal temperature (Topt_) modified from Chen Ecol. Mod. (2022)
-IMPLICIT NONE
-real, intent(in) :: mumax0    !Maximal rate normalized to an optimal temperature of 15 ºC
-real, intent(in) :: tC         !Environmental temperature in ºC
-real, intent(in) :: Topt_   !Optimal temperature in ºC
-
-real, parameter   :: Ea0   = 0.98  
-real, parameter   :: Ed0   = 2.3
-real, parameter   :: Ei      = 0.22  
-real, parameter   :: beta  =-0.2  !Exponent for Ea0
-real, parameter   :: phi    = 0.27  !Exponent for Ed
-!real, parameter   :: mumax0 = 0.59  !Normalized growth rate for mumax (d-1)
-
-real :: Ed, Ea, mumax
-
-mumax = alloscale(Topt_, mumax0,  Ei) 
-Ea    = alloscale(Topt_, Ea0,  beta) 
-Ed    = alloscale(Topt_, Ed0,  phi) 
-y       = JOHNSON(tC, mumax, Ea, Ed, Topt_)
-
-end function temp_func
-
-
-REAL FUNCTION JOHNSON(tC, mumax, Ea, Ed, Topt_) RESULT(y)
-!Temperature function following Dell et al. PNAS (2011) and Chen & Laws L&O (2017)
-IMPLICIT NONE
-!Both tC and Topt_ are in ºC
-real,   intent(in)     :: tC, mumax, Ea, Ed, Topt_
-real,   parameter   :: kb   = 8.62D-5
-real,   parameter   :: T0   = 273.15D0
-real,   parameter   :: Tref = 15D0
-real                         :: Eh, x, theta, b
-
-if (Ed .le. 0d0) stop "Ed must be greater than zero!"
-Eh = Ed+Ea
-x    = TK(TC)
-theta = TK(Topt_)
-b = x - theta
-y = mumax*(Ea/Ed + 1.d0) * exp(Ea*b)/(1.D0+Ea/ED*exp(Eh*b))   
-return
-END FUNCTION JOHNSON
-
-PURE REAL FUNCTION TK(TC)
-IMPLICIT NONE
-!DESCRIPTION:
-!The temperature dependence of plankton rates are fomulated according to the Arrhenuis equation. 
-! tC: in situ temperature
-! Tr: reference temperature
-!
-!INPUT PARAMETERS:
-REAL, INTENT (IN) :: TC
-! boltzman constant constant [ eV /K ]
-REAL, PARAMETER   :: kb = 8.62d-5, Tr = 15.0
-
-TK = -(1./kb)*(1./(273.15 + tC) - 1./(273.15 + Tr))
-return 
-END FUNCTION TK
-
-PURE REAL FUNCTION alloscale(Topt_, mu0p, alpha)
-IMPLICIT NONE
-real, intent(in) :: Topt_     !Topt in ºC
-real, intent(in) :: mu0p  !Normalized growth rate
-real, intent(in) :: alpha    !Exponent of thermal traits normalized to z
-alloscale =  mu0p * exp(TK(Topt_) * alpha) 
-END FUNCTION alloscale
-
+END subroutine Par2PHY

@@ -50,13 +50,12 @@ character(len=*), intent(in) :: fname  !Need to create multiple files for storin
 open (unit=Particle_unit, file = fname, status = 'replace')
 write(Particle_unit, 102) 'Timestep','Day','Hour','ID','Grid', &
                           'Z', 'C', 'N', 'Chl', 'NO3', 'PAR',  &
-                          'Temp', 'Num', 'Topt' 
+                          'Temp', 'Num', 'Topt', 'ESD', 'Iopt' 
 close(Particle_unit)
-
 return
 
-102 format(14(A8, 2x))
-end subroutine
+102 format(16(A8, 2x))
+END subroutine create_Particle_file
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine save_particles(fname)
@@ -73,11 +72,12 @@ do i = 1, size(p_PHY)
                   current_day, current_hour, p_PHY(i)%ID, &
                   p_PHY(i)%iz, p_PHY(i)%rz,  p_PHY(i)%C,  &
                   p_PHY(i)%N,  p_PHY(i)%Chl, p_PHY(i)%NO3,&
-                  p_PHY(i)%PAR,p_PHY(i)%temp,p_PHY(i)%num, p_PHY(i)%Topt
+                  p_PHY(i)%PAR,p_PHY(i)%temp,p_PHY(i)%num, &
+                  p_PHY(i)%Topt, exp(p_PHY(i)%LnESD), exp(p_PHY(i)%LnIopt)
 enddo
 close(Particle_unit)
 
-104 format(I0, 1x, 2(I8, 1x), I0, 1x, I3, 1x, F12.3, 1x, 8(1pe12.3, 1x))
+104 format(I0, 1x, 2(I8, 1x), I0, 1x, I3, 1x, F12.3, 1x, 10(1pe12.3, 1x))
 end subroutine
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE IO
