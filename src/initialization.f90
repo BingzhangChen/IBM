@@ -76,6 +76,9 @@ DO k = 1, N_PAR
    p_PHY(k)%ID = k        
    p_PHY(k)%alive = .true.
 
+   !Initialize optimal temperature (Topt) to a single value
+   p_PHY(k)%Topt = 20.d0
+
    !Compute rx (randomly distributed between Z_w(0) and Z_w(nlev)
 
    CALL RANDOM_NUMBER(cff)

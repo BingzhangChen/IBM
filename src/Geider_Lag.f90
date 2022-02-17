@@ -283,6 +283,109 @@ dChl= Chl*(rhochl*VCN/theta - RChl*tf_p)
 return
 end subroutine GMK98_Ind
 
+!Adding optimal temperature into the Geider model
+SUBROUTINE GMK98_Ind(Temp, PAR, NO3, Topt_, C, N, Chl, dC, dN, dChl)
+USE forcing, only : TEMPBOL
+USE params,  only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
+implicit none
+
+real, intent(in)  :: Temp, PAR, NO3
+real, intent(in)  :: C    !Current cellular carbon
+real, intent(in)  :: N    !Current cellular nitrogen
+real, intent(in)  :: Chl  !Current cellular Chl
+real, intent(in)  :: Topt_  !Optimal temperature in C
+
+! Minimal and maximal N:C ratio
+real, parameter   :: QNmin = 0.05, QNmax = 0.18, dQN = 0.13  
+
+! Current N:C ratio
+real    :: QN    = 0.
+
+! Current Chl:C ratio
+real    :: theta = 0.
+
+! Maximal specific nitrogen uptake rate (molN molC-1 d-1; Vcref = Qmax * Pcref)
+real    :: Vcref    = 0.
+
+! Changes in the cellular nitrogen content (pmol/cell)
+real, intent(out) :: dN
+
+! Changes in the cellular carbon content
+real, intent(out) :: dC  
+
+! Changes in the cellular Chl content
+real, intent(out) :: dChl  
+
+! DIN uptake rate by phytoplankton (molN/molC/d)
+real :: VCN = 0.
+
+! Indices for nutrient, light and temperature limitation
+real :: Lno3, SI, tf_p
+
+real :: PCmax, PC, rhochl, Ik
+
+real, PARAMETER   :: Rc   = 0.025  !Basic respiration rate (d-1)
+real, PARAMETER   :: RN   = 0.025  !Basic respiration rate (d-1)
+real, PARAMETER   :: RChl = 0.025  !Basic respiration rate (d-1)
+real, PARAMETER   :: zeta = 3.0    !cost of biosynthesis (molC molN-1)
+!End of declaration
+
+!Check input
+if (NO3 .le. 0.d0) stop "Negative Nitrate concentration!"
+if (PAR .lt. 0.d0) stop "Negative PAR!"
+
+if (C .le. 0d0) then
+   dN=0.d0
+   dC=0.d0
+   dChl=0.d0
+   return
+endif
+
+QN       = N/C
+theta    = Chl/C
+Vcref    = mu0 * QNmax
+
+!Temperature coefficient
+tf_p = TEMPBOL(Ep, Temp)  
+
+! N limitation
+Lno3 = (QN-QNmin)/dQN
+
+!Maximal photosynthesis rate (regulated by QN)
+PCmax = mu0 *tf_P*Lno3
+
+Ik = PCmax/aI0/theta
+
+!The light limitation index (fpar)
+SI = 1.d0 - exp(-par/Ik)
+
+PC = PCmax * SI
+
+! define rhochl (gChl/molC; the fraction of phytoplankton carbon production that is devoted to Chl synthesis)
+!If dark, assume that rhochl equaled the value calculated for the end of the preceding light period 
+if (PAR <= 0d0) then
+   rhochl   = rhoChl_L
+else
+   rhochl   = thetaNmax*PC/aI0/theta/PAR
+   rhoChl_L = rhochl
+endif
+
+! DIN uptake rate by phytoplankton (molN/molC/d)
+VCN = Vcref * NO3/(NO3 + KN)* (QNmax-QN)/dQN*tf_p
+
+! Changes of cellular carbon
+dC  = C*(PC - zeta*VCN - Rc*tf_p)
+
+! Changes of cellular nitrogen (pmol N /d)
+dN  = N*(VCN/QN - RN*tf_p)
+
+! Changes of cellular Chl
+dChl= Chl*(rhochl*VCN/theta - RChl*tf_p)
+
+return
+end subroutine GMK98_Ind
+
+
 subroutine Par2PHY
 use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout
 use grid,                   only : Hz, nlev
@@ -325,3 +428,71 @@ do k = 1, nlev
 enddo
 return
 end subroutine Par2PHY
+
+real function temp_func(tC, mumax0, Topt_) result(y)
+!Function of a rate depending on Temperature and optimal temperature (Topt_) modified from Chen Ecol. Mod. (2022)
+IMPLICIT NONE
+real, intent(in) :: mumax0    !Maximal rate normalized to an optimal temperature of 15 ºC
+real, intent(in) :: tC         !Environmental temperature in ºC
+real, intent(in) :: Topt_   !Optimal temperature in ºC
+
+real, parameter   :: Ea0   = 0.98  
+real, parameter   :: Ed0   = 2.3
+real, parameter   :: Ei      = 0.22  
+real, parameter   :: beta  =-0.2  !Exponent for Ea0
+real, parameter   :: phi    = 0.27  !Exponent for Ed
+!real, parameter   :: mumax0 = 0.59  !Normalized growth rate for mumax (d-1)
+
+real :: Ed, Ea, mumax
+
+mumax = alloscale(Topt_, mumax0,  Ei) 
+Ea    = alloscale(Topt_, Ea0,  beta) 
+Ed    = alloscale(Topt_, Ed0,  phi) 
+y       = JOHNSON(tC, mumax, Ea, Ed, Topt_)
+
+end function temp_func
+
+
+REAL FUNCTION JOHNSON(tC, mumax, Ea, Ed, Topt_) RESULT(y)
+!Temperature function following Dell et al. PNAS (2011) and Chen & Laws L&O (2017)
+IMPLICIT NONE
+!Both tC and Topt_ are in ºC
+real,   intent(in)     :: tC, mumax, Ea, Ed, Topt_
+real,   parameter   :: kb   = 8.62D-5
+real,   parameter   :: T0   = 273.15D0
+real,   parameter   :: Tref = 15D0
+real                         :: Eh, x, theta, b
+
+if (Ed .le. 0d0) stop "Ed must be greater than zero!"
+Eh = Ed+Ea
+x    = TK(TC)
+theta = TK(Topt_)
+b = x - theta
+y = mumax*(Ea/Ed + 1.d0) * exp(Ea*b)/(1.D0+Ea/ED*exp(Eh*b))   
+return
+END FUNCTION JOHNSON
+
+PURE REAL FUNCTION TK(TC)
+IMPLICIT NONE
+!DESCRIPTION:
+!The temperature dependence of plankton rates are fomulated according to the Arrhenuis equation. 
+! tC: in situ temperature
+! Tr: reference temperature
+!
+!INPUT PARAMETERS:
+REAL, INTENT (IN) :: TC
+! boltzman constant constant [ eV /K ]
+REAL, PARAMETER   :: kb = 8.62d-5, Tr = 15.0
+
+TK = -(1./kb)*(1./(273.15 + tC) - 1./(273.15 + Tr))
+return 
+END FUNCTION TK
+
+PURE REAL FUNCTION alloscale(Topt_, mu0p, alpha)
+IMPLICIT NONE
+real, intent(in) :: Topt_     !Topt in ºC
+real, intent(in) :: mu0p  !Normalized growth rate
+real, intent(in) :: alpha    !Exponent of thermal traits normalized to z
+alloscale =  mu0p * exp(TK(Topt_) * alpha) 
+END FUNCTION alloscale
+

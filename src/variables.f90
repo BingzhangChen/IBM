@@ -72,6 +72,9 @@ TYPE Particle
     !Dead or alive
     logical :: alive = .true.
 
+    !Optimal temperature
+    real :: Topt = 20.d0
+
 END TYPE Particle
 
 !Threshold for splitting super-individuals
