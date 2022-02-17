@@ -44,11 +44,15 @@ Main.f90: the main program running the model and timing the model run.
 
 Makefile: the makefile for compiling the fortran codes and generating the executable. If you generate new source files, add them here.
 
+multiGauss.f90: the module file to generate a random sample from a multivariate Gaussian distribution.
+
 params.f90: the module file declaring and assigning plankton model parameters.
 
 Readcsv.f90: the subroutine reading external .dat files.
 
 time_interp.f90: the subroutine interpolating from time-series observation to model time.
+
+Trait_functions.f90: the module file containing the functions calculating phytoplankton physiological rates from environmental factors (light, nitrogen, temperature) and traits (optimal temperature, size, optimal light).
 
 Time_settings.f90: the module file declaring time-related variables and also containing the subroutine updating time step.
 
