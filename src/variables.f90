@@ -3,17 +3,28 @@ use grid, only : nlev, Hz
 implicit NONE
 
 !State variables
+integer, private      :: i
+integer, parameter :: NZOO = 10   !Number of zooplankton size classes
 
 !Indexes for the state variables
 integer, parameter :: iNO3 = 1 
 integer, parameter :: iPC  = iNO3 + 1 
 integer, parameter :: iPN  = iPC  + 1 
 integer, parameter :: iCHL = iPN  + 1 
-integer, parameter :: iZOO = iCHL + 1 
-integer, parameter :: iDET = iZOO + 1 
+integer, parameter :: iZOO(NZOO) = [iCHL + i , i = 1, NZOO]
+integer, parameter :: iDET = iZOO(NZOO) + 1 
 integer, parameter :: nvar = iDET !Total number of state variables
 real               :: t(nvar, nlev) = 0.d0
 real               :: Ntot = 0d0  !Total nitrogen in the domain
+real, parameter :: MinSzoo =   log(2d0)  !Minimal zooplankton log ESD
+real, parameter :: MaxSzoo = log(25d2) !Maximal zooplankton log ESD
+real, parameter :: dZOOESD =  (MaxSzoo - MinSzoo)/dble(NZOO-1)! ESD difference between adjacent zooplankton size class (log)
+
+!Log ESD of each zoo. size class
+real                    :: ESDZOO(NZOO) = 0d0
+
+!Volume of each zooplankton size class
+real                    :: VolZOO(NZOO) = 0d0
 
 ! Define the number of sinking tracers:
 integer, parameter :: NVsinkterms =  1  ! DET
@@ -63,10 +74,11 @@ TYPE Particle
     ! Number of cells per superindividual
     real    :: num = 5d9 
 
-    ! cellular carbon content threshold for division (pmol), can be used as a proxy for size
+    ! cellular carbon content threshold for division (pmol/cell), can be used as a proxy for size and can be converted to ESD; other nutrient uptake rates  should be functions of this parameter
+    !This trait will vary with mutation 
     real :: Cdiv= 0.04d0
     
-    ! Subsistence cellular carbon content (pmol), below which the cell will die (can be half or 1/3 of the maximal size)
+    ! Subsistence cellular carbon content (pmol), below which the cell will die (can be 1/4 of the Cdiv)
     real :: Cmin= 0.01d0
 
     !Dead or alive

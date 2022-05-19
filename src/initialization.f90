@@ -13,6 +13,7 @@ integer            :: j_       = 0
 real               :: cff      = 0.d0
 integer, parameter :: namlst   = 20   !Unit time for namelist files
 character(len=10)  :: par_file = 'Filename'
+character(len=10), parameter :: format_string = "(A3,I0)"
 !==========================================================
 
 !Namelist definition of time settings
@@ -68,10 +69,19 @@ write(6,'(a)') 'Initialize state variables...'
 
 ! Initialize initial NO3:
 t(iNO3,:) = 0.5d0
-t(iZOO,:) = 0.1d0
+
+do k = 1, NZOO
+   t(iZOO(k),:) = 0.1d0/dble(NZOO) !Assuming an initial condition of uniform biomass among different zoo. size classes
+
+   !Initialize zooplankton size (logESD)
+   ESDZOO(k) = MinSzoo + dble(k-1)*dZOOESD
+
+   !Compute volume of zooplankton
+   VolZOO(k) = pi/6d0*exp(ESDZOO(k))**3
+enddo
 
 !Following Verity et al. AME (1996)
-t(iDET,:) = t(iZOO,:) 
+t(iDET,:) = .1d0
 
 !For lagrangian model, initialize individuals
 DO k = 1, N_PAR
@@ -106,14 +116,17 @@ call UPDATE_PHYTO  !Initialize Eulerian concentrations of phytoplankton carbon, 
 
 !Initialiaze labels for model output
 Labelout(iNO3) = 'NO3'
-Labelout(iZOO) = 'ZOO'
 Labelout(iDET) = 'DET'
 Labelout(iPC)  = 'PC '
 Labelout(iPN)  = 'PN '
 Labelout(iCHL) = 'CHL'
 Labelout(oNPP) = 'NPP'
 
-write(6, '(a)') 'Write out the labels for output:'
+do k = 1, NZOO
+   write(Labelout(iZOO(k)),  format_string) 'ZOO',k
+enddo
+
+write(6, '(a)') 'Write out the labels for output for validation:'
 do k = 1, Nout
    write(6, 1000) 'Labelout(',k,') = ',trim(Labelout(k))
 enddo

@@ -3,7 +3,7 @@ SUBROUTINE BIOLOGY
 USE params
 USE state_variables
 USE forcing,                only : Temp
-USE Trait_functions,  only : TEMPBOL
+USE Trait_functions,  only : TEMPBOL, PHY_C2Vol, palatability
 USE grid,                only : Hz, nlev
 USE Time_setting, only : dtdays, sec_of_day
 implicit none
@@ -28,6 +28,8 @@ real    :: pp_DZ = 0.
 real    :: pp_ND = 0.   
 real    :: pp_NZ = 0.   
 real    :: Pmort  = 0.   
+real    :: FZoo    = 0.   !The total amount of palatable prey (in Nitrogen) 
+real    :: Z_P_R = 0.   !Zooplankton:Phytoplankton volume ratio
 real    :: RES     = 0.   
 real    :: EGES  = 0.   
 real    :: gbar     = 0.   
@@ -35,11 +37,17 @@ real    :: INGES = 0.
 real    :: Zmort = 0.   
 real,    parameter   :: GGE   = 0.30d0   !Zooplankton Gross Growth Efficiency
 real,    parameter   :: unass = 0.24d0   !The fraction of unassimilated food ingested by zooplankton
+real,    parameter   :: eta     = -1.d0   !Prey refuge parameter
+real,    parameter   :: A_g    = 21.9   !Intercept of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
+real,    parameter   :: B_g    = -0.16  !Slope of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
 
 ! cellular carbon content threshold for division (pmol)
 INTEGER, ALLOCATABLE :: index_(:)    !The indexes of particles in each grid
 INTEGER, ALLOCATABLE :: scratch(:)    !The scratch indexes of particles in each grid
 INTEGER                                 :: Allocatestatus = 0
+
+!Number of prey items (including phyto. super-individuals and smaller zooplankton)
+INTEGER                                 ::  jprey = 0
 !End of declaration
 
 !Eulerian model for NO3, ZOO and DET and lagrangian model for PHY
@@ -105,9 +113,41 @@ DO k =  nlev, 1, -1
 
    tf_z      = TEMPBOL(Ez,Temp(k))
 
-   !Calculate zooplankton grazing
-   gbar     = PHY**2/(PHY**2 + Kp**2)
-   INGES = ZOO*gmax*tf_z*gbar
+   !Calculate the total amount of prey N biomass available to each size class of zooplankton
+   do kk = 1, NZOO
+      gmax = A_g * VolZOO(kk)**B_g 
+
+	  !Count the number of prey items for the zooplankton size class
+	  jprey = N_ + kk - 1
+
+	  FZoo = 0d0
+
+	  !First calculate total phyto. prey from super-individuals
+	  do m = 1, N_
+
+		!Volume ratio of this zoo. size class to the mth super-individual
+		Z_P_R = VolZOO(kk)/PHY_C2Vol(p_PHY(m)%C)
+
+		!Calculate the palatability of each prey superindividual and add to the total amount palatable prey
+		FZoo = FZoo + palatability(Z_P_R) * p_PHY(m)%N * p_PHY(m)%num*1d-9/Hz(k)
+	  enddo
+
+	  !Second, calculate the total zooplankton prey
+	  if (kk > 1) then
+	    do m = 1, kk - 1
+
+		  !Volume ratio of this zoo. size class to the mth zooplankton size class
+		  Z_P_R = VolZOO(kk)/VolZOO(m)
+
+		 !Calculate the palatability of each zoo. prey and add to the total amount palatable prey
+		  FZoo = FZoo + palatability(Z_P_R) * ZOO(m)
+	    enddo
+	  endif
+
+      gbar     = FZoo/(FZoo + Kp)*(1.d0 - exp(eta *FZoo))
+      INGES = ZOO(kk)*gmax*tf_z*gbar
+   enddo
+
    Zmort  = ZOO*ZOO*mz*tf_z         !Mortality term for ZOO
  
    !Zooplankton excretion rate (-> DOM)
@@ -210,7 +250,7 @@ call Par2PHY
 END SUBROUTINE BIOLOGY
 
 SUBROUTINE GMK98_Ind(Temp, PAR, NO3, C, N, Chl, dC, dN, dChl)
-USE Trait_functions, only : TEMPBOL
+USE Trait_functions, only : TEMPBOL, palatability
 USE params,              only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
 implicit none
 

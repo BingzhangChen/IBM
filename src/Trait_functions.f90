@@ -4,9 +4,44 @@ implicit none
 
 private
 
-public :: TEMPBOL, temp_Topt
+public :: TEMPBOL, temp_Topt, palatability, PHY_C2Vol
 
 CONTAINS
+
+!Function converting phytoplankton carbon to volume (unit: micron^3) with the parameters obtained from Maranon et al. (2013)
+pure real function PHY_C2Vol(p_C) result(y)
+implicit none
+real, intent(in)  :: p_C !Phytoplankton carbon (pmol C/cell)
+
+real, parameter :: a = -0.69
+real, parameter :: b = 0.88
+
+y = (12d0 * p_C/10**a)**(1d0/b)
+return
+end function 
+
+
+!Function calculating the prey palatability based on Ward et al. L&O 2012 (Eq. A21)
+pure real function palatability(R_real) result(y)
+implicit none
+
+!The actual predator:prey volume ratio
+real, intent(in)  :: R_real
+
+! Standard deviation of log zooplankton feeding preference
+real, parameter  :: SDpref_Z = 0.5
+
+!Optimal predator:prey volume ratio
+real, parameter  :: R_opt = 1d3  !Length ratio 10:1
+
+real :: cff = 0d0
+
+cff = log(R_real/R_opt)
+
+y = exp(-cff**2/(2.d0 * SDpref_Z**2))
+return
+end function palatability
+
 
 pure real function TEMPBOL(Ea,tC)
 implicit none
