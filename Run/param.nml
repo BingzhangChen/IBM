@@ -1,5 +1,5 @@
 &paramlist
-   Model_ID = 2,
+   Model_ID = 6,
    mu0 = 5.0, 
    aI0 = 1.2, 
    KN  = 0.5,  !KN
