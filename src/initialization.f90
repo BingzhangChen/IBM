@@ -91,8 +91,8 @@ DO k = 1, N_PAR
    !Initialize optimal temperature (Topt) to 20 C
    p_PHY(k)%Topt = 20.d0
 
-   !Initialize ESD to 2 micron
-   p_PHY(k)%LnESD = log(2.d0)
+   !Initialize CDiv to 1 micron
+   p_PHY(k)%CDiv = 0.04
 
    !Initialize Iopt to 1000 umol photons m-2 s-1
    p_PHY(k)%LnIopt = log(1d3)
@@ -131,7 +131,7 @@ do k = 1, Nout
    write(6, 1000) 'Labelout(',k,') = ',trim(Labelout(k))
 enddo
 
-1000 format(A9, I0, A4, A3)
+1000 format(A9, I0, A4, A5)
 
 !Initialize Varout
 do k = 1, NVAR

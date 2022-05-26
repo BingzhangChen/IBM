@@ -157,7 +157,7 @@ END SUBROUTINE UPDATE_PARTICLE_FORCING
 
 subroutine Cal_total_N
 use grid, only : nlev, Hz, Z_r
-use state_variables, only : t, Ntot, iPC, iCHL,iPN, iZOO, iNO3, iDET,N_PAR, p_PHY, IDmax
+use state_variables, only : t, Ntot, iPC, iCHL,iPN, iZOO, iNO3, iDET,N_PAR, p_PHY, IDmax, NZOO
 implicit none
 integer :: k,i,m
 real      :: rnd
@@ -194,15 +194,17 @@ do k = 1, nlev
       stop 
    endif
 
-   if (t(iZOO,k) .ne. t(iZOO,k)) then
-      write(6,*) "ZOO is NaN at depth", Z_r(k)
-      stop 
-   endif
+   do m = 1, NZOO
+     if (t(iZOO(m),k) .ne. t(iZOO(m),k)) then
+        write(6,*) "ZOO", m, " is NaN at depth", Z_r(k)
+        stop 
+     endif
 
-   if (t(iZOO,k) < 0d0) then
-      write(6,*) "ZOO is negative at depth", Z_r(k)
-      stop 
-   endif
+     if (t(iZOO(m),k) < 0d0) then
+        write(6,*) "ZOO", m, " is negative at depth", Z_r(k)
+        stop 
+     endif
+   enddo
 
    if (t(iDET,k) .ne. t(iDET,k)) then
       write(6,*) "DET is NaN at depth", Z_r(k)
@@ -240,11 +242,15 @@ do k = 1, nlev
 
          !The second one is identical with its twin, but its ID needs to change to a new number (not overlapping with any ID of current superindividuals)
          p_PHY(i)        = p_PHY(m)
-         p_PHY(i)%ID= IDmax+1
-         IDmax             = IDmax+1 !Update maximal ID
+         p_PHY(i)%ID     = IDmax+1
+         IDmax           = IDmax+1 !Update maximal ID
       ENDIF
    ENDDO
 
-   Ntot = Ntot + Hz(k)*(t(iPN,k) + t(iZOO, k) + t(iNO3, k) + t(iDET, k))
+   Ntot = Ntot + Hz(k)*(t(iPN,k)  + t(iNO3, k) + t(iDET, k))
+
+   do i = 1, NZOO
+      Ntot = Ntot + t(iZOO(i), k) * Hz(k)
+   enddo
 enddo
 end subroutine Cal_total_N

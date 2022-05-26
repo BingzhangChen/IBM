@@ -20,9 +20,8 @@ y = (12d0 * p_C/10**a)**(1d0/b)
 return
 end function 
 
-
 !Function calculating the prey palatability based on Ward et al. L&O 2012 (Eq. A21)
-pure real function palatability(R_real) result(y)
+real function palatability(R_real) result(y)
 implicit none
 
 !The actual predator:prey volume ratio
@@ -41,7 +40,6 @@ cff = log(R_real/R_opt)
 y = exp(-cff**2/(2.d0 * SDpref_Z**2))
 return
 end function palatability
-
 
 pure real function TEMPBOL(Ea,tC)
 implicit none

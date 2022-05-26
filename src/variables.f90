@@ -3,7 +3,7 @@ use grid, only : nlev, Hz
 implicit NONE
 
 !State variables
-integer, private      :: i
+integer, private   :: i
 integer, parameter :: NZOO = 10   !Number of zooplankton size classes
 
 !Indexes for the state variables
@@ -11,7 +11,7 @@ integer, parameter :: iNO3 = 1
 integer, parameter :: iPC  = iNO3 + 1 
 integer, parameter :: iPN  = iPC  + 1 
 integer, parameter :: iCHL = iPN  + 1 
-integer, parameter :: iZOO(NZOO) = [iCHL + i , i = 1, NZOO]
+integer, parameter :: iZOO(NZOO) = (/ (iCHL + i , i = 1, NZOO) /)
 integer, parameter :: iDET = iZOO(NZOO) + 1 
 integer, parameter :: nvar = iDET !Total number of state variables
 real               :: t(nvar, nlev) = 0.d0
@@ -53,7 +53,7 @@ TYPE Particle
     ! Z coordinates for particles
     real    :: rz = 0.
 
-       ! associated PAR 
+    ! associated PAR 
     real    :: PAR = 0.01
 
     ! associated Temperature
@@ -74,7 +74,7 @@ TYPE Particle
     ! Number of cells per superindividual
     real    :: num = 5d9 
 
-    ! cellular carbon content threshold for division (pmol/cell), can be used as a proxy for size and can be converted to ESD; other nutrient uptake rates  should be functions of this parameter
+    !cellular carbon content threshold for division (pmol/cell), can be used as a proxy for size and can be converted to ESD; Phytoplankton half-saturation constant, minimal N:C and maximal N:C ratios are allometric functions of this parameter
     !This trait will vary with mutation 
     real :: Cdiv= 0.04d0
     
@@ -86,9 +86,6 @@ TYPE Particle
 
     !Optimal temperature
     real :: Topt = 20.d0
-
-    !log ESD
-    real :: LnESD = 1.d0
 
     !Ln Optimal light (micro mol quanta m-2 s-1)
     real :: LnIopt = 6.9  !log(1000)
@@ -120,7 +117,7 @@ integer :: Model_ID = 2
 !Number of traits
 integer, parameter :: NTrait = 3
 integer, parameter :: iTopt = 1     !Trait index for Topt
-integer, parameter :: iESD = 2     !Trait index for Size (ESD)
+integer, parameter :: iSize = 2     !Trait index for Size (ESD)
 integer, parameter :: iIopt = 3    !Trait index for optimal light
 
 real, parameter :: nu(NTrait) = [1d-12, 1d-12, 1d-12]   !Unit: probability per generation per cell; needs to be carefully designed

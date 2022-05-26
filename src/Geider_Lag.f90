@@ -3,43 +3,51 @@ SUBROUTINE BIOLOGY
 USE params
 USE state_variables
 USE forcing,                only : Temp
-USE Trait_functions,  only : TEMPBOL
+USE Trait_functions,  only : TEMPBOL, PHY_C2Vol, palatability
 USE grid,                only : Hz, nlev
 USE Time_setting, only : dtdays, sec_of_day
 implicit none
 INTEGER :: k, i, j, m,kk
 INTEGER :: N_ = 0   !Number of particles in each grid
 real    :: NO3 = 0.
-real    :: PHY = 0.
-real    :: PHYC=0. 
 real    :: ZOO(NZOO) = 0. 
 real    :: DET = 0. 
-real    :: CHL = 0.
 real    :: tf_p  = 0.
 real    :: tf_z  = 0.
 real    :: Graz  = 0.
+real    :: p_    = 0.
 real    :: dC_   = 0.
 real    :: dN_   = 0.
 real    :: dChl_ = 0.
 real    :: uptake= 0.   !Total NO3 uptake
 real    :: NPPc_(nlev)  = 0.  !C-based phytoplankton production (mg C m-3 d-1)
-real    :: pp_ZP = 0.   
 real    :: pp_DZ = 0.   
 real    :: pp_ND = 0.   
-real    :: pp_NZ = 0.   
 real    :: Pmort  = 0.   
+real    :: FZoo(NZOO) = 0.   !The total amount of palatable prey (in Nitrogen)
+                             !for each zooplankton size class
+real    :: Z_P_R = 0.   !Zooplankton:Phytoplankton volume ratio
 real    :: RES     = 0.   
 real    :: EGES  = 0.   
-real    :: gbar     = 0.   
-real    :: INGES = 0.   
+real    :: gbar  = 0.   
+real    :: INGES(NZOO) = 0.   
 real    :: Zmort = 0.   
+real    :: Gmatrix(NZOO,NZOO) = 0.d0     !Grazer biomass specific grazing rate matrix
+real,    allocatable :: Pmatrix(:,:)     !Phytoplankton mortality rates by each
+                                         !zooplankton size class for each
+                                         !superindividual
+real,    parameter   :: Lmp   = 0.02d0   !Linear zooplankton mortality term
 real,    parameter   :: GGE   = 0.30d0   !Zooplankton Gross Growth Efficiency
 real,    parameter   :: unass = 0.24d0   !The fraction of unassimilated food ingested by zooplankton
+real,    parameter   :: eta     = -1.d0   !Prey refuge parameter
+real,    parameter   :: A_g    = 21.9   !Intercept of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
+real,    parameter   :: B_g    = -0.16  !Slope of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
 
 ! cellular carbon content threshold for division (pmol)
 INTEGER, ALLOCATABLE :: index_(:)    !The indexes of particles in each grid
 INTEGER, ALLOCATABLE :: scratch(:)    !The scratch indexes of particles in each grid
 INTEGER                                 :: Allocatestatus = 0
+
 !End of declaration
 
 !Eulerian model for NO3, ZOO and DET and lagrangian model for PHY
@@ -57,11 +65,9 @@ DO k =  nlev, 1, -1
        Varout(oNPP, k) = NPPc_(k)  !NPP of the past day; this is real NPP (mg C d-1 m-3)
        NPPc_(k)   = 0d0      !Reset NPPc_
    endif
+
    !The codes from Line 54-92 calculate the total amount of concentrations of 
    !phytoplankton carbon, nitrogen, and chl based on the cells present.
-   PHYC= 0.d0
-   PHY = 0.d0
-   CHL = 0.d0
    N_  = 0
 
    !Get the indexes of particles in this grid (for grazing loss)
@@ -70,9 +76,6 @@ DO k =  nlev, 1, -1
    do i = 1, N_PAR
       if (p_PHY(i)%iz == k .and. p_PHY(i)%alive) then !Ignore dead super-individuals
          N_       = N_   + 1
-         PHYC = PHYC + p_PHY(i)%num *1d-9*p_PHY(i)%C 
-         PHY    = PHY  + p_PHY(i)%num *1d-9*p_PHY(i)%N
-         CHL    = CHL  + p_PHY(i)%num *1d-9*p_PHY(i)%Chl
 
          if (N_ == 1) then
 	         allocate(scratch(1), stat=Allocatestatus)
@@ -93,10 +96,13 @@ DO k =  nlev, 1, -1
       endif
    enddo
 
-   PHYC = PHYC /Hz(k)   !Convert Unit to mmol/m^3
-   PHY  = PHY  /Hz(k)   !Convert Unit to mmol/m^3
-   CHL  = CHL  /Hz(k)   !Convert Unit to mmol/m^3
-
+   !Allocate Pmatrix (matrix for super-individual grazing mortality)
+   IF (N_ > 0) THEN
+      allocate(Pmatrix(N_, NZOO), stat=AllocateStatus)
+      IF (AllocateStatus /= 0) STOP "*** Problem in allocating Pmatrix***"
+      Pmatrix(:,:) = 0d0
+   ENDIF
+ 
    ! The total amount of phytoplankton grazed by zooplankton (molN;gmax is the maximal specific ingestion rate!)
    ! In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
    !The ingested food by zooplankton has three fates: 
@@ -105,38 +111,111 @@ DO k =  nlev, 1, -1
 
    tf_z      = TEMPBOL(Ez,Temp(k))
 
-   !Calculate zooplankton grazing
-   gbar     = PHY**2/(PHY**2 + Kp**2)
-   INGES = ZOO*gmax*tf_z*gbar
-   Zmort  = ZOO*ZOO*mz*tf_z         !Mortality term for ZOO
- 
-   !Zooplankton excretion rate (-> DOM)
-   RES    = INGES*(1d0-GGE-unass)
+   !Calculate the total amount of prey N biomass available to each size class of zooplankton
+   DO kk = 1, NZOO
+      gmax = A_g * VolZOO(kk)**B_g 
 
-   !ZOOPLANKTON EGESTION (-> POM)
-   EGES   = INGES*unass
+	  FZoo(kk) = 0d0
+
+	  !First calculate total phyto. prey from super-individuals
+	  do m = 1, N_
+
+                i = index_(m)
+
+		!Volume ratio of this zoo. size class to the mth super-individual
+		Z_P_R = VolZOO(kk)/PHY_C2Vol(p_PHY(i)%C)
+
+                !The amount of patalable prey in the super-individual m
+                Pmatrix(m,kk) = palatability(Z_P_R) * p_PHY(i)%N * p_PHY(i)%num*1d-9/Hz(k)
+
+		!Calculate the palatability of each prey superindividual and add to the total amount palatable prey
+		FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
+	  enddo
+
+	  !Second, calculate the total zooplankton prey
+	  if (kk > 1) then
+	    do m = 1, (kk - 1)
+
+		!Volume ratio of this zoo. size class to the mth zooplankton size class
+		Z_P_R = VolZOO(kk)/VolZOO(m)
+
+                !Save the palatability into Gmatrix
+                Gmatrix(m,kk) = palatability(Z_P_R) 
+
+		!Calculate the palatability of each zoo. prey and add to the total amount palatable prey
+		FZoo(kk) = FZoo(kk) + Gmatrix(m,kk) * ZOO(m)
+
+	    enddo
+	  endif
+
+          gbar = FZoo(kk)/(FZoo(kk) + Kp)*(1.d0 - exp(eta *FZoo(kk)))
+
+          !Total ingestion of zooplankton kk
+          INGES(kk) = ZOO(kk)*gmax*tf_z*gbar
+
+	  if (kk > 1) then
+	    do m = 1, (kk - 1)
+
+               !Calculate the per capita grazing rate matrix (d-1) of
+               !zooplankton kk on zooplankton m
+               Gmatrix(m,kk) = Gmatrix(m,kk)*ZOO(m)/FZoo(kk) * gmax*tf_z*gbar
+
+            enddo
+	  endif
+
+   ENDDO !End of the zooplankton loop
+
+   !Computing zooplankton mortality
+   RES = 0d0  !Total amount of nitrogen that is excreted by zooplankton and
+              !becomes DIN
+   EGES= 0d0  !Total egestion by zooplankton to detritus
+
+   DO kk = 1, NZOO
+
+      !Zooplankton excretion rate (-> DIN)
+      RES  = RES + INGES(kk)*(1d0-GGE-unass)
+
+      !ZOOPLANKTON EGESTION (-> Detritus)
+      EGES = EGES + INGES(kk)*unass
+
+      !Calculate zooplankton mortality
+      Zmort = ZOO(kk)*Lmp *tf_z     !Linear Mortality term
+
+      !Loop through all predators
+      if (kk .lt. NZOO) then
+        do m = (kk + 1), NZOO
+          Zmort = Zmort + ZOO(m)*Gmatrix(kk,m)    !Linear Mortality term + grazing by other ZOO
+        enddo
+      endif
+
+      !Update the biomass of ZOOplankton kk
+      t(iZOO(kk),k) = ZOO(kk) + dtdays*(GGE*INGES(kk) - Zmort)
+      Varout(iZOO(kk), k) = t(iZOO(kk), k)
+
+   ENDDO !End of the zooplankton loop
 
    ! For production/destruction matrix:
-   pp_ND  = RDN*DET * tf_z   
-   pp_NZ  = ZOO*RES        
-   pp_DZ  = ZOO*EGES + Zmort 
-   pp_ZP  = ZOO*INGES      
+   pp_ND  = RDN*DET * tf_z   !Flux from DET to DIN
+   pp_DZ  = EGES + Zmort     !Flux from ZOO to DET 
   
-   t(iZOO,k) = ZOO + dtdays*(pp_ZP - pp_DZ - pp_NZ)
-   Varout(iZOO, k) = t(iZOO, k)
-
    !Now calculate new cell numbers associated with each particle
-   if (PHY > 0d0) then
-      Graz = pp_ZP/PHY*dtdays  !Specific mortality rate induced by zooplankton grazing per time step
-   else
-      Graz = 0d0 
-   endif
-
    ! Impose the zooplankton grazing (the number of cells associated with each superindividual changes)
    IF (N_ > 0) THEN
+ 
       do j = 1, N_
          i = index_(j)
-         p_PHY(i)%num = p_PHY(i)%num*(1d0 - Graz)   !Apply grazing
+
+         !Nitrogen biomass of this super-individual (Unit: pmol N)
+         P_ = p_PHY(i)%num*1d-9*p_PHY(i)%N/Hz(k)
+
+         Graz = 0d0 
+
+         !Calculate all the zooplankton ingestion for this superindividual
+         do m = 1, NZOO
+            Graz = Graz + INGES(m) * Pmatrix(j, m)/FZoo(m)
+         enddo
+
+         p_PHY(i)%num = p_PHY(i)%num*(1d0 - Graz*dtdays/P_)   !Apply grazing
       enddo
    ENDIF
 
@@ -164,20 +243,21 @@ DO k =  nlev, 1, -1
          CASE(GMK98_ToptLight)
             stop "To be developed..."
          CASE(GMK98_ToptSize)
-            stop "To be developed..."
+            call GMK98_Ind_TempSize(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt,&
+                           p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, dC_, dN_, dChl_)
          CASE(GMK98_ToptSizeLight)
             stop "To be developed..."
          CASE DEFAULT
             stop "Model choice is wrong!!"
          END SELECT
 
-         uptake      = uptake + dN_ * p_PHY(i)%num 
+         uptake   =   uptake + dN_ * p_PHY(i)%num 
          NPPc_(k) = NPPc_(k) + dC_ * p_PHY(i)%num *1d-9/Hz(k)*12.d0   !Unit: mgC m-3 d-1
 
          ! Update cellular C, N, and Chl
          p_PHY(i)%C   =  p_PHY(i)%C   + dC_   * dtdays
-         p_PHY(i)%N   =  p_PHY(i)%N   + dN_ * dtdays
-         p_PHY(i)%Chl=  p_PHY(i)%Chl + dChl_ * dtdays
+         p_PHY(i)%N   =  p_PHY(i)%N   + dN_   * dtdays
+         p_PHY(i)%Chl =  p_PHY(i)%Chl + dChl_ * dtdays
 
          ! If celular carbon is lower than the susbsistence threshold, it dies:
          p_PHY(i)%Cmin = 0.25d0 * p_PHY(i)%Cdiv
@@ -192,16 +272,18 @@ DO k =  nlev, 1, -1
          endif
       enddo
   endif
-  uptake= uptake*1d-9/Hz(k)!Convert uptake to mmol N m-3
-  Pmort = Pmort*1d-9/Hz(k) !Convert Pmort to mmol N m-3
+  uptake= uptake*1d-9/Hz(k) !Convert uptake to mmol N m-3
+  Pmort =  Pmort*1d-9/Hz(k) !Convert Pmort to mmol N m-3
 
   !Now calculate NO3 and DET
-  t(iNO3,k) = NO3 + dtdays*(pp_ND + pp_NZ - uptake)
+  t(iNO3,k) = NO3 + dtdays*(pp_ND + RES - uptake)
   Varout(iNO3, k) = t(iNO3, k)
-  t(iDET,k) = DET + Pmort + dtdays*( pp_DZ - pp_ND)
+
+  t(iDET,k) = DET + Pmort + dtdays*(pp_DZ - pp_ND)
   Varout(iDET,k) = t(iDET,k)
 
-   if (allocated(index_)) deallocate(index_)
+  if (allocated(index_))  deallocate(index_)
+  if (allocated(Pmatrix)) deallocate(Pmatrix)
 ENDDO
 
 !Needs to update t(iPN, :), t(iPC,:), and t(iChl,:)
@@ -210,7 +292,7 @@ call Par2PHY
 END SUBROUTINE BIOLOGY
 
 SUBROUTINE GMK98_Ind(Temp, PAR, NO3, C, N, Chl, dC, dN, dChl)
-USE Trait_functions, only : TEMPBOL
+USE Trait_functions, only : TEMPBOL, palatability
 USE params,              only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
 implicit none
 
@@ -425,8 +507,161 @@ dChl= Chl*(rhochl*VCN/theta - RChlT)
 return
 END SUBROUTINE GMK98_Ind_Temp
 
+subroutine GMK98_Ind_TempSize(Temp, PAR, NO3, Topt_, C, N, Chl, Cdiv, dC, dN, dChl)
+
+USE Trait_functions, only : temp_Topt, PHY_C2Vol
+USE params,          only : Ep, aI0, thetaNmax, mu0, rhoChl_L
+
+implicit none
+
+! Declaration of variables:
+real, intent(in)  :: Temp          ! Associated temperarure [degree C]
+real, intent(in)  :: PAR           ! Associated PAR [W m-2]
+real, intent(in)  :: NO3           ! Associated NO3 concentration [mmol N m-3]
+
+real, intent(in)  :: C             ! Current cellular carbon [mmol C cell-1]
+real, intent(in)  :: N             ! Current cellular nitrogen [mmol N cell-1]
+real, intent(in)  :: Chl           ! Current cellular Chl [mg C cell-1]
+real, intent(in)  :: Topt_         ! Optimal temperature [degree C]
+real, intent(in)  :: Cdiv          ! Cellular carbon content threshold for division [pmol]
+
+real              :: KN    = 0.50  ! Nitrate half-saturation constant of phyto growth [uM]
+real              :: QNmin = 0.05  ! Minimal N:C ratio [mmol N mmol C]
+real              :: QNmax = 0.18  ! Maximal N:C ratio [mmol N mmol C]
+real              :: dQN   = 0.13  ! (Qmax - Qmin) [mmol N mmol C]
+real              :: QN    = 0.    ! Current N:C ratio [mmol N mmol C]
+real              :: theta = 0.    ! Current Chl:C ratio [mg Chl mmol C]
+
+! Changes in the cellular nitrogen content [pmol N cell-1]:
+real, intent(out) :: dN
+
+! Changes in the cellular carbon content [pmol N cell-1]:
+real, intent(out) :: dC
+
+! Changes in the cellular Chl content [pg Chl cell-1]:
+real, intent(out) :: dChl
+
+! Maximal growth rate as a function of temperature under resource (nutrient and light)
+! replete conditions [uM]:
+real :: muT = 0.
+
+! Maximal specific nitrogen uptake rate as a function of temperature under resource
+! (nutrient and light) replete conditions [mol N mol C-1 d-1]:
+! Vcref = Qmax * muT
+real :: Vcref = 0.
+
+! DIN uptake rate by phytoplankton [mol N mol C-1 d-1]:
+real :: VCN = 0.
+
+! Indices for nutrient, light and temperature limitation
+real :: Lno3 = 0.   ! Nutrient limitation [pmol N m-3]
+real :: SI   = 0.   ! Light limitation index [fpar]
+ real :: tf_p = 0.   ! Temperature limitation for phytoplankton growth [nd] [Iria]
+
+real :: PCmax  = 0. ! Maximal photosynthesis rate (regulated by QN) [d-1]
+real :: PC     = 0. ! Carbon specific rate of photosynthesis [d-1]
+real :: rhoChl = 0. ! Phyto C production devoted to Chl synthesis [mg Chl mmol C-1]
+real :: Ik     = 0. ! Saturation parameter for the PI curve [umol photons m-2 s-1]
+
+real, parameter   :: RC   = 0.025d0  ! Basic respiration rate [d-1]
+real, parameter   :: RN   = 0.025d0  ! Basic respiration rate [d-1]
+real, parameter   :: RChl = 0.025d0  ! Basic respiration rate [d-1]
+real, parameter   :: zeta = 3.0d0    ! Cost of biosynthesis [mol C mol N-1]
+
+!Kn is an allometric function of Vol
+real, parameter   :: KN_a = 10**(-0.84)  ! Normalization constant for KN
+real, parameter   :: KN_b = 0.33d0  ! Allometric exponent for KN
+
+!QNmin and QNmax are allometric functions of CDiv
+real, parameter   :: QNmin_a = 0.12d0  ! Normalization constant for QNmin (pmol N per cell)
+real, parameter   :: QNmin_b = 0.95d0  ! Allometric exponent for QNmin
+real, parameter   :: QNmax_a = 0.2d0   ! Normalization constant for QNmax (pmol N per cell)
+real, parameter   :: QNmax_b = 1d0  ! Allometric exponent for QNmax
+
+real, parameter   :: nx   = 1.d0   ! Exponent of nutrient uptake function in GMK98
+
+real :: RcT   = 0. ! Temperature dependent respiration rate
+real :: RNT   = 0. ! Temperature dependent N-based respiration rate
+real :: RChlT = 0. ! Temperature dependent Chl-based respiration rate
+real :: Vol = 0d0 !Cell volume of phytoplankton
+! End of declaration
+   
+! Check input
+if (NO3 .le. 0.d0) stop "Negative Nitrate concentration!"
+if (PAR .lt. 0.d0) stop "Negative PAR!"
+
+if (C .le. 0d0) then
+   dN   = 0.d0
+   dC   = 0.d0
+   dChl = 0.d0
+   return
+endif
+
+QN      = N / C
+theta   = Chl / C
+   
+!Convert phytoplankton CDiv to Volume
+Vol = PHY_C2Vol(CDiv)
+
+! Nitrate half-saturation constant of phyto growth based on cell volume [uM]:
+KN = KN_a * Vol**KN_b
+
+! Minimal N:C ratio [mmol N mmol C]:
+QNmin = QNmin_a * Cdiv**(QNmin_b-1d0)
+   
+! Maximal N:C ratio [mmol N mmol C]:
+QNmax = QNmax_a * Cdiv**(QNmax_b-1d0)
+dQN   = QNmax - QNmin
+
+! Temperature coefficient (what value of mu0 should be?):
+muT   = temp_Topt(Temp, mu0, Topt_)
+Vcref = muT * QNmax
+
+! Assume the same temperature dependence of respiration as on photosynthetic 
+! rate (long-term adaptation; Barton et al. 2020):
+RcT   = temp_Topt(Temp, RC,   Topt_)
+RNT   = temp_Topt(Temp, RN,   Topt_)
+RChlT = temp_Topt(Temp, RChl, Topt_)
+
+! Nutrient limitation [pmol N m-3]:
+Lno3 = (QN - QNmin) / dQN
+
+! Maximal photosynthesis rate (regulated by QN) [d-1]:
+PCmax = muT * Lno3
+Ik    = PCmax / aI0 / theta
+
+! Light limitation index [fpar]:
+SI = 1.d0 - exp(-PAR/Ik)
+PC = PCmax * SI
+
+! Define rhoChl [g Chl mol C-1]:
+! If dark, assume that rhoChl equaled the value calculated for the end of the 
+! preceding light period .
+if (PAR <= 0d0) then
+   rhoChl   = rhoChl_L
+else
+   rhoChl   = thetaNmax * PC / aI0 / theta / PAR
+   rhoChl_L = rhoChl
+endif
+
+! DIN uptake rate by phytoplankton [mol N mol C-1 d-1]:
+VCN = Vcref * NO3 / (NO3 + KN) * ((QNmax - QN) / dQN)**nx ! Vcref already temperature dependent
+
+! Changes of cellular carbon [pmol C cell-1 d-1]:
+dC  = C * (PC - zeta * VCN - RcT)
+
+! Changes of cellular nitrogen [pmol N cell-1 d-1]:
+dN  = N * (VCN / QN - RNT)
+
+! Changes of cellular Chl [pg Chl cell-1 d-1]:
+dChl= Chl * (rhoChl * VCN / theta - RChlT)
+
+return
+END subroutine GMK98_Ind_TempSize
+!------------------------------------------------------------------------------------------------
+
 SUBROUTINE Par2PHY
-use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iESD, iIopt, NTrait
+use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, iIopt, NTrait
 use grid,                   only : Hz, nlev
 use mGf90,              only : srand_mtGaus
 IMPLICIT NONE
@@ -468,10 +703,10 @@ DO i = 1, N_PAR
               select case(m)
               case(iTopt)
                   oldtt(1) = p_PHY(i)%Topt
-              case(iESD)
-                  oldtt(1) = p_PHY(i)%LnESD
+              case(iSize)
+                  oldtt(1) = log(p_PHY(i)%CDiv)
               case(iIopt)
-                  oldtt(1) = p_PHY(i)%LnIopt
+                  oldtt(1) = p_PHY(i)%lnIopt
               case DEFAULT
                   stop "Trait index wrong!"
               end select
@@ -483,8 +718,8 @@ DO i = 1, N_PAR
               select case(m)
               case(iTopt)
                   p_PHY(i)%Topt = newtt(1)
-              case(iESD)
-                  p_PHY(i)%LnESD = newtt(1)
+              case(iSize)
+                  p_PHY(i)%CDiv = exp(newtt(1))
               case(iIopt)
                   p_PHY(i)%LnIopt = newtt(1)
               case DEFAULT

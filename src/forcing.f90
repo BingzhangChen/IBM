@@ -28,7 +28,6 @@ real                         :: VTemp(nlev, N_time_temp)          = 0.d0
 !Final temperature data at each model grid at the target time
 real                         ::  Temp(nlev)                       = 0.d0
 
-
 !Kv forcing
 character(len=20), parameter :: Kv_time_file = 'BATS_Aks_time.dat'
 character(len=20), parameter :: Kv0_file     = 'BATS_KV0.dat'
@@ -77,7 +76,7 @@ public :: Dirichlet, Neumann, bot_bound
 public :: extract_Kv
 
 ! Station latitude (Convert latitude to radians)
-real, parameter :: pi      = 3.1415926535897932384633
+real, public, parameter :: pi      = 3.1415926535897932384633
 real, parameter :: Stn_lat = 31.67d0 *pi/180.d0  !BATS
 
 CONTAINS
