@@ -205,7 +205,7 @@ DO k =  nlev, 1, -1
       do j = 1, N_
          i = index_(j)
 
-         !Nitrogen biomass of this super-individual (Unit: pmol N)
+         !Nitrogen biomass of this super-individual (Unit: mmol N/m3)
          P_ = p_PHY(i)%num*1d-9*p_PHY(i)%N/Hz(k)
 
          Graz = 0d0 
