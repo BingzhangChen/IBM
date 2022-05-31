@@ -13,7 +13,7 @@ real,   parameter  :: zero       = 0.d0  !Vectors of zero
 real,   parameter  :: Vec0(nlev) = zero  !Vectors of zero
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
-integer            :: j, k
+integer            :: j
 
 ! 'START TIME STEPPING'
 DO it = 1, Nstep+1
@@ -103,8 +103,8 @@ END SUBROUTINE TIMESTEP
 
 SUBROUTINE UPDATE_PARTICLE_FORCING
 use forcing,         only : PARw, Temp
+use grid,              only : Z_w, Z_r, nlev
 use state_variables, only : p_PHY, t, iNO3
-use grid,            only : Z_w, Z_r, nlev
 implicit none
 
 ! interpolation results for particles

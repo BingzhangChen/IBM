@@ -25,7 +25,7 @@ export SCRATCHDIR=Compile
 export SRCDIR=../src
 
 
-MPI=1
+MPI=0
 Test=0
 
 if [[ $MPI == 1 ]]; then
