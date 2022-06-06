@@ -24,7 +24,6 @@ fi
 export SCRATCHDIR=Compile
 export SRCDIR=../src
 
-
 MPI=0
 Test=0
 
