@@ -2,7 +2,7 @@ SUBROUTINE INITIALIZE
 use params
 use state_variables
 use Time_setting, only: d_per_s, dtsec, dtdays, Nstep, nsave, NDay_Run
-use grid,         only: Z_w
+use grid,                only: Z_w, hmax
 use IO
 use forcing
 implicit NONE
@@ -96,6 +96,9 @@ DO k = 1, N_PAR
 
    !Initialize Iopt to 1000 umol photons m-2 s-1
    p_PHY(k)%LnIopt = log(1d3)
+
+   !Initialize the number of cells associated with each super-individual (assuming initial phytoplankton nitrogen is 0.1 mmol m-3)
+   p_PHY(k)%num = 0.1 * hmax/dble(N_PAR)/p_PHY(k)%N * 1d9
 
    !Compute rx (randomly distributed between Z_w(0) and Z_w(nlev)
    CALL RANDOM_NUMBER(cff)

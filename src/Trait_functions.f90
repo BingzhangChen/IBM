@@ -28,7 +28,7 @@ implicit none
 real, intent(in)  :: R_real
 
 ! Standard deviation of log zooplankton feeding preference
-real, parameter  :: SDpref_Z = 0.5
+real, parameter  :: SDpref_Z = 0.1
 
 !Optimal predator:prey volume ratio
 real, parameter  :: R_opt = 1d3  !Length ratio 10:1
@@ -36,8 +36,14 @@ real, parameter  :: R_opt = 1d3  !Length ratio 10:1
 real :: cff = 0d0
 
 cff = log(R_real/R_opt)
+cff = cff**2/(2.d0 * SDpref_Z**2)
 
-y = exp(-cff**2/(2.d0 * SDpref_Z**2))
+!To avoid underflow
+if (cff > 5d2) then
+	y = 0d0
+else
+   y = exp(-cff)
+endif
 return
 end function palatability
 

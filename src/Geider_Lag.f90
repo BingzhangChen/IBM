@@ -22,6 +22,7 @@ real    :: NPPc_(nlev)  = 0.  !C-based phytoplankton production (mg C m-3 d-1)
 real    :: pp_DZ = 0.   
 real    :: pp_ND = 0.   
 real    :: Pmort  = 0.   
+real    :: Cmin  = 0. !Phytoplankton subsistence carbon quota below which the cell will die   
 real    :: FZoo(NZOO) = 0.   !The total amount of palatable prey (in Nitrogen)
                              !for each zooplankton size class
 real    :: Z_P_R = 0.   !Zooplankton:Phytoplankton volume ratio
@@ -113,7 +114,7 @@ DO k =  nlev, 1, -1
 
 	ENDDO
 
-   ! The total amount of phytoplankton grazed by zooplankton (molN;gmax is the maximal specific ingestion rate!)
+   !The multiple zooplankton size class model follows Ward et al. L&O 2012
    ! In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
    !The ingested food by zooplankton has three fates: 
    !1) being recycled to DIN; 2) being converted to detritus; and 3) supporting zooplankton growth. 
@@ -167,7 +168,11 @@ DO k =  nlev, 1, -1
 	    do m = 1, (kk - 1)
 
          !Calculate the total ingestion rate (mmol N m-3 d-1) of zooplankton kk on zooplankton m
-         Gmatrix(m,kk) = Gmatrix(m,kk)*ZOO(m)/FZoo(kk)*INGES(kk)
+         if (FZOO(kk) > 0d0) then
+            Gmatrix(m,kk) = Gmatrix(m,kk)*ZOO(m)/FZoo(kk)*INGES(kk)
+         else
+            Gmatrix(m,kk) = 0d0
+         endif
 
         enddo
 	  ENDIF
@@ -217,7 +222,11 @@ DO k =  nlev, 1, -1
 
          !Calculate all the zooplankton ingestion for this superindividual (unit: mmol N m-3 d-1)
          do m = 1, NZOO
-            Graz = Graz + INGES(m) * Pmatrix(j, m)/FZoo(m)
+              if (FZOO(m) > 0d0) then
+                 Graz = Graz + INGES(m) * Pmatrix(j, m)/FZoo(m)
+              else
+                 Graz = Graz 
+              endif
          enddo
 
          p_PHY(i)%num = p_PHY(i)%num*(1d0 - Graz*dtdays/BN(j))   !Apply grazing
@@ -264,10 +273,10 @@ DO k =  nlev, 1, -1
          p_PHY(i)%N   =  p_PHY(i)%N   + dN_   * dtdays
          p_PHY(i)%Chl =  p_PHY(i)%Chl + dChl_ * dtdays
 
-         ! If celular carbon is lower than the susbsistence threshold, it dies:
-         p_PHY(i)%Cmin = 0.25d0 * p_PHY(i)%Cdiv
+         ! If celular carbon is lower than the susbsistence threshold (Cmin), it dies:
+         Cmin = 0.25d0 * p_PHY(i)%Cdiv
       
-         if (p_PHY(i)%C < p_PHY(i)%Cmin) then  ! The superindividual Dies
+         if (p_PHY(i)%C < Cmin) then  ! The superindividual Dies
             Pmort = Pmort + p_PHY(i)%N * p_PHY(i)%num !Natural mortality of phytoplankton ==> DET
             p_PHY(i)%C     = 0d0
             p_PHY(i)%N     = 0d0

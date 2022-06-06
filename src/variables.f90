@@ -16,8 +16,8 @@ integer, parameter :: iDET = iZOO(NZOO) + 1
 integer, parameter :: nvar = iDET !Total number of state variables
 real               :: t(nvar, nlev) = 0.d0
 real               :: Ntot = 0d0  !Total nitrogen in the domain
-real, parameter :: MinSzoo =   log(2d0)  !Minimal zooplankton log ESD
-real, parameter :: MaxSzoo = log(25d2) !Maximal zooplankton log ESD
+real, parameter :: MinSzoo =   log(2d0)  !Minimal zooplankton log ESD (micron)
+real, parameter :: MaxSzoo = log(25d2) !Maximal zooplankton log ESD (micron)
 real, parameter :: dZOOESD =  (MaxSzoo - MinSzoo)/dble(NZOO-1)! ESD difference between adjacent zooplankton size class (log)
 
 !Log ESD of each zoo. size class
@@ -65,7 +65,7 @@ TYPE Particle
     ! cellular carbon content (pmol; assuming a 1 micron cell)
     real    :: C   = 0.02
 
-    ! cellular nitrogen content (pmol; assuming a 1 micron cell)
+    ! cellular nitrogen content (pmol per cell; assuming a 1 micron cell)
     real    :: N   = 0.02/106.*16.
 
     ! Cellular Chl content (pg Chl)
@@ -78,9 +78,6 @@ TYPE Particle
     !This trait will vary with mutation 
     real :: Cdiv= 0.04d0
     
-    ! Subsistence cellular carbon content (pmol), below which the cell will die (can be 1/4 of the Cdiv)
-    real :: Cmin= 0.01d0
-
     !Dead or alive
     logical :: alive = .true.
 
@@ -98,7 +95,7 @@ END TYPE Particle
 integer :: IDmax = 0 !Maximal ID number
 
 !Fix the number of individuals in the system
-INTEGER, PARAMETER           :: N_PAR = 2000
+INTEGER, PARAMETER           :: N_PAR = 10000
 Type (Particle)                              :: p_PHY(N_PAR)
 
 !Model choices
@@ -112,7 +109,7 @@ integer, parameter :: GMK98_SizeLight          = 7
 integer, parameter :: GMK98_ToptSizeLight  = 8 
 
 !Current model selection
-integer :: Model_ID = 2
+integer :: Model_ID = 6
 
 !Number of traits
 integer, parameter :: NTrait = 3

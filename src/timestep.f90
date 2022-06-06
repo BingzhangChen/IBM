@@ -32,8 +32,8 @@ DO it = 1, Nstep+1
    call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kv0,   Kv0)
    call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kvmax, Kvmax)
 
-   !Calculate vertical Kv
-   call analytic_Kv(nlev, Kv0(1), Kvmax(1), 1d-5, MLD(1), Kv)
+   !Calculate vertical Kv (Kbg follows Christina L&O 2005)
+   call analytic_Kv(nlev, Kv0(1), Kvmax(1), 3d-5, MLD(1), Kv)
 
    !Start biology
    !Update environmental variables associated with each particle
