@@ -5,7 +5,7 @@
    KN  = 0.5,  !KN
    gmax= 2.0,  
    Kp  = 0.15,  !Kp
-   mz  = 0.05,  !mz
+   mz  = 0.01,  !mz
    RDN = 0.1, !RDN
    wDET= 1.0,  !wDET
 /

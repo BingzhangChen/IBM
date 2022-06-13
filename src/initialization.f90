@@ -2,7 +2,8 @@ SUBROUTINE INITIALIZE
 use params
 use state_variables
 use Time_setting, only: d_per_s, dtsec, dtdays, Nstep, nsave, NDay_Run
-use grid,                only: Z_w, hmax
+use grid,         only: Z_w, hmax
+use Trait_functions,  only: PHY_ESD2C
 use IO
 use forcing
 implicit NONE
@@ -23,6 +24,7 @@ namelist /timelist/  NDay_Run, dtsec, nsave
 namelist /paramlist/ Model_ID, mu0, aI0, KN, gmax, Kp, mz,RDN, wDET 
 
 write(6,*) 'Initialize model simulation time...'
+
 ! Check whether the namelist file exists.
 inquire (file='time.nml', iostat=rc)
 
@@ -76,9 +78,14 @@ do k = 1, NZOO
    !Initialize zooplankton size (logESD)
    ESDZOO(k) = MinSzoo + dble(k-1)*dZOOESD
 
+   !Make the model write out the zooplankton size
+   write(6,1001) "ZOO", k, "ESD = ", exp(ESDZOO(k))
+
    !Compute volume of zooplankton
    VolZOO(k) = pi/6d0*exp(ESDZOO(k))**3
 enddo
+
+1001 format(A3, 1x, I0, 1x, A6, F12.3 )
 
 !Following Verity et al. AME (1996)
 t(iDET,:) = .1d0
@@ -91,8 +98,15 @@ DO k = 1, N_PAR
    !Initialize optimal temperature (Topt) to 20 C
    p_PHY(k)%Topt = 20.d0
 
-   !Initialize CDiv to 1 micron
-   p_PHY(k)%CDiv = 0.04
+   !Initialize phytoplankton size from a uniform distribution between 0.8 and 60 um
+   call random_number(cff)
+   cff = log(0.8d0) + cff * (log(60.d0) - log(0.8d0))
+   cff = exp(cff) !ESD
+
+   p_PHY(k)%C    = PHY_ESD2C(cff)      !Unit: pmol C cell-1
+   p_PHY(k)%N    = p_PHY(k)%C/106.*16. !Unit: pmol N cell-1
+   p_PHY(k)%Chl  = p_PHY(k)%C* 12./50. !Unit: pgChl cell-1
+   p_PHY(k)%CDiv = p_PHY(k)%C* 2d0 !Unit: pmol C cell-1
 
    !Initialize Iopt to 1000 umol photons m-2 s-1
    p_PHY(k)%LnIopt = log(1d3)
@@ -126,7 +140,8 @@ Labelout(iCHL) = 'CHL'
 Labelout(oNPP) = 'NPP'
 
 do k = 1, NZOO
-   write(Labelout(iZOO(k)),  format_string) 'ZOO',k
+   write(Labelout(iZOO(k)),  format_string) 'ZOO', k
+   write(Labelout( oFZ(k)),  format_string) 'FZO',k
 enddo
 
 write(6, '(a)') 'Write out the labels for output for validation:'

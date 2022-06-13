@@ -25,7 +25,7 @@ real    :: Pmort  = 0.
 real    :: Cmin  = 0. !Phytoplankton subsistence carbon quota below which the cell will die   
 real    :: FZoo(NZOO) = 0.   !The total amount of palatable prey (in Nitrogen)
                              !for each zooplankton size class
-real    :: Z_P_R = 0.   !Zooplankton:Phytoplankton volume ratio
+real    :: phyV = 0.   !Phytoplankton cell volume
 real    :: RES     = 0.   
 real    :: EGES  = 0.   
 real    :: gbar  = 0.   
@@ -34,7 +34,6 @@ real    :: Zmort = 0.
 real    :: Gmatrix(NZOO,NZOO) = 0.d0     !Grazer biomass specific grazing rate matrix
 real,    allocatable :: BN(:)                !The amount of nitrogen in each super-individual
 real,    allocatable :: Pmatrix(:,:)     !Phytoplankton mortality rates by each zooplankton size class for each superindividual
-real,    parameter   :: Lmp   = 0.02d0   !Linear zooplankton mortality term
 real,    parameter   :: GGE   = 0.30d0   !Zooplankton Gross Growth Efficiency
 real,    parameter   :: unass = 0.24d0   !The fraction of unassimilated food ingested by zooplankton
 real,    parameter   :: eta     = -1.d0   !Prey refuge parameter
@@ -133,11 +132,11 @@ DO k =  nlev, 1, -1
 
         i = index_(m)
 
-		  !Volume ratio of this zoo. size class to the mth super-individual
-		  Z_P_R = VolZOO(kk)/PHY_C2Vol(p_PHY(i)%C)
+		  !Volume of phytoplankton super-individual
+		  phyV = PHY_C2Vol(p_PHY(i)%C)
 
         !The amount of patalable prey in the super-individual m
-        Pmatrix(m,kk) = palatability(Z_P_R) * BN(m)
+        Pmatrix(m,kk) = palatability(VolZOO(kk), phyV) * BN(m)
 
 		  !Calculate the palatability of each prey superindividual and add to the total amount palatable prey
 		  FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
@@ -147,17 +146,17 @@ DO k =  nlev, 1, -1
 	  IF (kk > 1) THEN
 	    do m = 1, (kk - 1)
 
-		 !Volume ratio of this zoo. size class to the mth zooplankton size class
-		 Z_P_R = VolZOO(kk)/VolZOO(m)
-
        !Save the palatability into Gmatrix
-       Gmatrix(m,kk) = palatability(Z_P_R) 
+       Gmatrix(m,kk) = palatability(VolZOO(kk), VolZOO(m)) 
 
 		 !Calculate the palatability of each zoo. prey and add to the total amount palatable prey
 		 FZoo(kk) = FZoo(kk) + Gmatrix(m,kk) * ZOO(m)
 
 	    enddo
 	  ENDIF
+
+     !Save the total available prey for zooplankton
+     Varout(oFZ(kk),k) = FZOO(kk)
 
      gbar = FZoo(kk)/(FZoo(kk) + Kp)*(1.d0 - exp(eta *FZoo(kk)))
 
@@ -192,7 +191,7 @@ DO k =  nlev, 1, -1
       EGES = EGES + INGES(kk)*unass
 
       !Calculate zooplankton mortality
-      Zmort = ZOO(kk)*Lmp *tf_z     !Linear Mortality term
+      Zmort = ZOO(kk)*mz *tf_z     !Linear Mortality term
 
       !Loop through all predators
       if (kk .lt. NZOO) then
@@ -208,8 +207,8 @@ DO k =  nlev, 1, -1
    ENDDO !End of the zooplankton loop
 
    ! For production/destruction matrix:
-   pp_ND  = RDN*DET*tf_z   !Flux from DET to DIN
-   pp_DZ  = EGES + Lmp*tf_z*sum(ZOO(:))     !Flux from ZOO to DET 
+   pp_ND = RDN*DET*tf_z                   !Flux from DET to DIN
+   pp_DZ = EGES + mz*tf_z*sum(ZOO(:))     !Flux from ZOO to DET 
   
    !Now calculate new cell numbers associated with each particle
    ! Impose the zooplankton grazing (the number of cells associated with each superindividual changes)
@@ -266,8 +265,7 @@ DO k =  nlev, 1, -1
          END SELECT
 
          uptake   =   uptake + dN_ * p_PHY(i)%num 
-         NPPc_(k) = NPPc_(k) + dC_ * p_PHY(i)%num *1d-9/Hz(k)*12.d0   !Unit: mgC m-3 d-1
-
+         NPPc_(k) = NPPc_(k) + dC_ * p_PHY(i)%num *1d-9/Hz(k)*12.d0*dtdays !Unit: mgC m-3 d-1
          ! Update cellular C, N, and Chl
          p_PHY(i)%C   =  p_PHY(i)%C   + dC_   * dtdays
          p_PHY(i)%N   =  p_PHY(i)%N   + dN_   * dtdays
@@ -285,7 +283,8 @@ DO k =  nlev, 1, -1
             p_PHY(i)%alive = .false.
          endif
       enddo
-  endif
+  endif !End if of N_ > 0
+
   uptake= uptake*1d-9/Hz(k) !Convert uptake to mmol N m-3
   Pmort =  Pmort*1d-9/Hz(k) !Convert Pmort to mmol N m-3
 
@@ -632,8 +631,8 @@ dQN   = QNmax - QNmin
 muT   = temp_Topt(Temp, mu0, Topt_)
 Vcref = muT * QNmax
 
-! Assume the same temperature dependence of respiration as on photosynthetic 
-! rate (long-term adaptation; Barton et al. 2020):
+!Assume the same temperature dependence of respiration as on photosynthetic 
+!rate (long-term adaptation; Barton et al. 2020):
 RcT   = temp_Topt(Temp, RC,   Topt_)
 RNT   = temp_Topt(Temp, RN,   Topt_)
 RChlT = temp_Topt(Temp, RChl, Topt_)

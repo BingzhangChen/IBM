@@ -4,9 +4,33 @@ implicit none
 
 private
 
-public :: TEMPBOL, temp_Topt, palatability, PHY_C2Vol
+public :: TEMPBOL, temp_Topt, palatability, PHY_C2Vol, PHY_ESD2C
+
+real, parameter :: pi= 3.1415926535
 
 CONTAINS
+
+!Function converting phytoplankton ESD (micron) to Carbon (unit: pmol C per cell) with the parameters obtained from Maranon et al. (2013)
+real function PHY_ESD2C(ESD) result(y)
+implicit none
+real, intent(in)  :: ESD !Phytoplankton ESD (micron)
+
+real, parameter :: a = -0.69
+real, parameter :: b = 0.88
+
+real :: Vol = 0d0
+
+!Calculate volume from ESD
+Vol = pi/6d0 * ESD**3
+
+!the parameters of a and b are derived from pg C cell-1 to volume; so we need to
+!convert the carbon unit from pmol C cell-1 to pg C cell-1
+
+!Calculate carbon (pmol C per cell) from volume
+y = 10.d0**a * Vol**b / 12.d0
+
+return
+end function PHY_ESD2C
 
 !Function converting phytoplankton carbon to volume (unit: micron^3) with the parameters obtained from Maranon et al. (2013)
 pure real function PHY_C2Vol(p_C) result(y)
@@ -16,24 +40,52 @@ real, intent(in)  :: p_C !Phytoplankton carbon (pmol C/cell)
 real, parameter :: a = -0.69
 real, parameter :: b = 0.88
 
-y = (12d0 * p_C/10**a)**(1d0/b)
+!the parameters of a and b are derived from pg C cell-1 to volume; so we need to
+!convert the carbon unit from pmol C cell-1 to pg C cell-1
+
+y = (12d0 * p_C/10.d0**a)**(1d0/b)
 return
 end function 
 
-!Function calculating the prey palatability based on Ward et al. L&O 2012 (Eq. A21)
-real function palatability(R_real) result(y)
+!Function calculating the prey palatability based on Ward et al. L&O 2012 (Eq. A21) and Banas Ecol. Mod. (2011) Table 2
+real function palatability(Vpred, Vprey) result(y)
 implicit none
 
+!Predator Volume
+real, intent(in)  :: Vpred
+
+!Prey Volume
+real, intent(in)  :: Vprey
+
 !The actual predator:prey volume ratio
-real, intent(in)  :: R_real
+real  :: R_real = 0d0
 
 ! Standard deviation of log zooplankton feeding preference
 real, parameter  :: SDpref_Z = 0.1
 
+!Optimal prey Volume of the predator
+real :: Vprey_opt = 1d3 
+
+real :: Xpred, Xprey !ESD of predator and prey
+real :: Xprey_opt = 0. !Optimal prey ESD
+
 !Optimal predator:prey volume ratio
-real, parameter  :: R_opt = 1d3  !Length ratio 10:1
+real :: R_opt = 1d3 
 
 real :: cff = 0d0
+
+!First calculate prey and predator ESD (micron) from volume
+Xpred = (6d0*Vpred/pi)**(.33333333333333)
+Xprey = (6d0*Vprey/pi)**(.33333333333333)
+
+!Then calculate optimal prey ESD (micron)
+Xprey_opt = 0.65 * Xpred**0.56
+
+!Convert prey ESD to volume
+Vprey_opt = pi/6d0 * Xprey_opt**3
+
+R_opt  = Vpred/Vprey_opt
+R_real = Vpred/Vprey
 
 cff = log(R_real/R_opt)
 cff = cff**2/(2.d0 * SDpref_Z**2)

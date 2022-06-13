@@ -141,6 +141,7 @@ do k = 1, size(p_PHY)
 enddo
 
 dat_in(:,1) = t(iNO3,:)  !Observed profile of NO3
+
 do k = 1, size(p_PHY) 
    zp(1) = p_PHY(k)%rz
    call gridinterpol(nlev, 1, Z_r, dat_in, 1, zp, zout)

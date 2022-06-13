@@ -2,8 +2,8 @@ module params
 implicit NONE
 
 ! Parameters
-real :: mu0     =  0d0  !PCref: maximal growth rate normalized to 15 C
-real :: aI0     =  0d0  !Slope of P-I curve
+real :: mu0     =  0d0  !PCref: maximal growth rate normalized to 15 C (d-1)
+real :: aI0     =  0d0  !Chl-specific Slope of P-I curve ((W m-2)-1 (gChl molC)-1 d-1)
 real :: KN      =  0d0  !Half saturation constant of phytoplankton growth on N
 real :: gmax    =  0d0  !Maximal zooplankton grazing rate
 real :: Kp      =  0d0  !Half saturation constant of zooplankton grazing

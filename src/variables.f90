@@ -4,7 +4,7 @@ implicit NONE
 
 !State variables
 integer, private   :: i
-integer, parameter :: NZOO = 10   !Number of zooplankton size classes
+integer, parameter :: NZOO = 20   !Number of zooplankton size classes
 
 !Indexes for the state variables
 integer, parameter :: iNO3 = 1 
@@ -16,7 +16,7 @@ integer, parameter :: iDET = iZOO(NZOO) + 1
 integer, parameter :: nvar = iDET !Total number of state variables
 real               :: t(nvar, nlev) = 0.d0
 real               :: Ntot = 0d0  !Total nitrogen in the domain
-real, parameter :: MinSzoo =   log(2d0)  !Minimal zooplankton log ESD (micron)
+real, parameter :: MinSzoo = log(0.8d0)!Minimal zooplankton log ESD (micron)
 real, parameter :: MaxSzoo = log(25d2) !Maximal zooplankton log ESD (micron)
 real, parameter :: dZOOESD =  (MaxSzoo - MinSzoo)/dble(NZOO-1)! ESD difference between adjacent zooplankton size class (log)
 
@@ -36,9 +36,12 @@ integer, parameter :: Windex(NVsinkterms) = [iDET]
 real               :: ww(0:nlev, NVsinkterms) = 0.d0
 
 !Labels for each state variable (for saving model output)
-integer, parameter   :: oNPP                       = nvar + 1   !Daily net primary production integrated over a whole day
-integer, parameter   :: Nout                        = oNPP
-real                            :: Varout(Nout, nlev) = 0.d0
+integer, parameter   :: oNPP = nvar + 1   !Daily net primary production integrated over a whole day
+
+! Total available prey biomass for each zoo. size class
+integer, parameter :: oFZ(NZOO) = (/ (oNPP + i , i = 1, NZOO) /)
+integer, parameter :: Nout      = oFZ(NZOO)
+real               :: Varout(Nout, nlev) = 0.d0
 character(LEN=7)   :: Labelout(Nout)       = 'Unknown'
 
 !Particles
