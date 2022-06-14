@@ -61,7 +61,7 @@ real, intent(in)  :: Vprey
 real  :: R_real = 0d0
 
 ! Standard deviation of log zooplankton feeding preference
-real, parameter  :: SDpref_Z = 0.1
+real, parameter  :: SDpref_Z = 0.5
 
 !Optimal prey Volume of the predator
 real :: Vprey_opt = 1d3 
@@ -92,7 +92,7 @@ cff = cff**2/(2.d0 * SDpref_Z**2)
 
 !To avoid underflow
 if (cff > 5d2) then
-	y = 0d0
+   y = 0d0
 else
    y = exp(-cff)
 endif

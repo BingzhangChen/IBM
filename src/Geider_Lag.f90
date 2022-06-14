@@ -201,7 +201,7 @@ DO k =  nlev, 1, -1
       endif
 
       !Update the biomass of ZOOplankton kk
-      t(iZOO(kk),k) = ZOO(kk) + dtdays*(GGE*INGES(kk) - Zmort)
+      t(iZOO(kk),k) = max(ZOO(kk) + dtdays*(GGE*INGES(kk) - Zmort), 0d0)
       Varout(iZOO(kk), k) = t(iZOO(kk), k)
 
    ENDDO !End of the zooplankton loop
