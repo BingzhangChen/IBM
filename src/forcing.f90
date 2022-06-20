@@ -1,7 +1,7 @@
 Module forcing
 !This module provides several analytic functions calculating temperature, surface PAR, MLD, maximal eddy diffusivity as a function of time
 use Time_setting, only: d_per_s, y_per_d, s_per_h
-use Grid,               only: nlev, Z_r, Hz
+use Grid,         only: nlev, Z_r, Hz
 implicit none
 
 private
@@ -50,7 +50,6 @@ real                         :: MLD(1)                            = 0.d0
 !Kvmax
 real                         :: obs_Kvmax(N_time_Kv)              = 0.d0
 real                         :: Kvmax(1)                          = 0.d0
-
 
 !Final Kv at w points of each grid at the target time
 real                         :: Kv(0:nlev)                        = 0.d0
@@ -212,7 +211,7 @@ subroutine extract_Kv
 implicit none
 
 !Obtain time
-call Readcsv(Kv_time_file, 1, N_time_Kv, obs_time_Kv) 
+call Readcsv(temp_time_file, 1, N_time_Kv, obs_time_Kv) 
 obs_time_Kv(:) = obs_time_Kv(:)*3.d1*dble(d_per_s) !unit: second
 
 !Obtain MLD

@@ -2,9 +2,9 @@ SUBROUTINE BIOLOGY
 !1D lagrangian model using the model of Geider et al. L&O (1998)
 USE params
 USE state_variables
-USE forcing,                only : Temp
+USE forcing,          only : Temp, PAR
 USE Trait_functions,  only : TEMPBOL, PHY_C2Vol, palatability
-USE grid,                only : Hz, nlev
+USE grid,             only : Hz, nlev
 USE Time_setting, only : dtdays, sec_of_day
 implicit none
 INTEGER :: k, i, j, m,kk
@@ -19,6 +19,7 @@ real    :: dN_   = 0.
 real    :: dChl_ = 0.
 real    :: uptake= 0.   !Total NO3 uptake
 real    :: NPPc_(nlev)  = 0.  !C-based phytoplankton production (mg C m-3 d-1)
+real    ::  IPAR(nlev)  = 0.  !Daily integrated PAR at each depth
 real    :: pp_DZ = 0.   
 real    :: pp_ND = 0.   
 real    :: Pmort  = 0.   
@@ -43,7 +44,7 @@ real,    parameter   :: B_g    = -0.16  !Slope of the allometric equation of max
 ! cellular carbon content threshold for division (pmol)
 INTEGER, ALLOCATABLE :: index_(:)    !The indexes of particles in each grid
 INTEGER, ALLOCATABLE :: scratch(:)    !The scratch indexes of particles in each grid
-INTEGER                                 :: Allocatestatus = 0
+INTEGER              :: Allocatestatus = 0
 
 !End of declaration
 
@@ -52,6 +53,8 @@ INTEGER                                 :: Allocatestatus = 0
 DO k =  nlev, 1, -1
    NO3 = t(iNO3, k)
    DET = t(iDET, k)
+   Varout(oTEMP,k) = Temp(k)
+   IPAR(k) = IPAR(k) + PAR(k)*dtdays !Unit: W m-2
 
    do kk = 1, NZOO
       ZOO(kk)= t(iZOO(kk), k)
@@ -59,7 +62,9 @@ DO k =  nlev, 1, -1
 
    if (sec_of_day == 0) then
        Varout(oNPP, k) = NPPc_(k)  !NPP of the past day; this is real NPP (mg C d-1 m-3)
-       NPPc_(k)   = 0d0                     !Reset NPPc_
+       Varout(oPAR, k) = IPAR(k)   !Integrated PAR of the past day (W m-2)
+       NPPc_(k)   = 0d0              !Reset NPPc_
+       IPAR(k)    = 0d0              !Reset IPAR
    endif
 
    !Calculate the number of super-individuals (N_) in this vertical layer and obtain their indexes (index_)

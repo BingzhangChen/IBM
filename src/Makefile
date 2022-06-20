@@ -16,8 +16,8 @@ SRCS = Readcsv.f90 tridiagonal.f90\
 	variables.f90\
 	Time_settings.f90\
 	lagrange.f90\
-	IO_files.f90\
 	forcing.f90\
+	IO_files.f90\
  	Advection_center.f90 Diff_center.f90\
 	Geider_Lag.f90\
 	initialization.f90\

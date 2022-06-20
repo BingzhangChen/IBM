@@ -138,6 +138,8 @@ Labelout(iPC)  = 'PC '
 Labelout(iPN)  = 'PN '
 Labelout(iCHL) = 'CHL'
 Labelout(oNPP) = 'NPP'
+Labelout(oTEMP)= 'TEMP'
+Labelout(oPAR) = 'PAR'
 
 do k = 1, NZOO
    write(Labelout(iZOO(k)),  format_string) 'ZOO', k
@@ -159,6 +161,10 @@ enddo
 !Save initial state to external file
 call create_Eulerian_file
 call save_Eulerian
+
+!Save Kv
+call create_Kv_file
+call save_Kv
 
 !Name the initial particle file
 par_file = 'ParY1_D0'

@@ -4,11 +4,13 @@ implicit none
 private
 
 character(len=9), parameter :: Euler_file    = "Euler.out"
+character(len=6), parameter :: Kv_file       = "Kv.out"
 integer,          parameter ::    Euler_unit = 10
+integer,          parameter ::       Kv_unit = 12
 integer,          parameter :: Particle_unit = 11
 
-public :: create_Eulerian_file, create_Particle_file
-public :: save_Eulerian, save_particles
+public :: create_Eulerian_file, create_Particle_file, create_Kv_file
+public :: save_Eulerian, save_particles, save_Kv
 
 contains
 
@@ -24,6 +26,19 @@ close(Euler_unit)
 
 101 format(4(A10,1x), 200(2x,F12.5))
 end subroutine
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine create_Kv_file
+use GRID, only : Z_w
+implicit none
+
+! Create data out file
+open (unit=Kv_unit, file = Kv_file, status = 'replace')
+write(Kv_unit, 111) 'Timestep','Day', 'Hour', Z_w
+close(Kv_unit)
+
+111 format(3(A10,1x), 200(2x,F12.5))
+end subroutine create_Kv_file
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine save_Eulerian
@@ -40,7 +55,22 @@ enddo
 close(Euler_unit)
 
 103 format(A5, 1x, I7, 1x, 2(I0, 1x), 200(1pe12.3, 1x))
-end subroutine
+end subroutine save_Eulerian
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine save_Kv
+use forcing,         only : Kv
+use Time_setting,    only : it, current_day, current_hour
+implicit none
+integer :: i
+
+! save data into the Kv file
+open (unit=Kv_unit, file = Kv_file, status = 'old', action='write', position='append')
+write(Kv_unit, 113) it, current_day, current_hour, Kv(:)
+close(Kv_unit)
+
+113 format(I7, 1x, 2(I0, 1x), 200(1pe12.3, 1x))
+end subroutine save_Kv
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine create_Particle_file(fname)

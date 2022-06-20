@@ -1,5 +1,5 @@
 &timelist
    NDay_Run = 365, 
-   dtsec    = 10, 
-   nsave    = 8640, ! if save Eulerian model outputs at daily frequencies, nsave = 86400/dtsec; if save output at hourly frequences, nsave = 3600/dtsec
+   dtsec    = 20, 
+   nsave    = 4320, ! if save Eulerian model outputs at daily frequencies, nsave = 86400/dtsec; if save output at hourly frequences, nsave = 3600/dtsec
 /

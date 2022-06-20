@@ -40,9 +40,11 @@ integer, parameter   :: oNPP = nvar + 1   !Daily net primary production integrat
 
 ! Total available prey biomass for each zoo. size class
 integer, parameter :: oFZ(NZOO) = (/ (oNPP + i , i = 1, NZOO) /)
-integer, parameter :: Nout      = oFZ(NZOO)
+integer, parameter :: oTEMP     = oFZ(NZOO) + 1
+integer, parameter :: oPAR      = oTEMP     + 1
+integer, parameter :: Nout      = oPAR
 real               :: Varout(Nout, nlev) = 0.d0
-character(LEN=7)   :: Labelout(Nout)       = 'Unknown'
+character(LEN=7)   :: Labelout(Nout)     = 'Unknown'
 
 !Particles
 !Declaration for phyto particles
