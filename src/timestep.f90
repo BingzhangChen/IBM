@@ -32,13 +32,6 @@ DO it = 1, Nstep+1
    call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kv0,   Kv0)
    call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kvmax, Kvmax)
 
-   write(6,*) "obs_time_temp = ", obs_time_temp
-   write(6,*) "obs_time_kv = ", obs_time_kv
-   write(6,*) "KV0 = ", Kv0
-   write(6,*) "KVmax = ", Kvmax
-   write(6,*) "MLD = ", MLD
-   stop
-
    !Calculate vertical Kv (Kbg follows Christina L&O 2005)
    call analytic_Kv(nlev, Kv0(1), Kvmax(1), 3d-5, MLD(1), Kv)
 
