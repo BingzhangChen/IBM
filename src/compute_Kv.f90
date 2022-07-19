@@ -11,6 +11,8 @@ real, intent(out) :: Kv(0:nlev)  ! Output Kv file
 
 real :: z !Water depth
 
+real :: cff = 0. !Scratch variable
+
 integer :: k  
 
 Kv(nlev) = Ksurf
@@ -19,7 +21,13 @@ do k = 1, nlev
    if (z .gt. -H/2.d0) then
       Kv(k)=Ksurf + (Km - Ksurf)*( 1.d0 - 1.5**(-abs(z)**2.3) )
    elseif (z .le. -H/2d0 .and. z .ge. -H) then
-      Kv(k)=Kbg + (Km - Kbg)*( 1.d0 - 1.5**(-(H+z)**2.3) )
+      cff  = -(H+z)**2.3
+
+      if (cff .lt. -200.) then
+         Kv(k)=Km
+      else 
+         Kv(k)=Kbg + (Km - Kbg)*( 1.d0 - 1.5**cff )
+      endif
    else
       Kv(k)=Kbg
    endif
