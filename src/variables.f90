@@ -89,8 +89,8 @@ TYPE Particle
     !Optimal temperature
     real :: Topt = 20.d0
 
-    !Ln Optimal light (micro mol quanta m-2 s-1)
-    real :: LnIopt = 6.9  !log(1000)
+    !Ln alphaChl (slope of the P-I curve; unit: (W m-2)-1 (gChl molC)-1 d-1 instead of micro mol quanta m-2 s-1)
+    real :: LnalphaChl = -2.3  !log(0.1)
 
 END TYPE Particle
 

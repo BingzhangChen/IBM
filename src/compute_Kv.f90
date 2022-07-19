@@ -19,7 +19,13 @@ Kv(nlev) = Ksurf
 do k = 1, nlev
    z = Z_w(k) !Current depth
    if (z .gt. -H/2.d0) then
-      Kv(k)=Ksurf + (Km - Ksurf)*( 1.d0 - 1.5**(-abs(z)**2.3) )
+      cff  = -abs(z)**2.3
+      if (cff .lt. -200.) then
+         Kv(k)=Km
+      else 
+         Kv(k)=Ksurf + (Km - Ksurf)*( 1.d0 - 1.5**cff )
+      endif
+
    elseif (z .le. -H/2d0 .and. z .ge. -H) then
       cff  = -(H+z)**2.3
 
