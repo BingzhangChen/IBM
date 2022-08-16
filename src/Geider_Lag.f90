@@ -265,7 +265,8 @@ DO k =  nlev, 1, -1
                            p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, dC_, dN_, dChl_)
          CASE(GMK98_ToptSizeLight)
             call GMK98_Ind_TempSizeLight(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt,&
-                 p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, exp(p_PHY(i)%alphaChl), dC_, dN_, dChl_)
+                 p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, exp(p_PHY(i)%LnalphaChl),&
+                 dC_, dN_, dChl_)
          CASE DEFAULT
             stop "Model choice is wrong!!"
          END SELECT
@@ -678,8 +679,9 @@ dChl= Chl * (rhoChl * VCN / theta - RChlT)
 
 return
 END subroutine GMK98_Ind_TempSize
+
 !------------------------------------------------------------------------------------------------
-subroutine GMK98_Ind_TempSizeLight(Temp, PAR, NO3, Topt_, C, N, Chl, Cdiv,alphaChl_, dC, dN, dChl)
+subroutine GMK98_Ind_TempSizeLight(Temp, PAR, NO3, Topt_, C, N, Chl, Cdiv, alphaChl_, dC, dN, dChl)
 
 USE Trait_functions, only : temp_Topt, PHY_C2Vol, Ainf
 USE params,          only : thetaNmax, mu0, rhoChl_L
@@ -697,7 +699,6 @@ real, intent(in)  :: Cdiv             !Cellular carbon content threshold for div
 
 real, intent(in)  :: Topt_            !Optimal temperature [degree C]
 real, intent(in)  :: alphaChl_        !Slope of the P-I curve [Unit the same as aI0]
-
 real, intent(out) :: dN               !Changes in the cellular nitrogen content [pmol N cell-1]
 real, intent(out) :: dC               !Changes in the cellular carbon content [pmol C cell-1]
 real, intent(out) :: dChl             !Changes in the cellular Chl content [pg Chl cell-1]
@@ -807,7 +808,7 @@ Ik = PCmax / alphachl_ / theta
 
 !Calculate the fraction of open PSU [nd]:
 if (PAR > 0.) then !Photoinhibition
-   A = Ainf(PAR, theta)
+   A = Ainf(PAR, alphachl_, QN, QNmin, QNmax, theta)
 else
    A = 1d0
 endif
@@ -823,7 +824,7 @@ PC = PCmax * SI
 if (PAR <= 0d0) then
    rhochl   = rhoChl_L
 else
-   rhochl   = thetaNmax * PC / aI0 / theta / PAR
+   rhochl   = thetaNmax * PC / alphachl_ / theta / PAR
    rhoChl_L = rhochl
 endif
 

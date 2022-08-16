@@ -182,4 +182,70 @@ real, intent(in) :: alpha    !Exponent of thermal traits normalized to z
 alloscale =  mu0p * exp(TK(Topt_) * alpha) 
 END FUNCTION alloscale
 
+!------------------------------------------------------------------------------------------------
+!Function to estimate photoinhibition following Nikolaou et al. (2016) (J. Theor. Biol.), and
+!Han (2001) (J. Theor. Biol.)
+!Assuming that acclimation to photoinhibition is at the time-scale of ms.
+!------------------------------------------------------------------------------------------------
+PURE REAL FUNCTION Ainf(PAR_, alpha_, QN_, QNmin_, QNmax_, theta_)
+
+implicit none
+
+!Declaration of variables:
+real, intent(in) :: PAR_           !Irradiance [W m-2]
+real, intent(in) :: alpha_         !Slope of the P-I curve [Unit the same as aI0]
+real, intent(in) :: QN_            !N:C ratio of the phyto. super-individual [mol N mol C-1]
+real, intent(in) :: QNmin_         !Minimal N:C ratio
+real, intent(in) :: QNmax_         !Maximal N:C ratio
+real, intent(in) :: theta_         !Chl:C ratio [mg Chl mmol C]
+
+real, parameter  :: Tau   = 5.5d-3 !Turnover time of the electron transport chain [s]
+real, parameter  :: Beta  = 0.492  !Pre-exponential factor of effective cross-section eq [m2 uE-1 (g Chl)^(1/Kappa) (g C)^(-1/Kappa)]
+real, parameter  :: Kappa = 0.469  !Exponent of effective cross-section equation [nd]
+real, parameter  :: Kd    = 5d-6   !Damage constant of a photosynthetic unit [nd]
+
+real, parameter  :: WtouE = 4.57   !Constant to convert PAR units from [Wm-2] to [uE m-2 s-1]
+
+real, parameter  :: Kr_alpha_PROD = -2.35d-5 !The constant of log10(Kr) and alpha
+
+real             :: Kr0            !Repair constant of a photosynthetic unit [s-1] under nutrient saturated conditions which depends on alpha to impose a tradeoff
+real             :: Kr             !Nutrient dependent Repair constant of a photosynthetic unit [s-1]
+real             :: K              !Ratio of damage to repair constants [s]
+real             :: Sigma          !Effective cross-section of the PSU [m2 uE-1]
+
+real             :: thetaA         !Chl:C ratio (g Chl g C-1) to be consistent with Han (2001)
+real             :: PARWm2
+!End of declaration
+
+!PAR, unit conversion:
+PARWm2 = PAR_ * WtouE    ![W m-2] to [uE m-2]
+
+!Carbon-speciﬁc chlorophyll quota, unit conversion:
+thetaA = theta_ / 12d0     ![mg Chl mmol C] to [g Chl g C-1]
+
+!Effective cross-section of the PSU [m2 uE-1] Nikolaou et al. (2016)
+Sigma = Beta * thetaA**Kappa
+
+!Repair constant of a photosynthetic unit [s-1], following Han et al. (2001):
+
+!Nutrient limitation index
+Lno3 = (QN_ - QNmin_) / (QNmax_ - QNmin_)
+
+!Kr0 depends on alpha_ (we artificially assume that log10(Kr)*alpha_ is a
+!constant of -2.35d-5 
+Kr0 = 10**(Kr_alpha_PROD/alpha_)
+
+Kr = Kr0 * Lno3
+
+!Ratio of damage to repair constants [s]:
+K  = Kd / Kr
+
+!Calculate photoinhibition [nd]:
+Ainf = 1d0 / (1d0 + Tau * Sigma * PARWm2 + K * Tau * Sigma**2 * PARWm2**2)
+
+return 
+
+END FUNCTION Ainf
+!------------------------------------------------------------------------------------------------
+
 END MODULE
