@@ -114,7 +114,7 @@ integer, parameter :: GMK98_SizeLight          = 7
 integer, parameter :: GMK98_ToptSizeLight  = 8 
 
 !Current model selection
-integer :: Model_ID = 6
+integer :: Model_ID = 8
 
 !Number of traits
 integer, parameter :: NTrait = 3

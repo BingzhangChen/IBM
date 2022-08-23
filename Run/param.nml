@@ -1,5 +1,5 @@
 &paramlist
-   Model_ID = 6,
+   Model_ID = 8,
    mu0 = 5.0, 
    aI0 = 1.2, 
    KN  = 0.5,  !KN
@@ -9,3 +9,16 @@
    RDN = 0.1, !RDN
    wDET= 1.0,  !wDET
 /
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!Model choices
+!GMK98_simple            = 1 
+!GMK98_Topt              = 2 
+!GMK98_Size              = 3 
+!GMK98_Light             = 4 
+!GMK98_ToptLight         = 5 
+!GMK98_ToptSize          = 6 
+!GMK98_SizeLight         = 7 
+!GMK98_ToptSizeLight     = 8 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
