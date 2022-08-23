@@ -108,8 +108,8 @@ DO k = 1, N_PAR
    p_PHY(k)%Chl  = p_PHY(k)%C* 12./50. !Unit: pgChl cell-1
    p_PHY(k)%CDiv = p_PHY(k)%C* 2d0 !Unit: pmol C cell-1
 
-   !Initialize Iopt to 1000 umol photons m-2 s-1
-   p_PHY(k)%LnIopt = log(1d3)
+   !Initialize alphaChl to 0.1 (W m-2)-1 (gChl molC)-1 d-1
+   p_PHY(k)%LnalphaChl = -2.3
 
    !Initialize the number of cells associated with each super-individual (assuming initial phytoplankton nitrogen is 0.1 mmol m-3)
    p_PHY(k)%num = 0.1 * hmax/dble(N_PAR)/p_PHY(k)%N * 1d9

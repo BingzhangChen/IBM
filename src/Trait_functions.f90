@@ -4,7 +4,7 @@ implicit none
 
 private
 
-public :: TEMPBOL, temp_Topt, palatability, PHY_C2Vol, PHY_ESD2C
+public :: TEMPBOL, temp_Topt, palatability, PHY_C2Vol, PHY_ESD2C, Ainf
 
 real, parameter :: pi= 3.1415926535
 
@@ -215,6 +215,7 @@ real             :: Sigma          !Effective cross-section of the PSU [m2 uE-1]
 
 real             :: thetaA         !Chl:C ratio (g Chl g C-1) to be consistent with Han (2001)
 real             :: PARWm2
+real             :: Lno3           !Nutrient limitation index
 !End of declaration
 
 !PAR, unit conversion:

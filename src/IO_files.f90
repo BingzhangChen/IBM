@@ -80,7 +80,7 @@ character(len=*), intent(in) :: fname  !Need to create multiple files for storin
 open (unit=Particle_unit, file = fname, status = 'replace')
 write(Particle_unit, 102) 'Timestep','Day','Hour','ID','Grid', &
                           'Z', 'C', 'N', 'Chl', 'NO3', 'PAR',  &
-                          'Temp', 'Num', 'Topt', 'CDiv', 'Iopt' 
+                          'Temp', 'Num', 'Topt', 'CDiv', 'LnAlpha' 
 close(Particle_unit)
 return
 
@@ -103,7 +103,7 @@ do i = 1, size(p_PHY)
                   p_PHY(i)%iz, p_PHY(i)%rz,  p_PHY(i)%C,  &
                   p_PHY(i)%N,  p_PHY(i)%Chl, p_PHY(i)%NO3,&
                   p_PHY(i)%PAR,p_PHY(i)%temp,p_PHY(i)%num, &
-                  p_PHY(i)%Topt, p_PHY(i)%CDiv, p_PHY(i)%lnIopt
+                  p_PHY(i)%Topt, p_PHY(i)%CDiv, p_PHY(i)%LnalphaChl
 enddo
 close(Particle_unit)
 

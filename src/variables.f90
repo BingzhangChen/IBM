@@ -120,7 +120,7 @@ integer :: Model_ID = 6
 integer, parameter :: NTrait = 3
 integer, parameter :: iTopt = 1     !Trait index for Topt
 integer, parameter :: iSize = 2     !Trait index for Size (ESD)
-integer, parameter :: iIopt = 3    !Trait index for optimal light
+integer, parameter :: ialphaChl = 3    !Trait index for optimal light
 
 real, parameter :: nu(NTrait) = [1d-12, 1d-12, 1d-12]   !Unit: probability per generation per cell; needs to be carefully designed
 real, parameter :: sigma(NTrait) = [0.1, 0.1, 0.1]        !Standard deviation of mutation of the three traits

@@ -846,7 +846,7 @@ END subroutine GMK98_Ind_TempSizeLight
 !------------------------------------------------------------------------------------------------
 
 SUBROUTINE Par2PHY
-use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, iIopt, NTrait
+use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, ialphaChl, NTrait
 use grid,                   only : Hz, nlev
 use mGf90,              only : srand_mtGaus
 IMPLICIT NONE
@@ -890,8 +890,8 @@ DO i = 1, N_PAR
                   oldtt(1) = p_PHY(i)%Topt
               case(iSize)
                   oldtt(1) = log(p_PHY(i)%CDiv)
-              case(iIopt)
-                  oldtt(1) = p_PHY(i)%lnIopt
+              case(ialphaChl)
+                  oldtt(1) = p_PHY(i)%LnalphaChl
               case DEFAULT
                   stop "Trait index wrong!"
               end select
@@ -905,8 +905,8 @@ DO i = 1, N_PAR
                   p_PHY(i)%Topt = newtt(1)
               case(iSize)
                   p_PHY(i)%CDiv = exp(newtt(1))
-              case(iIopt)
-                  p_PHY(i)%LnIopt = newtt(1)
+              case(ialphaChl)
+                  p_PHY(i)%LnalphaChl = newtt(1)
               case DEFAULT
                   stop "Trait index wrong!"
               end select
@@ -918,8 +918,8 @@ DO i = 1, N_PAR
    do k = 1, nlev
      if (p_PHY(i)%iz == k) then
          PHYC(k) = PHYC(k) + p_PHY(i)%num *1d-9*p_PHY(i)%C/Hz(k) 
-         PHY(k)    = PHY(k)    + p_PHY(i)%num *1d-9*p_PHY(i)%N/Hz(k)
-         CHL(k)    = CHL(k)   + p_PHY(i)%num *1d-9*p_PHY(i)%Chl/Hz(k)
+         PHY(k)  = PHY(k)  + p_PHY(i)%num *1d-9*p_PHY(i)%N/Hz(k)
+         CHL(k)  = CHL(k)  + p_PHY(i)%num *1d-9*p_PHY(i)%Chl/Hz(k)
          EXIT
       endif
    enddo
