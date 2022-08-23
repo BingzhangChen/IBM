@@ -141,7 +141,7 @@ DO k =  nlev, 1, -1
 		  phyV = PHY_C2Vol(p_PHY(i)%C)
 
         !The amount of patalable prey in the super-individual m
-        Pmatrix(m,kk) = palatability(VolZOO(kk), phyV) * BN(m)
+        Pmatrix(m,kk) = palatability(VolZOO(kk), phyV, SDZoo) * BN(m)
 
 		  !Calculate the palatability of each prey superindividual and add to the total amount palatable prey
 		  FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
@@ -152,7 +152,7 @@ DO k =  nlev, 1, -1
 	    do m = 1, (kk - 1)
 
        !Save the palatability into Gmatrix
-       Gmatrix(m,kk) = palatability(VolZOO(kk), VolZOO(m)) 
+       Gmatrix(m,kk) = palatability(VolZOO(kk), VolZOO(m), SDZoo) 
 
 		 !Calculate the palatability of each zoo. prey and add to the total amount palatable prey
 		 FZoo(kk) = FZoo(kk) + Gmatrix(m,kk) * ZOO(m)

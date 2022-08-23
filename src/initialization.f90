@@ -21,7 +21,7 @@ character(len=10), parameter :: format_string = "(A3,I0)"
 namelist /timelist/  NDay_Run, dtsec, nsave
 
 !Namelist definition of model choice and parameters
-namelist /paramlist/ Model_ID, mu0, aI0, KN, gmax, Kp, mz,RDN, wDET 
+namelist /paramlist/ Model_ID, mu0, aI0, KN, gmax, Kp, mz,RDN, wDET, SDZoo 
 
 write(6,*) 'Initialize model simulation time...'
 
@@ -37,7 +37,6 @@ end if
 open(namlst,file='time.nml',status='old',action='read')
 read(namlst,nml=timelist)
 close(namlst)
-
 
 !Update total number of time ! Number of time steps
 Nstep  = NDay_Run*INT(d_per_s)/INT(dtsec) 

@@ -48,7 +48,7 @@ return
 end function 
 
 !Function calculating the prey palatability based on Ward et al. L&O 2012 (Eq. A21) and Banas Ecol. Mod. (2011) Table 2
-real function palatability(Vpred, Vprey) result(y)
+real function palatability(Vpred, Vprey, SDpref_Z) result(y)
 implicit none
 
 !Predator Volume
@@ -57,11 +57,11 @@ real, intent(in)  :: Vpred
 !Prey Volume
 real, intent(in)  :: Vprey
 
+! Standard deviation of log zooplankton feeding preference
+real, intent(in)  :: SDpref_Z
+
 !The actual predator:prey volume ratio
 real  :: R_real = 0d0
-
-! Standard deviation of log zooplankton feeding preference
-real, parameter  :: SDpref_Z = 0.5
 
 !Optimal prey Volume of the predator
 real :: Vprey_opt = 1d3 

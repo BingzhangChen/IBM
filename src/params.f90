@@ -11,6 +11,9 @@ real :: mz      =  0d0  !Zooplankton mortality grazing coefficient
 real :: RdN     =  0d0  !Rate of detritus converting to DIN
 real :: wDET    =  0d0 ! Sinking rate of detritus
 
+! Standard deviation of log zooplankton feeding preference
+real :: SDZoo   =  0d0 
+
 ! Activation energy for phytoplankton growth
 real, parameter :: Ep  = 0.32d0
 
