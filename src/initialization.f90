@@ -21,7 +21,8 @@ character(len=10), parameter :: format_string = "(A3,I0)"
 namelist /timelist/  NDay_Run, dtsec, nsave
 
 !Namelist definition of model choice and parameters
-namelist /paramlist/ Model_ID, mu0, aI0, KN, gmax, Kp, mz,RDN, wDET, SDZoo 
+namelist /paramlist/ Model_ID, mu0, aI0, KN, gmax, Kp, mz,RDN, &
+                     wDET, SDZoo, nu,sigma
 
 write(6,*) 'Initialize model simulation time...'
 

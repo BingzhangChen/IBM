@@ -9,7 +9,10 @@
    RDN = 0.1, !RDN
    wDET= 1.0,  !wDET
    SDZoo= 0.5, !SDZoo
+   nu(1) = 1d-12, 1d-12, 1d-12,  !Mutation rate (Topt, size, alphaChl)
+   sigma(1) = 0.1, 0.1, 0.1, !Standard deviation of mutation rates
 /
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !Model choices
@@ -22,6 +25,3 @@
 !GMK98_SizeLight         = 7 
 !GMK98_ToptSizeLight     = 8 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!TODO:
-!Add mutation rates

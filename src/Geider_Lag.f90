@@ -314,7 +314,7 @@ END SUBROUTINE BIOLOGY
 
 SUBROUTINE GMK98_Ind(Temp, PAR, NO3, C, N, Chl, dC, dN, dChl)
 USE Trait_functions, only : TEMPBOL, palatability
-USE params,              only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
+USE params,          only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
 implicit none
 
 real, intent(in)  :: Temp, PAR, NO3
@@ -748,6 +748,11 @@ real, parameter   :: QNmin_b = 0.95d0     !Allometric exponent for QNmin
 
 real, parameter   :: QNmax_a = 0.2d0      ! Normalization constant for QNmax [pmol N cell-1]
 real, parameter   :: QNmax_b = 1d0        ! Allometric exponent for QNmax
+
+real, parameter   :: a1 = 0.d0        ! Allometric exponent between mumax and alphaChl
+real, parameter   :: b0 = 0.d0        ! Allometric exponent between mumax and size 
+real, parameter   :: b1 = 0.d0        ! Allometric exponent between mumax and size
+real, parameter   :: b2 = 0.d0        ! Allometric exponent between mumax and size
 !End of declaration
 
 
@@ -786,7 +791,9 @@ dQN   = QNmax - QNmin
 
 !Maximal growth rate as a function of temperature under resource (nutrient and light) replete conditions:
 !(what value of mu0 should be?): mu0 should be a function of alphaChl
-muT    = temp_Topt(Temp, mu0, Topt_)
+muT    = mu0 * exp(a1 * (alphaChl_ - .1)) !0.1 is the average alphaChl value
+muT    = temp_Topt(Temp, muT, Topt_)
+muT    = muT * exp(b0 + b1 * log(Cdiv) + b2 * log(Cdiv)**2 )
 
 !Assuming the same temperature dependence of nutrient uptake rate as on photosynthesis rate.
 !QNmax/QNmin may be also a function of temperature which needs being further investigated.
