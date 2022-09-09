@@ -1,21 +1,32 @@
 &paramlist
+
+!Phytoplankton parameters:
+   mu0   = 5.00, !Maximal growth rate [d-1]
+   aI0   = 1.20, !Chl-specific slope of P-I curve [(W m-2)-1 (g Chl mol C-1)-1 d-1]
+   KN    = 0.50, !Half-saturation constant for nutrient uptake [uM N]
+
+!Zooplankton parameters:
+   gmax  = 2.00, !Maximal zooplankton grazing rate [pmol N m-3]
+   Kp    = 0.15, !Half-saturation constant of zooplankton grazing [uM N]
+   mz    = 0.01, !Zooplankton mortality grazing coefficient [uM N−1 d-1]
+   GGE   = 0.30, !Zooplankton Gross Growth Efficiency [pmol N m-3]
+   unass = 0.24, !Fraction of unassimilated food ingested by zooplankton [nd]
+   SDZoo = 0.50, !Standard deviation of zooplankton feeding preference [nd]
+
+!Detritus parameters:
+   RDN   = 0.10, !Conversion rate of detritus to inorganic nitrogen [d-1]
+   wDET  = 1.00, !Detritus sinking rate [m d-1]
+
+!Mutation parameters:
+   nu(1)    = 1d-12, 1d-12, 1d-12,  !Mutation rate (Topt, size, alphaChl)
+   sigma(1) =  0.10,  0.10,  0.10,  !Standard deviation of mutation rates
+
+!Model selection:
    Model_ID = 8,
-   mu0 = 5.0, 
-   aI0 = 1.2, 
-   KN  = 0.5,  !KN
-   gmax= 2.0,  
-   Kp  = 0.15,  !Kp
-   mz  = 0.01,  !mz
-   RDN = 0.1, !RDN
-   wDET= 1.0,  !wDET
-   SDZoo= 0.5, !SDZoo
-   nu(1) = 1d-12, 1d-12, 1d-12,  !Mutation rate (Topt, size, alphaChl)
-   sigma(1) = 0.1, 0.1, 0.1, !Standard deviation of mutation rates
 /
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!Model choices
+!Model choices:
 !GMK98_simple            = 1 
 !GMK98_Topt              = 2 
 !GMK98_Size              = 3 

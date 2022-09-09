@@ -35,8 +35,6 @@ real    :: Zmort = 0.
 real    :: Gmatrix(NZOO,NZOO) = 0.d0     !Grazer biomass specific grazing rate matrix
 real,    allocatable :: BN(:)                !The amount of nitrogen in each super-individual
 real,    allocatable :: Pmatrix(:,:)     !Phytoplankton mortality rates by each zooplankton size class for each superindividual
-real,    parameter   :: GGE   = 0.30d0   !Zooplankton Gross Growth Efficiency
-real,    parameter   :: unass = 0.24d0   !The fraction of unassimilated food ingested by zooplankton
 real,    parameter   :: eta     = -1.d0   !Prey refuge parameter
 real,    parameter   :: A_g    = 21.9   !Intercept of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
 real,    parameter   :: B_g    = -0.16  !Slope of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
@@ -577,7 +575,7 @@ real :: VCN = 0.
 ! Indices for nutrient, light and temperature limitation
 real :: Lno3 = 0.   ! Nutrient limitation [pmol N m-3]
 real :: SI   = 0.   ! Light limitation index [fpar]
- real :: tf_p = 0.   ! Temperature limitation for phytoplankton growth [nd] [Iria]
+ real :: tf_p = 0.  ! Temperature limitation for phytoplankton growth [nd]
 
 real :: PCmax  = 0. ! Maximal photosynthesis rate (regulated by QN) [d-1]
 real :: PC     = 0. ! Carbon specific rate of photosynthesis [d-1]
@@ -742,7 +740,6 @@ real, parameter   :: KN_b   = 0.33d0      !Allometric exponent for KN
 real              :: KN     = 0.          !Half-saturation constant [uM]
 
 !QNmin and QNmax are allometric functions of Vol (Cdiv) (Maranon et al. 2013) [mol N mol C]:
-![to Iria]: check these values
 real, parameter   :: QNmin_a = 0.12d0     !Normalization constant for QNmin [pmol N cell-1]
 real, parameter   :: QNmin_b = 0.95d0     !Allometric exponent for QNmin
 
