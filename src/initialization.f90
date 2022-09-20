@@ -1,7 +1,7 @@
 SUBROUTINE INITIALIZE
 use params
 use state_variables
-use Time_setting, only: d_per_s, dtsec, dtdays, Nstep, nsave, NDay_Run
+use Time_setting, only: d_per_s, dtsec, dtdays, Nstep, nsave,NDay_Run,Nrand
 use grid,         only: Z_w, hmax
 use Trait_functions,  only: PHY_ESD2C
 use IO
@@ -18,7 +18,7 @@ character(len=10), parameter :: format_string = "(A3,I0)"
 !==========================================================
 
 !Namelist definition of time settings
-namelist /timelist/  NDay_Run, dtsec, nsave
+namelist /timelist/  NDay_Run, dtsec, nsave, Nrand
 
 !Namelist definition of model choice and parameters
 namelist /paramlist/ Model_ID, mu0, aI0, KN, gmax, Kp, mz,GGE, unass, RDN, &

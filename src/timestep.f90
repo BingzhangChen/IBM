@@ -13,7 +13,7 @@ real,   parameter  :: zero       = 0.d0  !Vectors of zero
 real,   parameter  :: Vec0(nlev) = zero  !Vectors of zero
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
-integer            :: j
+integer            :: j, iit
 
 ! 'START TIME STEPPING'
 DO it = 1, Nstep+1
@@ -66,12 +66,14 @@ DO it = 1, Nstep+1
    Endif
 
    ! Vertical random walk for particles that are not dead
-   Do j = 1, N_par
-      !Assume closed boundary for particles
-      if (p_PHY(j)%alive) then
-         CALL LAGRANGE(nlev, Z_w, Kv, w, p_PHY(j)%iz, p_PHY(j)%rz)
-      endif
-   Enddo
+   DO iit = 1, Nrand
+     Do j = 1, N_par
+        !Assume closed boundary for particles
+        if (p_PHY(j)%alive) then
+           CALL LAGRANGE(nlev, Z_w, Kv, w, p_PHY(j)%iz, p_PHY(j)%rz)
+        endif
+     Enddo
+   ENDDO
 
    ! Update 
    ! Diffusion for Eulerian fields except phytoplankton

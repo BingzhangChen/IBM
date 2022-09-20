@@ -18,8 +18,11 @@ real       :: current_sec  = 0.d0
 !The current step
 integer  :: it           = 0
 
-!Total number of time steps
+!Total number of biological time steps
 integer  :: Nstep        = 0
+
+!Number of time steps of random walk per biological time step
+integer  :: Nrand        = 0
 
 !Timestep as a fraction of the day
 real     :: dtdays       = 0.d0
