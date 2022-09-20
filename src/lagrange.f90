@@ -2,7 +2,7 @@
 ! !INTERFACE:
 !TODO: Needs to implement Ross & Sharples (2004)
 SUBROUTINE LAGRANGE(nlev,zlev, nuh,w,zi,zp)
-USE Time_setting, only: dtdays, d_per_s
+USE Time_setting, only: dtdays, d_per_s, Nrand
 ! dtdays: timestep in days
 ! d_per_s: how many seconds in one day
 !
@@ -32,7 +32,7 @@ REAL               :: wint  !interpolated w
 !-----------------------------------------------------------------------
 !BOC
 
-dt = dtdays * d_per_s
+dt = dtdays * d_per_s/dble(Nrand)
 
 !Judge whether the input is correct
 IF (zp < zlev(0) .or. zp > zlev(nlev) .or. zi < 1 .or. zi > nlev) THEN
