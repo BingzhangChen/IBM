@@ -4,6 +4,7 @@ use Time_setting
 use state_variables
 use grid
 use IO
+use Trait_functions,  only : PHY_C2Vol
 implicit none
 
 character(LEN=20)  :: par_file   = 'Particles'
@@ -14,6 +15,8 @@ real,   parameter  :: Vec0(nlev) = zero  !Vectors of zero
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
 integer            :: j, iit
+real                  :: vs
+real, external  :: sinking
 
 ! 'START TIME STEPPING'
 DO it = 1, Nstep+1
@@ -66,14 +69,20 @@ DO it = 1, Nstep+1
    Endif
 
    ! Vertical random walk for particles that are not dead
-   DO iit = 1, Nrand
-     Do j = 1, N_par
-        !Assume closed boundary for particles
-        if (p_PHY(j)%alive) then
+   Do j = 1, N_par
+      !Assume closed boundary for particles
+      if (p_PHY(j)%alive) then
+         !Compute sinking rate (negative) based on Waite et al. MEPS 1997
+        vs = sinking(PHY_C2Vol(p_PHY(j)%C)) 
+
+        do iit = 1, (nlev-1)
+          w(iit) = w(iit) + vs
+        enddo
+        do iit = 1, Nrand
            CALL LAGRANGE(nlev, Z_w, Kv, w, p_PHY(j)%iz, p_PHY(j)%rz)
-        endif
-     Enddo
-   ENDDO
+        enddo
+      endif
+   Enddo
 
    ! Update 
    ! Diffusion for Eulerian fields except phytoplankton
@@ -258,3 +267,16 @@ do k = 1, nlev
    enddo
 enddo
 end subroutine Cal_total_N
+
+!If phytoplankton cell is smaller than 8 micron, sinking rate is zero
+!Otherwise follow Waite et al. 1997
+real function sinking(Vol) result(y)
+implicit none
+real, intent(in) :: Vol  !Cell volume (um^3) 
+real, parameter  :: V0 = 268.d0 !8 um cell
+if (Vol .ge. V0) then
+  y = -1d-2 *sqrt(Vol)/86400. !Unit: m per second (downwards)
+else
+  y = 0d0
+endif 
+end function sinking

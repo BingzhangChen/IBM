@@ -58,7 +58,7 @@ real                         :: Kv(0:nlev)                        = 0.d0
 real                         :: PARw(0:nlev)                      = 0.d0
 real                         :: PAR(   nlev)                      = 0.d0
 
-!Final Kv at w points of each grid at the target time
+!Final w at w points of each grid at the target time
 real                         :: w(0:nlev)                         = 0.d0
 
 ! Bottom boundary condition:
