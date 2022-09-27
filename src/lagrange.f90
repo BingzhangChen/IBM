@@ -25,7 +25,7 @@ REAL,    intent(inout)             :: zp
 INTEGER            :: i
 REAL               :: rnd, rnd_var_inv, dt, step1, step2
 REAL,parameter     :: visc_back=0.e-6,rnd_var=0.333333333
-REAL               :: dz(nlev),dzn(nlev),step,zp_old
+REAL               :: dz(nlev),dzn(nlev),step
 REAL               :: visc,rat,dt_inv,zloc
 REAL               :: wint  !interpolated w
 !EOP
@@ -56,23 +56,18 @@ END DO
 
 !  local viscosity calculation
 ! correction suggested by Visser [1997]
-
 rat  = (zp-zlev(zi-1))/dz(zi)
 wint = rat*w(zi) +(1.-rat)*w(zi-1)  ! interpolate w
 
 ! The new position after dt/2
 zloc = zp + 0.5*(dzn(zi)+wint)*dt 
 
-step = zloc - zp   ! The distance traveled
-
 ! First judge whether the particle jumps out of the domain
 if (zloc > zlev(nlev)) then  !Reflective boundary at surface
    zloc = 2.d0*zlev(nlev) - zloc 
 elseif (zloc < zlev(0)) then  !Reflective boundary at bottom
-   zp   = zlev(0) + (zlev(0) - zloc)
+   zloc = zlev(0) + (zlev(0) - zloc)
 endif      
-
-step = zloc-zp     ! The distance traveled
 
 ! The following is to find the index for the grid where the particle currently resides
 do i = 1,nlev
@@ -87,8 +82,6 @@ visc = rat*nuh(i)+(1.-rat)*nuh(i-1)  ! interpolate Kv
 wint = rat*w(i) +(1.-rat)*w(i-1)     ! interpolate w
 
 IF (visc.lt.visc_back) visc=visc_back   !Kv background
-
-zp_old = zp
 
 CALL RANDOM_NUMBER(rnd)
 rnd  = 2.d0*rnd - 1.d0

@@ -76,7 +76,7 @@ DO it = 1, Nstep+1
         vs = sinking(PHY_C2Vol(p_PHY(j)%C)) 
 
         do iit = 1, (nlev-1)
-          w(iit) = w(iit) + vs
+          w(iit) = vs
         enddo
         do iit = 1, Nrand
            CALL LAGRANGE(nlev, Z_w, Kv, w, p_PHY(j)%iz, p_PHY(j)%rz)
