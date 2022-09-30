@@ -15,7 +15,8 @@ real,   parameter  :: Vec0(nlev) = zero  !Vectors of zero
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
 integer            :: j, iit
-real                  :: vs
+real               :: vs   !Scratch variable for phyto. sinking
+real               :: bio_w(nlev) = 0d0  !Scratch sinking rate in 1D
 real, external  :: sinking
 
 ! 'START TIME STEPPING'
@@ -72,14 +73,19 @@ DO it = 1, Nstep+1
    Do j = 1, N_par
       !Assume closed boundary for particles
       if (p_PHY(j)%alive) then
+
          !Compute sinking rate (negative) based on Waite et al. MEPS 1997
         vs = sinking(PHY_C2Vol(p_PHY(j)%C)) 
 
-        do iit = 1, (nlev-1)
-          w(iit) = vs
-        enddo
+        !Add biological sinking to w
+        bio_w(:)    = vs
+        bio_w(0)    = 0d0
+        bio_w(nlev) = 0d0
+
+        bio_w = w + bio_w
+
         do iit = 1, Nrand
-           CALL LAGRANGE(nlev, Z_w, Kv, w, p_PHY(j)%iz, p_PHY(j)%rz)
+           CALL LAGRANGE(nlev, Z_w, Kv, bio_w, p_PHY(j)%iz, p_PHY(j)%rz)
         enddo
       endif
    Enddo
