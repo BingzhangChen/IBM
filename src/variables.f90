@@ -1,6 +1,6 @@
-module state_variables
+MODULE STATE_VARIABLES
 use grid, only : nlev, Hz
-implicit NONE
+IMPLICIT NONE
 
 !State variables
 integer, private   :: i
@@ -43,7 +43,7 @@ integer, parameter :: oFZ(NZOO) = (/ (oNPP + i , i = 1, NZOO) /)
 integer, parameter :: oTEMP     = oFZ(NZOO) + 1
 integer, parameter :: oPAR      = oTEMP     + 1
 integer, parameter :: Nout      = oPAR
-real               :: Varout(Nout, nlev) = 0.d0
+real                              :: Varout(Nout, nlev) = 0.d0
 character(LEN=7)   :: Labelout(Nout)     = 'Unknown'
 
 !Particles
@@ -52,6 +52,7 @@ TYPE Particle
 
     ! Particle ID
     integer :: ID = 1
+
     ! Grid indices for particles (range from nlev to 1)
     integer :: iz = 1
     
@@ -94,14 +95,26 @@ TYPE Particle
 
 END TYPE Particle
 
-!Threshold for splitting super-individuals
-!real, parameter :: Split_threshold = 2d8     !the total carbon (pmol C) for the super-individual that can be splitted
+!Passive particles for diagosing random walk
+TYPE Passive_Particle
+
+    ! Particle ID
+    integer :: ID = 1
+    ! Grid indices for particles (range from nlev to 1)
+    integer :: iz = 1
+    
+    ! Z coordinates for particles
+    real    :: rz = 0.
+
+End Type Passive_Particle
 
 integer :: IDmax = 0 !Maximal ID number
 
 !Fix the number of individuals in the system
-INTEGER, PARAMETER           :: N_PAR = 10000
-Type (Particle)                              :: p_PHY(N_PAR)
+INTEGER, PARAMETER           :: N_PAR = 10000  !Number of phyto. particles
+INTEGER, PARAMETER           :: N_Pass= 1000    !Number of passive particles
+Type (Particle)                        :: p_PHY(N_PAR)
+Type (Passive_Particle)          :: p_pass(N_Pass)
 
 !Model choices
 integer, parameter :: GMK98_simple                 = 1 
@@ -154,4 +167,4 @@ do j_ = 1, nlev
 Enddo
 END SUBROUTINE UPDATE_PHYTO
 
-END MODULE
+END MODULE STATE_VARIABLES

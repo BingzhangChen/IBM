@@ -7,16 +7,17 @@ use IO
 use Trait_functions,  only : PHY_C2Vol
 implicit none
 
-character(LEN=20)  :: par_file   = 'Particles'
-real,   parameter  :: cnpar      = 0.6d0
-real,   parameter  :: Taur(nlev) = 1D12  !Relaxation time
-real,   parameter  :: zero       = 0.d0  !Vectors of zero
-real,   parameter  :: Vec0(nlev) = zero  !Vectors of zero
+character(LEN=20)  :: par_file   = 'Phyto'
+character(LEN=20)  :: passive_file = 'Passive'
+real,       parameter  :: cnpar      = 0.6d0
+real,       parameter  :: Taur(nlev) = 1D12  !Relaxation time
+real,       parameter  :: zero       = 0.d0  !Vectors of zero
+real,       parameter  :: Vec0(nlev) = zero  !Vectors of zero
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
 integer            :: j, iit
 real               :: vs   !Scratch variable for phyto. sinking
-real               :: bio_w(nlev) = 0d0  !Scratch sinking rate in 1D
+real               :: bio_w(0:nlev) = 0d0  !Scratch sinking rate in 1D
 real, external  :: sinking
 
 ! 'START TIME STEPPING'
@@ -61,15 +62,28 @@ DO it = 1, Nstep+1
    If (mod(current_sec, s_per_h) == 0) then
        if (current_hour == 0) then
 
-          !Name the par_file
+          !Create the phyto. particle file
           write(par_file, 100) 'ParY', current_year, '_D', current_DOY
-          call create_Particle_file(par_file)
+          call create_Particle_file(par_file, phyto)
+
+          !Create the passive particle file
+          write(passive_file, 102) 'PassY', current_year, '_D', current_DOY
+          call create_Particle_file(passive_file, passive)
+
        endif
 
-       call save_particles(par_file)
+       call save_particles(par_file, phyto)
+       call save_particles(passive_file, passive)
    Endif
 
-   ! Vertical random walk for particles that are not dead
+   ! Vertical random walk for passive particles
+   Do j = 1, N_Pass
+        do iit = 1, Nrand
+           CALL LAGRANGE(nlev, Z_w, Kv, w, p_pass(j)%iz, p_pass(j)%rz)
+        enddo
+   Enddo
+
+   ! Vertical random walk for phyto. particles that are not dead
    Do j = 1, N_par
       !Assume closed boundary for particles
       if (p_PHY(j)%alive) then
@@ -117,6 +131,7 @@ ENDDO
 
 100 format(A4,I0,A2,I0)
 101 format(A3,1x, I0, 1x, A25, 1x, F10.4)
+102 format(A5,I0,A2,I0)
 END SUBROUTINE TIMESTEP
 
 SUBROUTINE UPDATE_PARTICLE_FORCING

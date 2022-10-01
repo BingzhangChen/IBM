@@ -2,18 +2,20 @@ SUBROUTINE INITIALIZE
 use params
 use state_variables
 use Time_setting, only: d_per_s, dtsec, dtdays, Nstep, nsave,NDay_Run,Nrand
-use grid,         only: Z_w, hmax
+use grid,                   only: Z_w, hmax
 use Trait_functions,  only: PHY_ESD2C
 use IO
 use forcing
 implicit NONE
 
-integer            :: rc       = 0
-integer            :: k        = 0
-integer            :: j_       = 0
+integer         :: rc    = 0
+integer         :: k     = 0
+integer         :: j_     = 0
 real               :: cff      = 0.d0
+real               :: Z_avg = 0.d0
 integer, parameter :: namlst   = 20   !Unit time for namelist files
 character(len=10)  :: par_file = 'Filename'
+character(len=12)  :: passive_file = 'Passive'
 character(len=10), parameter :: format_string = "(A3,I0)"
 !==========================================================
 
@@ -79,18 +81,46 @@ do k = 1, NZOO
    ESDZOO(k) = MinSzoo + dble(k-1)*dZOOESD
 
    !Make the model write out the zooplankton size
-   write(6,1001) "ZOO", k, "ESD = ", exp(ESDZOO(k))
+   write(6,1001) "ZOO", k, "ESD = ", exp(ESDZOO(k)), "micron"
 
    !Compute volume of zooplankton
    VolZOO(k) = pi/6d0*exp(ESDZOO(k))**3
 enddo
 
-1001 format(A3, 1x, I0, 1x, A6, F12.3 )
-
 !Following Verity et al. AME (1996)
 t(iDET,:) = .1d0
 
-!For lagrangian model, initialize individuals
+!For lagrangian model, initialize individual particles
+
+!Initialize passive particles
+Z_avg = 0d0
+DO k = 1, N_Pass
+   p_pass(k)%ID = k
+
+   !Compute rx (randomly distributed between Z_w(0) and Z_w(nlev)
+   CALL RANDOM_NUMBER(cff)
+   p_pass(k)%rz = cff *(Z_w(nlev)-Z_w(0)) + Z_w(0)
+
+   !Update average position
+   Z_avg = Z_avg + p_pass(k)%rz
+
+   ! Find iz
+   DO j_ = 1, nlev
+      IF (Z_w(j_-1) .le. p_pass(k)%rz .AND. Z_w(j_) .gt. p_pass(k)%rz) THEN
+         p_pass(k)%iz = j_
+         EXIT            
+      ENDIF
+   ENDDO
+ENDDO
+
+!Print out the number of passive particles
+write(6, 1002)  N_Pass
+write(6, 1003)  Z_avg/dble(N_Pass)
+
+1002 format('Number of passive particles is:', 1x, I0)
+1003 format('Their average position is:', 1x, F12.2, 1x, 'm')
+
+!Initialize phytoplankton super-individuals
 DO k = 1, N_PAR
    p_PHY(k)%ID = k        
    p_PHY(k)%alive = .true.
@@ -166,11 +196,17 @@ call save_Eulerian
 call create_Kv_file
 call save_Kv
 
-!Name the initial particle file
+!Name the initial phyto. particle file
 par_file = 'ParY1_D0'
 
-call create_Particle_file(par_file)
-call       save_particles(par_file)
+call create_Particle_file(par_file, phyto)
+call         save_particles(par_file, phyto)
+
+!Name the initial passive particle file
+passive_file = 'PassY1_D0'
+
+call create_Particle_file(passive_file, passive)
+call         save_particles(passive_file, passive)
 
 ! Prepare forcing
 ! Prepare temperature for temporal interpolation
@@ -187,6 +223,7 @@ do k = 0,nlev-1
    !Detritus sinking rate (convert to UNIT: m/s)
    ww(k,NVsinkterms) = -wDET/dble(d_per_s) 
 enddo
-
 return
+
+1001 format(A3, 1x, I0, 1x, A6, F05.2, 1x, A6 )
 END SUBROUTINE INITIALIZE

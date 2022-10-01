@@ -7,10 +7,13 @@ character(len=9), parameter :: Euler_file    = "Euler.out"
 character(len=6), parameter :: Kv_file       = "Kv.out"
 integer,          parameter ::    Euler_unit = 10
 integer,          parameter ::       Kv_unit = 12
-integer,          parameter :: Particle_unit = 11
+integer,          parameter :: Phyto_unit = 13
+integer,          parameter :: Passive_unit= 14
+integer,          parameter :: phyto= 1
+integer,          parameter :: passive= 2
 
 public :: create_Eulerian_file, create_Particle_file, create_Kv_file
-public :: save_Eulerian, save_particles, save_Kv
+public :: save_Eulerian, save_particles, save_Kv, phyto, passive
 
 contains
 
@@ -73,41 +76,69 @@ close(Kv_unit)
 end subroutine save_Kv
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine create_Particle_file(fname)
+subroutine create_Particle_file(fname, type)
 implicit none
 character(len=*), intent(in) :: fname  !Need to create multiple files for storing particles to avoid huge files
+integer, intent(in) :: type  !type = 1, phyto; !type = 2, passive particles
+integer :: fileunit = 0
 
-open (unit=Particle_unit, file = fname, status = 'replace')
-write(Particle_unit, 102) 'Timestep','Day','Hour','ID','Grid', &
-                          'Z', 'C', 'N', 'Chl', 'NO3', 'PAR',  &
-                          'Temp', 'Num', 'Topt', 'CDiv', 'LnAlpha' 
-close(Particle_unit)
+select case(type)
+case (phyto)
+   fileunit = Phyto_unit
+   open (unit=fileunit, file = fname, status = 'replace')
+   write(fileunit, 102) 'Timestep','Day','Hour','ID','Grid', &
+                               'Z', 'C', 'N', 'Chl', 'NO3', 'PAR',  &
+                               'Temp', 'Num', 'Topt', 'CDiv', 'LnAlpha' 
+case (passive)
+   fileunit = passive_unit
+   open (unit=fileunit, file = fname, status = 'replace')
+   write(fileunit, 102) 'Timestep','Day','Hour','ID','Grid', 'Z'
+case default
+   stop "Particle file type incorrect!"
+end select
+close(fileunit)
 return
 
 102 format(16(A8, 2x))
 END subroutine create_Particle_file
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine save_particles(fname)
-use state_variables, only : p_PHY
+subroutine save_particles(fname, type)
+use state_variables, only : p_PHY, p_pass
 use Time_setting,    only : it, current_day, current_hour
 implicit none
 character(len=*), intent(in) :: fname  !The file for saving particles
-integer :: i
+integer, intent(in) :: type
+integer :: i, fileunit
 
-! save data into the particle file
-open (unit=Particle_unit, file=fname, status='old', action='write', position='append')
-do i = 1, size(p_PHY)
-   write(Particle_unit, 104) it,                             &
-                  current_day, current_hour, p_PHY(i)%ID, &
-                  p_PHY(i)%iz, p_PHY(i)%rz,  p_PHY(i)%C,  &
-                  p_PHY(i)%N,  p_PHY(i)%Chl, p_PHY(i)%NO3,&
-                  p_PHY(i)%PAR,p_PHY(i)%temp,p_PHY(i)%num, &
-                  p_PHY(i)%Topt, p_PHY(i)%CDiv, p_PHY(i)%LnalphaChl
-enddo
-close(Particle_unit)
+selectcase (type)
+case (phyto)
+   ! save data into the phyto. file
+   fileunit = Phyto_unit
+   open (unit=fileunit, file=fname, status='old', action='write', position='append')
+   do i = 1, size(p_PHY)
+      write(fileunit, 104) it,                             &
+                     current_day, current_hour, p_PHY(i)%ID, &
+                     p_PHY(i)%iz, p_PHY(i)%rz,  p_PHY(i)%C,  &
+                     p_PHY(i)%N,  p_PHY(i)%Chl, p_PHY(i)%NO3,&
+                     p_PHY(i)%PAR,p_PHY(i)%temp,p_PHY(i)%num, &
+                     p_PHY(i)%Topt, p_PHY(i)%CDiv, p_PHY(i)%LnalphaChl
+   enddo
+case (passive)
+   fileunit = Phyto_unit
+   open (unit=fileunit, file=fname, status='old', action='write', position='append')
+   do i = 1, size(p_pass)
+      write(fileunit, 104) it,                             &
+                     current_day, current_hour, p_pass(i)%ID, &
+                     p_pass(i)%iz, p_pass(i)%rz
+   enddo
+case default
+   stop "Particle file type incorrect!"
+
+endselect
+close(fileunit)
 
 104 format(I0, 1x, 2(I8, 1x), I0, 1x, I3, 1x, F12.3, 1x, 10(1pe12.3, 1x))
-end subroutine
+END subroutine save_particles
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE IO
