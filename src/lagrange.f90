@@ -24,7 +24,7 @@ REAL,    intent(inout)             :: zp
 ! !LOCAL VARIABLES:
 INTEGER            :: i
 REAL               :: rnd, rnd_var_inv, dt, step1, step2
-REAL,parameter     :: visc_back=0.e-6,rnd_var=0.333333333
+REAL,parameter     :: visc_back=1d-6,rnd_var=0.333333333
 REAL               :: dz(nlev),dzn(nlev),step
 REAL               :: visc,rat,dt_inv,zloc
 REAL               :: wint  !interpolated w
