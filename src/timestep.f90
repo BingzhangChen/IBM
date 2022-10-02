@@ -88,7 +88,7 @@ DO it = 1, Nstep+1
       !Assume closed boundary for particles
       if (p_PHY(j)%alive) then
 
-         !Compute sinking rate (negative) based on Waite et al. MEPS 1997
+         !Compute sinking rate (negative) based on Durante et al. J. Phycol 2019
         vs = sinking(PHY_C2Vol(p_PHY(j)%C)) 
 
         !Add biological sinking to w
@@ -289,15 +289,9 @@ do k = 1, nlev
 enddo
 end subroutine Cal_total_N
 
-!If phytoplankton cell is smaller than 8 micron, sinking rate is zero
-!Otherwise follow Waite et al. 1997
-real function sinking(Vol) result(y)
+!Sinking rate follow Durante et al. JPR 2019
+pure real function sinking(Vol) result(y)
 implicit none
 real, intent(in) :: Vol  !Cell volume (um^3) 
-real, parameter  :: V0 = 268.d0 !8 um cell
-if (Vol .ge. V0) then
-  y = -1d-2 *sqrt(Vol)/86400. !Unit: m per second (downwards)
-else
-  y = 0d0
-endif 
-end function sinking
+  y =  -(0.0019 * Vol**0.43)/86400.d0 !Unit: m per second (downwards)
+END function sinking

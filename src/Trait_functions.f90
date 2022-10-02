@@ -45,7 +45,7 @@ real, parameter :: b = 0.88
 
 y = (12d0 * p_C/10.d0**a)**(1d0/b)
 return
-end function 
+end function PHY_C2Vol
 
 !Function calculating the prey palatability based on Ward et al. L&O 2012 (Eq. A21) and Banas Ecol. Mod. (2011) Table 2
 real function palatability(Vpred, Vprey, SDpref_Z) result(y)
