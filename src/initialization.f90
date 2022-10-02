@@ -225,5 +225,5 @@ do k = 0,nlev-1
 enddo
 return
 
-1001 format(A3, 1x, I0, 1x, A6, F05.2, 1x, A6 )
+1001 format(A3, 1x, I0, 1x, A6, F8.2, 1x, A6 )
 END SUBROUTINE INITIALIZE
