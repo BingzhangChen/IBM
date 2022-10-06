@@ -1,12 +1,12 @@
 SUBROUTINE INITIALIZE
-use params
-use state_variables
-use Time_setting, only: d_per_s, dtsec, dtdays, Nstep, nsave,NDay_Run,Nrand
-use grid,                   only: Z_w, hmax
-use Trait_functions,  only: PHY_ESD2C
-use IO
-use forcing
-implicit NONE
+USE params
+USE state_variables
+USE Time_setting, only: d_per_s, dtsec, dtdays, Nstep, nsave,NDay_Run,Nrand
+USE grid,                   only: Z_w, hmax
+USE Trait_functions,  only: PHY_ESD2C
+USE IO
+USE forcing
+IMPLICIT NONE
 
 integer         :: rc    = 0
 integer         :: k     = 0
@@ -17,13 +17,14 @@ integer, parameter :: namlst   = 20   !Unit time for namelist files
 character(len=10)  :: par_file = 'Filename'
 character(len=12)  :: passive_file = 'Passive'
 character(len=10), parameter :: format_string = "(A3,I0)"
+integer           :: AllocateStatus = 0
 !==========================================================
 
 !Namelist definition of time settings
 namelist /timelist/  NDay_Run, dtsec, nsave, Nrand
 
 !Namelist definition of model choice and parameters
-namelist /paramlist/ Model_ID, mu0, aI0, KN, gmax, Kp, mz,GGE, unass, RDN, &
+namelist /paramlist/ Model_ID, N_pass, N_Par, mu0, aI0, KN, gmax, Kp, mz,GGE, unass, RDN, &
                      wDET, SDZoo, nu,sigma
 
 write(6,*) 'Initialize model simulation time...'
@@ -69,6 +70,12 @@ write(6,'(a)') 'Successfully initialize model parameters.'
 write(6,'(A15,1x,I1)') 'Select Model ID', Model_ID
 
 !Initialize state variables
+ALLOCATE(p_pass(N_Pass), stat=AllocateStatus)
+IF (AllocateStatus /= 0) STOP "*** Problem in allocating p_pass ***"
+
+ALLOCATE(p_PHY(N_Par), stat=AllocateStatus)
+IF (AllocateStatus /= 0) STOP "*** Problem in allocating p_PHY ***"
+
 write(6,'(a)') 'Initialize state variables...'
 
 ! Initialize initial NO3:
@@ -117,8 +124,12 @@ ENDDO
 write(6, 1002)  N_Pass
 write(6, 1003)  Z_avg/dble(N_Pass)
 
+!Print out the number of phyto particles
+write(6, 1004)  N_Par
+
 1002 format('Number of passive particles is:', 1x, I0)
 1003 format('Their average position is:', 1x, F12.2, 1x, 'm')
+1004 format('Number of phyto. particles is:', 1x, I0)
 
 !Initialize phytoplankton super-individuals
 DO k = 1, N_PAR

@@ -53,6 +53,10 @@ real                         :: Kvmax(1)                          = 0.d0
 
 !Final Kv at w points of each grid at the target time
 real                         :: Kv(0:nlev)                        = 0.d0
+real                         :: dKvdz(nlev)                     = 0.d0  !Gradient of Kv
+
+!Background diffusivity
+real, parameter     :: Kbg = 3d-5 !Kbg follows Christina L&O 2005
 
 !PAR
 real                         :: PARw(0:nlev)                      = 0.d0
@@ -70,7 +74,7 @@ integer,           parameter :: bot_bound                         = Neumann
 public :: diurnal_light, season, extract_WOAtemp, VERTICAL_LIGHT !Subroutines and functions
 public :: Temp, VTemp, N_time_temp, obs_time_temp      !Scalars and vectors
 public :: PARw, PAR
-public :: w, Kv, N_time_Kv, obs_time_Kv, obs_MLD, obs_Kv0, obs_Kvmax, MLD, Kvmax, Kv0      !Scalars and vectors
+public :: w, Kv, dKvdz, N_time_Kv, obs_time_Kv, obs_MLD, obs_Kv0, obs_Kvmax, MLD, Kvmax, Kv0, Kbg   !Scalars and vectors
 public :: Dirichlet, Neumann, bot_bound
 public :: extract_Kv
 
