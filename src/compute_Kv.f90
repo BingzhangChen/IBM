@@ -16,7 +16,7 @@ real :: cff = 0. !Scratch variable
 integer :: k  
 
 Kv(nlev) = Ksurf
-do k = 1, nlev
+do k = 0, nlev
    z = Z_w(k) !Current depth
    if (z .gt. -H/2.d0) then
       cff  = -abs(z)**2.3
@@ -28,7 +28,6 @@ do k = 1, nlev
 
    elseif (z .le. -H/2d0 .and. z .ge. -H) then
       cff  = -(H+z)**2.3
-
       if (cff .lt. -200.) then
          Kv(k)=Km
       else 
