@@ -111,10 +111,10 @@ End Type Passive_Particle
 integer :: IDmax = 0 !Maximal ID number
 
 !Fix the number of individuals in the system
-INTEGER, PARAMETER           :: N_PAR = 10000  !Number of phyto. particles
-INTEGER, PARAMETER           :: N_Pass= 1000    !Number of passive particles
-Type (Particle)                        :: p_PHY(N_PAR)
-Type (Passive_Particle)          :: p_pass(N_Pass)
+INTEGER           :: N_PAR = 10000  !Number of phyto. particles
+INTEGER           :: N_Pass= 1000    !Number of passive particles
+Type (Particle), ALLOCATABLE       :: p_PHY(:)
+Type (Passive_Particle), ALLOCATABLE :: p_pass(:)
 
 !Model choices
 integer, parameter :: GMK98_simple                 = 1 

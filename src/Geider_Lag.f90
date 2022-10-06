@@ -52,7 +52,7 @@ DO k =  nlev, 1, -1
    NO3 = t(iNO3, k)
    DET = t(iDET, k)
    Varout(oTEMP,k) = Temp(k)
-   IPAR(k) = IPAR(k) + PAR(k)*dtdays !Unit: W m-2
+   IPAR(k) = IPAR(k) + PAR(k)*dtdays   !Unit: W m-2
 
    do kk = 1, NZOO
       ZOO(kk)= t(iZOO(kk), k)
