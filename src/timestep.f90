@@ -15,14 +15,21 @@ real,       parameter  :: zero       = 0.d0  !Vectors of zero
 real,       parameter  :: Vec0(nlev) = zero  !Vectors of zero
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
-integer            :: j, iit
-real               :: vs   !Scratch variable for phyto. sinking
-real               :: bio_w(0:nlev) = 0d0  !Scratch sinking rate in 1D
-real, external  :: sinking
+integer :: i,j
+
+!Benchmarking
+real(4) :: dt1, dt2, dt3, dt4, dt5, t1, t2, t3, t4, t5, t6
 
 ! 'START TIME STEPPING'
+dt1 = 0.d0
+dt2 = 0.d0
+dt3 = 0.d0
+dt4 = 0.d0
+dt5 = 0.d0
+
 DO it = 1, Nstep+1
 
+   call cpu_time(t1) 
    call update_time
 
    !For each time step, read in external environmental data%%%%%%%%%%%%%%%
@@ -37,14 +44,26 @@ DO it = 1, Nstep+1
    call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kv0,   Kv0)
    call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kvmax, Kvmax)
 
-   !Calculate vertical Kv (Kbg follows Christina L&O 2005)
-   call analytic_Kv(nlev, Kv0(1), Kvmax(1), 3d-5, MLD(1), Kv)
+   !Calculate vertical Kv
+   call analytic_Kv(nlev, Kv0(1), Kvmax(1), Kbg, MLD(1), Kv)
+
+   !Calculate dKv/dz
+   DO i = 1,nlev
+      ! gradient of Kv
+      dKvdz(i)= (Kv(i)-Kv(i-1))/Hz(i)
+   ENDDO
 
    !Start biology
    !Update environmental variables associated with each particle
    call UPDATE_PARTICLE_FORCING
 
+   call cpu_time(t2) 
+   dt1 = t2 - t1 + dt1 !The time for interpolating environmental data
+
    call BIOLOGY
+
+   call cpu_time(t3) 
+   dt2 = t3 - t2 + dt2 !The time for biology
 
    !Save the Eulerian output every day
    IF (mod(it, nsave) == 1) THEN
@@ -76,33 +95,14 @@ DO it = 1, Nstep+1
        call save_particles(passive_file, passive)
    Endif
 
-   ! Vertical random walk for passive particles
-   Do j = 1, N_Pass
-        do iit = 1, Nrand
-           CALL LAGRANGE(nlev, Z_w, Kv, w, p_pass(j)%iz, p_pass(j)%rz)
-        enddo
-   Enddo
+   call cpu_time(t4) 
+   dt3 = t4 - t3 + dt3 !The time for saving data
 
-   ! Vertical random walk for phyto. particles that are not dead
-   Do j = 1, N_par
-      !Assume closed boundary for particles
-      if (p_PHY(j)%alive) then
+   ! Vertical random walk for both phyto. particles (that are not dead) and passive particles
+   call LAGRANGE
 
-         !Compute sinking rate (negative) based on Durante et al. J. Phycol 2019
-        vs = sinking(PHY_C2Vol(p_PHY(j)%C)) 
-
-        !Add biological sinking to w
-        bio_w(:)    = vs
-        bio_w(0)    = 0d0
-        bio_w(nlev) = 0d0
-
-        bio_w = w + bio_w
-
-        do iit = 1, Nrand
-           CALL LAGRANGE(nlev, Z_w, Kv, bio_w, p_PHY(j)%iz, p_PHY(j)%rz)
-        enddo
-      endif
-   Enddo
+   call cpu_time(t5) 
+   dt4 = t5 - t4 + dt4  !The time for random walk
 
    ! Update 
    ! Diffusion for Eulerian fields except phytoplankton
@@ -127,7 +127,16 @@ DO it = 1, Nstep+1
       ENDSELECT
    enddo
 
+   call cpu_time(t6) 
+   dt5 = t6 - t5 + dt5  !The time for diffusion and sinking
+
 ENDDO
+
+print '("Environmental interpolation costs ",f8.3," hours.")', dt1/3600.0 
+print '("Biology costs ",f8.3," hours.")', dt2/3600.0 
+print '("Saving data costs ",f8.3," hours.")', dt3/3600.0 
+print '("Random walk costs ",f8.3," hours.")', dt4/3600.0 
+print '("Diffusion and detritus sinking cost ",f8.3," hours.")', dt5/3600.0 
 
 100 format(A4,I0,A2,I0)
 101 format(A3,1x, I0, 1x, A25, 1x, F10.4)
@@ -142,8 +151,8 @@ implicit none
 
 ! interpolation results for particles
 real, ALLOCATABLE :: zp(:), zout(:,:), dat_in(:,:)
-integer           :: AllocateStatus = 0
-integer           :: k              = 0
+integer   :: AllocateStatus = 0
+integer   :: k              = 0
 !==================================================================
 
 ALLOCATE(zp(1), stat=AllocateStatus)
@@ -288,10 +297,3 @@ do k = 1, nlev
    enddo
 enddo
 end subroutine Cal_total_N
-
-!Sinking rate follow Durante et al. JPR 2019
-pure real function sinking(Vol) result(y)
-implicit none
-real, intent(in) :: Vol  !Cell volume (um^3) 
-  y =  -(0.0019 * Vol**0.43)/86400.d0 !Unit: m per second (downwards)
-END function sinking
