@@ -2,7 +2,7 @@
 
 !Particle parameters:
    N_pass = 1000,  !Number of passive particles
-   N_par =   5000,  !Number of phyto. particles
+   N_par =  1000,  !Number of phyto. particles
 
 !Phytoplankton parameters:
    mu0   = 5.00, !Maximal growth rate [d-1]

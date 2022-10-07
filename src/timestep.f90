@@ -47,6 +47,9 @@ DO it = 1, Nstep+1
    !Calculate vertical Kv
    call analytic_Kv(nlev, Kv0(1), Kvmax(1), Kbg, MLD(1), Kv)
 
+   !Test the effect of Kv (setting it to constant)
+   Kv(:) = Kbg
+
    !Calculate dKv/dz
    DO i = 1,nlev
       ! gradient of Kv
