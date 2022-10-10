@@ -48,12 +48,13 @@ DO it = 1, Nstep+1
    call analytic_Kv(nlev, Kv0(1), Kvmax(1), Kbg, MLD(1), Kv)
 
    !Test the effect of Kv (setting it to constant)
-   Kv(:) = Kbg
+   Kv(:) = Kvmax(1)
 
    !Calculate dKv/dz
    DO i = 1,nlev
       ! gradient of Kv
       dKvdz(i)= (Kv(i)-Kv(i-1))/Hz(i)
+      !write(6,*) 'dKvdz = ', dKvdz(i), "at depth ", Z_r(i)
    ENDDO
 
    !Start biology
