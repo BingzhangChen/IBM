@@ -1,7 +1,7 @@
 Module forcing
 !This module provides several analytic functions calculating temperature, surface PAR, MLD, maximal eddy diffusivity as a function of time
 use Time_setting, only: d_per_s, y_per_d, s_per_h
-use Grid,         only: nlev, Z_r, Hz
+use Grid,         only: nlev, Z_r, Hz, Z_w
 implicit none
 
 private
@@ -31,17 +31,23 @@ real                         ::  Temp(nlev)                       = 0.d0
 !Kv forcing
 character(len=20), parameter :: Kv_time_file = 'BATS_Aks_time.dat'
 character(len=20), parameter :: Kv0_file     = 'BATS_KV0.dat'
+character(len=20), parameter :: Kv_file      = 'BATS_Aks.dat'
 character(len=20), parameter :: Kvmax_file   = 'BATS_KVmax.dat'
 character(len=20), parameter :: MLD_file     = 'BATS_MLD.dat'
 
+!Number of time points of observed Kv
 integer,           parameter :: N_time_Kv    = 12
 
-!Observed time of temperature (unit: second)
+!Observed time of Kv (unit: second)
 real                         :: obs_time_Kv(N_time_Kv)            = 0.d0
 
 !Surface Kv
 real                         :: obs_Kv0(N_time_Kv)                = 0.d0
 real                         :: Kv0(1)                            = 0.d0
+
+!Water column Kv directly estimated from ROMS model output
+integer,       parameter     :: N_obs_Kv                          = 41
+real                         :: obs_Kv(N_obs_Kv, 1+N_time_Kv)     = 0.d0
 
 !MLD
 real                         :: obs_MLD(N_time_Kv)                = 0.d0
@@ -51,12 +57,15 @@ real                         :: MLD(1)                            = 0.d0
 real                         :: obs_Kvmax(N_time_Kv)              = 0.d0
 real                         :: Kvmax(1)                          = 0.d0
 
+!Full Kv data interpolated to the model grid
+real                         :: VKv(0:nlev, N_time_Kv)          = 0.d0
+
 !Final Kv at w points of each grid at the target time
-real                         :: Kv(0:nlev)                        = 0.d0
+real                         :: Kv(0:nlev)                      = 0.d0
 real                         :: dKvdz(nlev)                     = 0.d0  !Gradient of Kv
 
 !Background diffusivity
-real, parameter     :: Kbg = 3d-5 !Kbg follows Christina L&O 2005
+real, parameter :: Kbg = 3d-5 !Kbg follows Christina L&O 2005
 
 !PAR
 real                         :: PARw(0:nlev)                      = 0.d0
@@ -74,7 +83,7 @@ integer,           parameter :: bot_bound                         = Neumann
 public :: diurnal_light, season, extract_WOAtemp, VERTICAL_LIGHT !Subroutines and functions
 public :: Temp, VTemp, N_time_temp, obs_time_temp      !Scalars and vectors
 public :: PARw, PAR
-public :: w, Kv, dKvdz, N_time_Kv, obs_time_Kv, obs_MLD, obs_Kv0, obs_Kvmax, MLD, Kvmax, Kv0, Kbg   !Scalars and vectors
+public :: w, Kv, VKv, dKvdz, N_time_Kv, obs_time_Kv, obs_MLD, obs_Kv0, obs_Kv, obs_Kvmax, MLD, Kvmax, Kv0, Kbg   !Scalars and vectors
 public :: Dirichlet, Neumann, bot_bound
 public :: extract_Kv
 
@@ -226,6 +235,13 @@ call Readcsv(Kvmax_file, 1, N_time_Kv, obs_Kvmax)
 
 !Obtain Kv0
 call Readcsv(Kv0_file, 1, N_time_Kv, obs_Kv0) 
+
+!Obtain Kv
+call Readcsv(Kv_file, N_obs_Kv, N_time_Kv, obs_Kv) 
+
+! Interpolate external Aks data:
+call gridinterpol(N_obs_Kv, N_time_Kv, obs_Kv(:, 1), &
+                  obs_Kv(:, 2:(N_time_Kv + 1)), nlev+1, Z_w, VKv)
 
 end subroutine extract_Kv
 

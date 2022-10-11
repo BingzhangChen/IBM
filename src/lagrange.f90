@@ -97,14 +97,6 @@ DO j = 1, (N_Pass + N_par)
      step2= dt*(wint+dKvdz(i))
      step = step1 + step2
      
-     !if (m == 1) then
-     ! write(6,*) "current grid = ", i
-     ! write(6,*) "current position = ", zloc
-     ! write(6,*) "step1 = ", step1
-     ! write(6,*) "step2 = ", step2
-     ! write(6,*) "dKvdz = ", dKvdz(i)
-     !endif
-
      zp = zp + step
      
      ! First judge whether the particle jumps out of the domain

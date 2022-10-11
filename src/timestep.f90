@@ -40,18 +40,24 @@ DO it = 1, Nstep+1
    call VERTICAL_LIGHT(current_DOY, sec_of_day, t(iChl,:))
 
    !Interpolate MLD, KV0, KVmax
-   call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_MLD,   MLD)
-   call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kv0,   Kv0)
-   call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kvmax, Kvmax)
+   !call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_MLD,   MLD)
+   !call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kv0,   Kv0)
+   !call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kvmax, Kvmax)
+
+   !Directly use the ROMS model output
+   call time_interp(int(current_sec), N_time_Kv, nlev+1, obs_time_Kv, VKv, Kv)
 
    !Calculate vertical Kv
-   call analytic_Kv(nlev, Kv0(1), Kvmax(1), Kbg, MLD(1), Kv)
+   !call analytic_Kv(nlev, Kv0(1), Kvmax(1), Kbg, MLD(1), Kv)
 
    !Test the effect of Kv (setting it to constant)
-   Kv(:) = Kvmax(1)
+   !Kv(:) = Kvmax(1)
 
    !Calculate dKv/dz
-   DO i = 1,nlev
+   DO i = 0,nlev
+      !write(6,*) 'Kv = ', Kv(i), "at depth ", Z_w(i)
+
+      if (i == 0) cycle
       ! gradient of Kv
       dKvdz(i)= (Kv(i)-Kv(i-1))/Hz(i)
       !write(6,*) 'dKvdz = ', dKvdz(i), "at depth ", Z_r(i)
