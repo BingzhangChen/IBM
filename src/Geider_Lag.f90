@@ -5,7 +5,7 @@ USE state_variables
 USE forcing,          only : Temp, PAR
 USE Trait_functions,  only : TEMPBOL, PHY_C2Vol, palatability
 USE grid,             only : Hz, nlev
-USE Time_setting, only : dtdays, sec_of_day
+USE Time_setting,     only : dtdays, sec_of_day
 implicit none
 INTEGER :: k, i, j, m,kk
 INTEGER :: N_ = 0   !Number of particles in each grid
@@ -106,15 +106,15 @@ DO k =  nlev, 1, -1
 
    ENDIF
 
- 	! calculate the amount of nitrogen in each super-individual
-	DO m = 1, N_
+   ! calculate the amount of nitrogen in each super-individual
+   DO m = 1, N_
 
       i = index_(m)
 
       !The amount of  N in the super-individual m
       BN(m) = p_PHY(i)%N * p_PHY(i)%num*1d-9/Hz(k)
 
-	ENDDO
+   ENDDO
 
    !The multiple zooplankton size class model follows Ward et al. L&O 2012
    ! In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
@@ -280,10 +280,11 @@ DO k =  nlev, 1, -1
          Cmin = 0.25d0 * p_PHY(i)%Cdiv
       
          if (p_PHY(i)%C < Cmin) then  ! The superindividual Dies
+            N_death(k) = N_death(k) + 1
             Pmort = Pmort + p_PHY(i)%N * p_PHY(i)%num !Natural mortality of phytoplankton ==> DET
-            p_PHY(i)%C     = 0d0
-            p_PHY(i)%N     = 0d0
-            p_PHY(i)%Chl  = 0d0
+            p_PHY(i)%C   = 0d0
+            p_PHY(i)%N   = 0d0
+            p_PHY(i)%Chl = 0d0
             p_PHY(i)%num = 0d0
             p_PHY(i)%alive = .false.
          endif
@@ -850,9 +851,9 @@ END subroutine GMK98_Ind_TempSizeLight
 !------------------------------------------------------------------------------------------------
 
 SUBROUTINE Par2PHY
-use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, ialphaChl, NTrait
-use grid,                   only : Hz, nlev
-use mGf90,              only : srand_mtGaus
+use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, ialphaChl, NTrait, N_birth, N_death, N_mutate
+use grid,            only : Hz, nlev
+use mGf90,           only : srand_mtGaus
 IMPLICIT NONE
 
 !This subroutine calculate the total amount of concentrations of 
@@ -878,6 +879,7 @@ DO i = 1, N_PAR
    !Handle cell division and mutation
    ! If cellular carbon is above the division threshold, it divides
    IF (p_PHY(i)%C >= p_PHY(i)%Cdiv) THEN  !Divide
+      N_birth(k)   = N_birth(k) + 1
       p_PHY(i)%C   = p_PHY(i)%C/2d0
       p_PHY(i)%N   = p_PHY(i)%N/2d0
       p_PHY(i)%Chl = p_PHY(i)%Chl/2d0
@@ -885,36 +887,38 @@ DO i = 1, N_PAR
 
       !Mutation
       DO m = 1, NTrait
-           nu_ = p_PHY(i)%num*nu(m)
-           call random_number(cff)
+         nu_ = p_PHY(i)%num*nu(m)
+         call random_number(cff)
 
-           IF (cff < nu_) THEN !Mutation occurs
-              select case(m)
-              case(iTopt)
-                  oldtt(1) = p_PHY(i)%Topt
-              case(iSize)
-                  oldtt(1) = log(p_PHY(i)%CDiv)
-              case(ialphaChl)
-                  oldtt(1) = p_PHY(i)%LnalphaChl
-              case DEFAULT
-                  stop "Trait index wrong!"
-              end select
+         IF (cff < nu_) THEN !Mutation occurs
+            N_mutate(k) = N_mutate(k) + 1
 
-              vartt(1,1)= sigma(m)**2   !Construct the covariance matrix for the selected trait
+            select case(m)
+            case(iTopt)
+                oldtt(1) = p_PHY(i)%Topt
+            case(iSize)
+                oldtt(1) = log(p_PHY(i)%CDiv)
+            case(ialphaChl)
+                oldtt(1) = p_PHY(i)%LnalphaChl
+            case DEFAULT
+                stop "Trait index wrong!"
+            end select
 
-              !A new Topt is randomly sampled from a Gaussian distribution with mean of previous Topt and SD of sigma
-              newtt = srand_mtGaus(1, oldtt, vartt)
-              select case(m)
-              case(iTopt)
-                  p_PHY(i)%Topt = newtt(1)
-              case(iSize)
-                  p_PHY(i)%CDiv = exp(newtt(1))
-              case(ialphaChl)
-                  p_PHY(i)%LnalphaChl = newtt(1)
-              case DEFAULT
-                  stop "Trait index wrong!"
-              end select
-           ENDIF
+            vartt(1,1)= sigma(m)**2   !Construct the covariance matrix for the selected trait
+
+            !A new Topt is randomly sampled from a Gaussian distribution with mean of previous Topt and SD of sigma
+            newtt = srand_mtGaus(1, oldtt, vartt)
+            select case(m)
+            case(iTopt)
+                p_PHY(i)%Topt = newtt(1)
+            case(iSize)
+                p_PHY(i)%CDiv = exp(newtt(1))
+            case(ialphaChl)
+                p_PHY(i)%LnalphaChl = newtt(1)
+            case DEFAULT
+                stop "Trait index wrong!"
+            end select
+         ENDIF
       ENDDO
    ENDIF
 
@@ -935,7 +939,7 @@ t(iChl,:) = CHL(:)   !Convert Unit to mmol/m^3
 
 Varout(iPC, :) = t(iPC, :)
 Varout(iPN, :) = t(iPN, :)
-Varout(iChl, :) = t(iChl, :)
+Varout(iChl,:) = t(iChl,:)
 
 return
 END subroutine Par2PHY

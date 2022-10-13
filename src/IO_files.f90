@@ -5,17 +5,21 @@ private
 
 character(len=9), parameter :: Euler_file    = "Euler.out"
 character(len=6), parameter :: Kv_file       = "Kv.out"
-integer,          parameter ::    Euler_unit = 10
-integer,          parameter ::       Kv_unit = 12
-integer,          parameter :: Phyto_unit = 13
-integer,          parameter :: Passive_unit= 14
-integer,          parameter :: phyto= 1
-integer,          parameter :: passive= 2
+character(len=9), parameter :: Death_file    = "Death.out"
+integer,          parameter :: Euler_unit    = 10
+integer,          parameter ::    Kv_unit    = 12
+integer,          parameter :: Phyto_unit    = 13
+integer,          parameter :: Passive_unit  = 14
+integer,          parameter ::  Death_unit   = 15
+integer,          parameter :: phyto         = 1
+integer,          parameter :: passive       = 2
+integer,          parameter :: death         = 3
 
 public :: create_Eulerian_file, create_Particle_file, create_Kv_file
-public :: save_Eulerian, save_particles, save_Kv, phyto, passive
+public :: save_Eulerian, save_particles, save_Kv, phyto, passive, death
+public :: Death_file
 
-contains
+CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine create_Eulerian_file
@@ -79,7 +83,8 @@ end subroutine save_Kv
 subroutine create_Particle_file(fname, type)
 implicit none
 character(len=*), intent(in) :: fname  !Need to create multiple files for storing particles to avoid huge files
-integer, intent(in) :: type  !type = 1, phyto; !type = 2, passive particles
+integer, intent(in) :: type  !type = 1, phyto; !type = 2, passive particles;
+                             !type = 3, Birth and death file
 integer :: fileunit = 0
 
 select case(type)
@@ -93,6 +98,11 @@ case (passive)
    fileunit = passive_unit
    open (unit=fileunit, file = fname, status = 'replace')
    write(fileunit, 102) 'Timestep','Day','Hour','ID','Grid', 'Z'
+case (death)
+   fileunit = death_unit
+   open (unit=fileunit, file = fname, status = 'replace')
+   write(fileunit, 102) 'Timestep','Day','Hour','Grid','N_birth','N_death','N_mutate'
+
 case default
    stop "Particle file type incorrect!"
 end select
@@ -104,8 +114,10 @@ END subroutine create_Particle_file
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine save_particles(fname, type)
-use state_variables, only : p_PHY, p_pass
+use state_variables, only : p_PHY, p_pass, N_birth, N_death, N_mutate
 use Time_setting,    only : it, current_day, current_hour
+use Grid,            only : nlev, Z_r
+
 implicit none
 character(len=*), intent(in) :: fname  !The file for saving particles
 integer, intent(in) :: type
@@ -132,6 +144,20 @@ case (passive)
                      current_day, current_hour, p_pass(i)%ID, &
                      p_pass(i)%iz, p_pass(i)%rz
    enddo
+
+case (death)
+   fileunit = death_unit
+   open (unit=fileunit, file=fname, status='old', action='write', position='append')
+   do i = 1, nlev
+     write(fileunit, 105) it, current_day, current_hour, Z_r(i), &
+                          N_birth(i), N_death(i), N_mutate(i)
+
+     !Reset N_birth, N_death, and N_mutate
+     N_birth(i) = 0
+     N_death(i) = 0
+     N_mutate(i)= 0
+   enddo
+
 case default
    stop "Particle file type incorrect!"
 
@@ -139,6 +165,7 @@ endselect
 close(fileunit)
 
 104 format(I0, 1x, 2(I8, 1x), I0, 1x, I3, 1x, F12.3, 1x, 10(1pe12.3, 1x))
-END subroutine save_particles
+105 format(I0, 1x, 2(I8, 1x), F12.3, 1x, 3(I0, 1x))
+END SUBROUTINE save_particles
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE IO

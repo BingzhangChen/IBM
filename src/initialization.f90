@@ -207,6 +207,10 @@ call save_Eulerian
 call create_Kv_file
 call save_Kv
 
+!Save N_birth, N_death, and N_mutate
+call create_Particle_file(Death_file, Death)
+call       save_particles(Death_file, death)
+
 !Name the initial phyto. particle file
 par_file = 'ParY1_D0'
 

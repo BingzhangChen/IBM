@@ -103,6 +103,9 @@ DO it = 1, Nstep+1
 
        call save_particles(par_file, phyto)
        call save_particles(passive_file, passive)
+
+       !Save N_birth, N_death, and N_mutate into a single file every hour
+       call save_particles(Death_file, death)
    Endif
 
    call cpu_time(t4) 

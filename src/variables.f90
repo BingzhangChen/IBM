@@ -138,6 +138,10 @@ integer, parameter :: ialphaChl = 3    !Trait index for optimal light
 real :: nu(NTrait) = [1d-12, 1d-12, 1d-12] !Probability per generation per cell
 real :: sigma(NTrait) = [0.1, 0.1, 0.1]    !Standard deviation of mutation of the three traits
 
+integer :: N_birth(nlev) = 0  !Number of birth events during one hour
+integer :: N_death(nlev) = 0  !Number of death events during one hour
+integer :: N_mutate(nlev)= 0  !Number of mutation events during one hour at each grid
+
 CONTAINS
 
 SUBROUTINE UPDATE_PHYTO
