@@ -48,7 +48,7 @@ INTEGER              :: Allocatestatus = 0
 
 !Eulerian model for NO3, ZOO and DET and lagrangian model for PHY
 
-DO k =  nlev, 1, -1
+DO k = nlev, 1, -1
    NO3 = t(iNO3, k)
    DET = t(iDET, k)
    Varout(oTEMP,k) = Temp(k)
@@ -128,22 +128,22 @@ DO k =  nlev, 1, -1
    DO kk = 1, NZOO
       gmax = A_g * VolZOO(kk)**B_g 
 
-	  FZoo(kk) = 0d0
+      FZoo(kk) = 0d0
 
-	  !First calculate total phyto. prey from super-individuals
-	  do m = 1, N_
+      !First calculate total phyto. prey from super-individuals
+      do m = 1, N_
 
         i = index_(m)
 
-		  !Volume of phytoplankton super-individual
-		  phyV = PHY_C2Vol(p_PHY(i)%C)
+        !Volume of phytoplankton super-individual
+        phyV = PHY_C2Vol(p_PHY(i)%C)
 
         !The amount of patalable prey in the super-individual m
         Pmatrix(m,kk) = palatability(VolZOO(kk), phyV, SDZoo) * BN(m)
 
-		  !Calculate the palatability of each prey superindividual and add to the total amount palatable prey
-		  FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
-	  enddo
+        !Calculate the palatability of each prey superindividual and add to the total amount palatable prey
+        FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
+      enddo
 
 	  !Second, calculate the total zooplankton prey
 	  IF (kk > 1) THEN
@@ -271,6 +271,7 @@ DO k =  nlev, 1, -1
 
          uptake   =   uptake + dN_ * p_PHY(i)%num 
          NPPc_(k) = NPPc_(k) + dC_ * p_PHY(i)%num *1d-9/Hz(k)*12.d0*dtdays !Unit: mgC m-3 d-1
+
          ! Update cellular C, N, and Chl
          p_PHY(i)%C   =  p_PHY(i)%C   + dC_   * dtdays
          p_PHY(i)%N   =  p_PHY(i)%N   + dN_   * dtdays
@@ -866,7 +867,7 @@ real      :: cff = 0.d0   !Random number [0,1]
 real      :: oldtt(1) = 0.   !Scratch variable for storing the old trait
 real      :: newtt(1) = 0.   !Scratch variable for storing the new trait
 real      :: vartt(1,1) = 0.   !Variance of the mutating trait
-integer :: k,i,m
+integer :: k,i,m, ipar
 
 !End of declaration
 
@@ -879,7 +880,8 @@ DO i = 1, N_PAR
    !Handle cell division and mutation
    ! If cellular carbon is above the division threshold, it divides
    IF (p_PHY(i)%C >= p_PHY(i)%Cdiv) THEN  !Divide
-      N_birth(k)   = N_birth(k) + 1
+      ipar         = p_PHY(i)%iz  !The current grid of super-individual i
+      N_birth(ipar)= N_birth(ipar) + 1
       p_PHY(i)%C   = p_PHY(i)%C/2d0
       p_PHY(i)%N   = p_PHY(i)%N/2d0
       p_PHY(i)%Chl = p_PHY(i)%Chl/2d0
@@ -891,7 +893,7 @@ DO i = 1, N_PAR
          call random_number(cff)
 
          IF (cff < nu_) THEN !Mutation occurs
-            N_mutate(k) = N_mutate(k) + 1
+            N_mutate(ipar) = N_mutate(ipar) + 1
 
             select case(m)
             case(iTopt)
