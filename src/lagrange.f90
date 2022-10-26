@@ -46,8 +46,8 @@ DO j = 1, (N_Pass + N_par)
       vs = phyto_sinking(PHY_C2Vol(p_PHY(m)%C)) 
       
       !Add biological sinking to w
-      bio_w(:)       = vs
-      bio_w(0)      = 0d0
+      bio_w(:)    = vs
+      bio_w(0)    = 0d0
       bio_w(nlev) = 0d0
       bio_w = w + bio_w
    endif
