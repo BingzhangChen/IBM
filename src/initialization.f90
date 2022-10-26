@@ -136,8 +136,10 @@ DO k = 1, N_PAR
    p_PHY(k)%ID = k        
    p_PHY(k)%alive = .true.
 
-   !Initialize optimal temperature (Topt) to 20 C
-   p_PHY(k)%Topt = 20.d0
+   !Initialize phytoplankton optimal temperature (Topt) from a uniform distribution between 2 and 30 degree celcius
+   call random_number(cff)
+   cff = 2. + cff * (30. - 2.)
+   p_PHY(k)%Topt = cff
 
    !Initialize phytoplankton size from a uniform distribution between 0.8 and 60 um
    call random_number(cff)
@@ -149,8 +151,10 @@ DO k = 1, N_PAR
    p_PHY(k)%Chl  = p_PHY(k)%C* 12./50. !Unit: pgChl cell-1
    p_PHY(k)%CDiv = p_PHY(k)%C* 2d0 !Unit: pmol C cell-1
 
-   !Initialize alphaChl to 0.1 (W m-2)-1 (gChl molC)-1 d-1
-   p_PHY(k)%LnalphaChl = -2.3
+   !Initialize log(alphaChl) from a uniform distribution from log(0.01) to log(0.5) (W m-2)-1 (gChl molC)-1 d-1
+   call random_number(cff)
+   cff = log(0.01d0) + cff * (log(0.5) - log(0.01d0))
+   p_PHY(k)%LnalphaChl = cff
 
    !Initialize the number of cells associated with each super-individual (assuming initial phytoplankton nitrogen is 0.1 mmol m-3)
    p_PHY(k)%num = 0.1 * hmax/dble(N_PAR)/p_PHY(k)%N * 1d9
