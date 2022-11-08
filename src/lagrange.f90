@@ -1,11 +1,11 @@
 ! Phytoplankton and passive particles random walk
-!TODO: Needs to implement Ross & Sharples (2004)
 SUBROUTINE LAGRANGE
+USE MPI_Setting
 USE Time_setting, only: dtsec, Nrand
-USE grid,                only: nlev, Z_w, Hz
-USE forcing,           only: Kv, dKvdz, w, Kbg
-USE STATE_VARIABLES, only: p_PHY, p_pass, N_PAR, N_pass
-USE Trait_functions,      only : PHY_C2Vol
+USE grid,         only: nlev, Z_w, Hz
+USE forcing,    only: Kv, w, Kbg
+USE STATE_VARIABLES, only: p_PHY, p_pass, N_PAR, N_pass, Zi_mpi, C_mpi, Zr_mpi
+USE Trait_functions, only: PHY_C2Vol
 IMPLICIT NONE
 
 REAL     :: bio_w(0:nlev) = 0d0  !Scratch sinking rate in 1D
@@ -17,40 +17,87 @@ REAL               :: rnd, rnd_var_inv, dt, step1, step2, zloc, zp
 REAL               :: dzn(nlev),step
 REAL               :: visc,rat,dt_inv, vs
 REAL               :: wint  !interpolated w
+REAL               :: dKvdz(nlev) = 0.d0  !Gradient of Kv
 REAL,parameter :: rnd_var=0.333333333
-REAL, external  :: phyto_sinking
-!-----------------------------------------------------------------------
+REAL, external :: phyto_sinking
+integer, parameter  :: tag1 = 1
+integer, parameter  :: tag2 = 2
+integer, parameter  :: tag3 = 3
+integer, parameter  :: tag4 = 4
+integer, parameter  :: tag5 = 5
+integer :: stat(MPI_STATUS_SIZE)   ! required variable for receive routines
+!--------------End of declaration-------------------------------------------------------
+
+!The parent thread passes information to child processes
+
+! Synchronize all processes:
+call MPI_BARRIER (MPI_COMM_WORLD,ierr)
+
+IF (TASKID .EQ. 0) THEN
+   !Allocate p_Pass and p_PHY to Zi_Mpi and Zr_MPI in the parent process
+   do m = 1, N_Pass + N_PAR
+      if (m .le. N_Pass) then
+          Zr_MPI(m) = p_Pass(m)%rZ
+          Zi_MPI(m) = p_Pass(m)%iz
+      else
+          Zr_MPI(m) = p_PHY(m-N_Pass)%rZ
+          Zi_MPI(m) = p_PHY(m-N_Pass)%iZ
+          C_MPI(m) =  p_PHY(m-N_Pass)%C
+      endif
+   enddo
+
+   Do j = 1, numtasks-1
+
+      ! Send  Kv to child processes:
+      call MPI_SEND(Kv, 1+nlev, MPI_REAL8, j, tag4, MPI_COMM_WORLD, ierr)
+
+      ! Send  w to child processes:
+      call MPI_SEND(w, 1+nlev, MPI_REAL8, j, tag5, MPI_COMM_WORLD, ierr)
+
+      !Send Zi_Mpi, Zr_MPI and C_MPI from parent to child processes
+      call MPI_SEND(Zi_MPI, N_Pass + N_PAR, MPI_INT, j, tag1, MPI_COMM_WORLD, ierr)
+      call MPI_SEND(Zr_MPI, N_Pass + N_PAR, MPI_REAL8, j, tag2, MPI_COMM_WORLD, ierr)
+      call MPI_SEND(C_MPI, N_PAR + N_Pass, MPI_REAL8, j, tag3, MPI_COMM_WORLD, ierr)
+   Enddo
+ELSE
+
+   ! Receive  Kv from root (child processes):
+   call MPI_RECV(Kv, 1+nlev, MPI_REAL8, 0, tag4, MPI_COMM_WORLD, stat, ierr)
+
+   ! Receive  w from root (child processes):
+   call MPI_RECV(w, 1+nlev, MPI_REAL8, 0, tag5, MPI_COMM_WORLD, stat, ierr)
+
+   !Receive Zi_Mpi, Zr_MPI and C_MPI from root
+   call MPI_RECV(Zi_MPI, N_Par + N_Pass, MPI_INT, 0, tag1, MPI_COMM_WORLD, stat, ierr)
+   call MPI_RECV(Zr_MPI, N_Par + N_Pass, MPI_REAL8, 0, tag2, MPI_COMM_WORLD, stat, ierr)
+   call MPI_RECV(C_MPI, N_Par + N_Pass, MPI_REAL8, 0, tag3, MPI_COMM_WORLD, stat, ierr)
+ENDIF
+
+!Calculate dKv/dz
+dKvdz(:) = 0d0
+DO i = 1,nlev
+   dKvdz(i)= (Kv(i)-Kv(i-1))/Hz(i)
+ENDDO
 
 dt = dtsec/dble(Nrand)
 dt_inv = 1.d0/dt
 rnd_var_inv = 1.d0/rnd_var
 
 ! Vertical random walk for passive particles
-DO j = 1, (N_Pass + N_par)
+! Real parallel computing
+DO j = (taskid*N_chunk + 1), ((taskid+1)*N_chunk)
 
-   if (j .le. N_Pass) then  !Passive particles
-      zp = p_pass(j)%rz
-      zi = p_pass(j)%iz 
-      bio_w = w  !No additional vertical movement
+   !Compute sinking rate (negative) based on Durante et al. J. Phycol 2019
+   vs = phyto_sinking(C_MPI(j))
 
-   else  !Phytoplankton particles
+   !Add biological sinking to w
+   bio_w(:)    = vs
+   bio_w(0)    = 0d0
+   bio_w(nlev) = 0d0
+   bio_w = w + bio_w
 
-      m = j - N_pass  !The index for phytoplankton particles
-
-      if (.not. p_PHY(m)%alive) cycle  !Only select live phyto. particles
-
-      zp = p_PHY(m)%rz
-      zi = p_PHY(m)%iz 
-
-      !Compute sinking rate (negative) based on Durante et al. J. Phycol 2019
-      vs = phyto_sinking(PHY_C2Vol(p_PHY(m)%C)) 
-      
-      !Add biological sinking to w
-      bio_w(:)    = vs
-      bio_w(0)    = 0d0
-      bio_w(nlev) = 0d0
-      bio_w = w + bio_w
-   endif
+   zp= Zr_MPI(j)
+   zi= Zi_MPI(j)
 
    do iit = 1, Nrand
 
@@ -113,19 +160,24 @@ DO j = 1, (N_Pass + N_par)
             EXIT
         endif
      end do
-
    enddo  !End of iit
 
    !Save zi and zp back to the particle
-   
-   if (j .le. N_Pass) then  !Passive particles
-      p_pass(j)%rz = zp
-      p_pass(j)%iz = zi
-   else   !Phyto. particles
-      p_PHY(m)%rz = zp
-      p_PHY(m)%iz = zi
-   endif
+   Zi_MPI(j) = zi
+   Zr_MPI(j) = zp
 ENDDO  !End of particle j
+
+!Return the information of Zi_MPI and Zr_MPI back to the parent process
+IF (TASKID .GT. 0) THEN
+  call MPI_SEND(Zi_MPI((taskid*N_chunk + 1):(taskid+1)*N_chunk), N_chunk, MPI_INT, 0, tag6(TASKID), MPI_COMM_WORLD, ierr)
+  call MPI_SEND(Zr_MPI((taskid*N_chunk + 1):(taskid+1)*N_chunk), N_chunk, MPI_REAL8,0,tag7(TASKID), MPI_COMM_WORLD, ierr)
+
+ELSE
+  do j = 1, numtasks-1
+    call MPI_RECV(Zi_MPI((j*N_chunk + 1):(j+1)*N_chunk), N_chunk, MPI_INT, j, tag6(j), MPI_COMM_WORLD, stat, ierr)
+    call MPI_RECV(Zr_MPI((j*N_chunk + 1):(j+1)*N_chunk), N_chunk, MPI_REAL8,j,tag7(j), MPI_COMM_WORLD, stat, ierr)
+  enddo
+ENDIF
 
 return
 END SUBROUTINE LAGRANGE

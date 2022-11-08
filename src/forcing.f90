@@ -62,7 +62,6 @@ real                         :: VKv(0:nlev, N_time_Kv)          = 0.d0
 
 !Final Kv at w points of each grid at the target time
 real                         :: Kv(0:nlev)                      = 0.d0
-real                         :: dKvdz(nlev)                     = 0.d0  !Gradient of Kv
 
 !Background diffusivity
 real, parameter :: Kbg = 3d-5 !Kbg follows Christina L&O 2005
@@ -83,12 +82,12 @@ integer,           parameter :: bot_bound                         = Neumann
 public :: diurnal_light, season, extract_WOAtemp, VERTICAL_LIGHT !Subroutines and functions
 public :: Temp, VTemp, N_time_temp, obs_time_temp      !Scalars and vectors
 public :: PARw, PAR
-public :: w, Kv, VKv, dKvdz, N_time_Kv, obs_time_Kv, obs_MLD, obs_Kv0, obs_Kv, obs_Kvmax, MLD, Kvmax, Kv0, Kbg   !Scalars and vectors
+public :: w, Kv, VKv, N_time_Kv, obs_time_Kv, obs_MLD, obs_Kv0, obs_Kv, obs_Kvmax, MLD, Kvmax, Kv0, Kbg   !Scalars and vectors
 public :: Dirichlet, Neumann, bot_bound
 public :: extract_Kv
 
 ! Station latitude (Convert latitude to radians)
-real, public, parameter :: pi      = 3.1415926535897932384633
+real, public, parameter :: pi = 3.1415926535897932384633
 real, parameter :: Stn_lat = 31.67d0 *pi/180.d0  !BATS
 
 CONTAINS

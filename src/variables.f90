@@ -116,6 +116,11 @@ INTEGER           :: N_Pass= 1000    !Number of passive particles
 Type (Particle), ALLOCATABLE       :: p_PHY(:)
 Type (Passive_Particle), ALLOCATABLE :: p_pass(:)
 
+!Variables storing Z_r, C, and Z_i of passive and phyto. particles
+real, allocatable :: Zr_mpi(:)
+real, allocatable ::  C_mpi(:)
+integer, allocatable :: Zi_mpi(:)
+
 !Model choices
 integer, parameter :: GMK98_simple                 = 1 
 integer, parameter :: GMK98_Topt                    = 2 

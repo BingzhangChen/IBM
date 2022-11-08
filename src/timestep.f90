@@ -1,4 +1,5 @@
 SUBROUTINE TIMESTEP
+USE MPI_Setting
 use forcing
 use Time_setting
 use state_variables
@@ -29,121 +30,113 @@ dt5 = 0.d0
 
 DO it = 1, Nstep+1
 
-   call cpu_time(t1) 
-   call update_time
+  IF (TASKID .EQ. 0) THEN
+    call cpu_time(t1) 
+    call update_time
 
-   !For each time step, read in external environmental data%%%%%%%%%%%%%%%
-   !Interpolate vertical profile of temperature at each timestep
-   call time_interp(int(current_sec), N_time_temp, nlev, obs_time_temp, VTemp, Temp)
+    !For each time step, read in external environmental data%%%%%%%%%%%%%%%
+    !Interpolate vertical profile of temperature at each timestep
+    call time_interp(int(current_sec), N_time_temp, nlev, obs_time_temp, VTemp, Temp)
 
-   !Calculate PAR
-   call VERTICAL_LIGHT(current_DOY, sec_of_day, t(iChl,:))
+    !Calculate PAR
+    call VERTICAL_LIGHT(current_DOY, sec_of_day, t(iChl,:))
 
-   !Interpolate MLD, KV0, KVmax
-   !call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_MLD,   MLD)
-   !call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kv0,   Kv0)
-   !call time_interp(int(current_sec), N_time_Kv, 1, obs_time_Kv, obs_Kvmax, Kvmax)
+    !Directly use the ROMS model output
+    call time_interp(int(current_sec), N_time_Kv, nlev+1, obs_time_Kv, VKv, Kv)
 
-   !Directly use the ROMS model output
-   call time_interp(int(current_sec), N_time_Kv, nlev+1, obs_time_Kv, VKv, Kv)
+    !Start biology
+    !Update environmental variables associated with each particle
+    call UPDATE_PARTICLE_FORCING
 
-   !Calculate vertical Kv
-   !call analytic_Kv(nlev, Kv0(1), Kvmax(1), Kbg, MLD(1), Kv)
+    call cpu_time(t2) 
+    dt1 = t2 - t1 + dt1 !The time for interpolating environmental data
 
-   !Calculate dKv/dz
-   DO i = 0,nlev
-      if (i == 0) cycle
-      ! gradient of Kv
-      dKvdz(i)= (Kv(i)-Kv(i-1))/Hz(i)
-   ENDDO
+    call BIOLOGY
 
-   !Start biology
-   !Update environmental variables associated with each particle
-   call UPDATE_PARTICLE_FORCING
+    call cpu_time(t3) 
+    dt2 = t3 - t2 + dt2 !The time for biology
 
-   call cpu_time(t2) 
-   dt1 = t2 - t1 + dt1 !The time for interpolating environmental data
+    !Save the Eulerian output every day
+    IF (mod(it, nsave) == 1) THEN
 
-   call BIOLOGY
+       ! Add calculations of total nitrogen and save to Eulerian output files
+       call Cal_total_N
+       write(6, 101) "Day", current_day, ": Total Nitrogen =", Ntot
+       call save_Eulerian
+       call save_Kv
 
-   call cpu_time(t3) 
-   dt2 = t3 - t2 + dt2 !The time for biology
+    ENDIF
 
-   !Save the Eulerian output every day
-   IF (mod(it, nsave) == 1) THEN
+    !Save the model output of particles to a separate file every day
+    !And save the particles every hour
+    If (mod(current_sec, s_per_h) == 0) then
+        if (current_hour == 0) then
 
-      ! Add calculations of total nitrogen and save to Eulerian output files
-      call Cal_total_N
-      write(6, 101) "Day", current_day, ": Total Nitrogen =", Ntot
-      call save_Eulerian
-      call save_Kv
+           !Create the phyto. particle file
+           write(par_file, 100) 'ParY', current_year, '_D', current_DOY
+           call create_Particle_file(par_file, phyto)
 
-   ENDIF
+           !Create the passive particle file
+           write(passive_file, 102) 'PassY', current_year, '_D', current_DOY
+           call create_Particle_file(passive_file, passive)
 
-   !Save the model output of particles to a separate file every day
-   !And save the particles every hour
-   If (mod(current_sec, s_per_h) == 0) then
-       if (current_hour == 0) then
+        endif
 
-          !Create the phyto. particle file
-          write(par_file, 100) 'ParY', current_year, '_D', current_DOY
-          call create_Particle_file(par_file, phyto)
+        call save_particles(par_file, phyto)
+        call save_particles(passive_file, passive)
 
-          !Create the passive particle file
-          write(passive_file, 102) 'PassY', current_year, '_D', current_DOY
-          call create_Particle_file(passive_file, passive)
+        !Save N_birth, N_death, and N_mutate into a single file every hour
+        call save_particles(Death_file, death)
+    Endif
 
+    call cpu_time(t4) 
+    dt3 = t4 - t3 + dt3 !The time for saving data
+  ENDIF  !! <-- End of main thread
+
+  ! Vertical random walk for both phyto. particles (that are not dead) and passive particles
+  !Use openmpi to allocate particles to ntasks threads
+  call LAGRANGE
+
+  IF (TASKID .EQ. 0) THEN
+    call cpu_time(t5) 
+    dt4 = t5 - t4 + dt4  !The time for random walk
+
+    ! Update 
+    ! Diffusion for Eulerian fields except phytoplankton
+    Do j = 1,NVAR
+       ! Zero flux at bottom
+       if (j .ne. iPC .and. j .ne. iPN .and. j .ne. iCHL) then
+          call diff_center(nlev,dtsec,cnpar,1,Hz, Neumann, Neumann, &
+                        zero, zero, Kv, Vec0,Vec0,Taur, t(j,:), t(j,:), t(j,:))
        endif
+    Enddo
 
-       call save_particles(par_file, phyto)
-       call save_particles(passive_file, passive)
+    ! Sinking:
+    do j = 1,NVsinkterms
+       SELECT CASE (bot_bound)
+       case(Neumann)  ! closed at bottom (Conserve total N mass)
+          call adv_center(nlev,dtsec,Hz,Hz,ww(:,j),1,1,zero,zero,    6,mode1,t(Windex(j),:))
+       case(Dirichlet)
+          ! Open bottom boundary
+          call adv_center(nlev,dtsec,Hz,Hz,ww(:,j),1,2,zero,t(Windex(j),1),6,mode1,t(Windex(j),:))
+       case default
+          stop "The boundary conditions incorrect! STOP!"
+       ENDSELECT
+    enddo
 
-       !Save N_birth, N_death, and N_mutate into a single file every hour
-       call save_particles(Death_file, death)
-   Endif
-
-   call cpu_time(t4) 
-   dt3 = t4 - t3 + dt3 !The time for saving data
-
-   ! Vertical random walk for both phyto. particles (that are not dead) and passive particles
-   call LAGRANGE
-
-   call cpu_time(t5) 
-   dt4 = t5 - t4 + dt4  !The time for random walk
-
-   ! Update 
-   ! Diffusion for Eulerian fields except phytoplankton
-   Do j = 1,NVAR
-      ! Zero flux at bottom
-      if (j .ne. iPC .and. j .ne. iPN .and. j .ne. iCHL) then
-         call diff_center(nlev,dtsec,cnpar,1,Hz, Neumann, Neumann, &
-                       zero, zero, Kv, Vec0,Vec0,Taur, t(j,:), t(j,:), t(j,:))
-      endif
-   Enddo
-
-   ! Sinking:
-   do j = 1,NVsinkterms
-      SELECT CASE (bot_bound)
-      case(Neumann)  ! closed at bottom (Conserve total N mass)
-         call adv_center(nlev,dtsec,Hz,Hz,ww(:,j),1,1,zero,zero,    6,mode1,t(Windex(j),:))
-      case(Dirichlet)
-         ! Open bottom boundary
-         call adv_center(nlev,dtsec,Hz,Hz,ww(:,j),1,2,zero,t(Windex(j),1),6,mode1,t(Windex(j),:))
-      case default
-         stop "The boundary conditions incorrect! STOP!"
-      ENDSELECT
-   enddo
-
-   call cpu_time(t6) 
-   dt5 = t6 - t5 + dt5  !The time for diffusion and sinking
+    call cpu_time(t6) 
+    dt5 = t6 - t5 + dt5  !The time for diffusion and sinking
+  ENDIF 
 
 ENDDO
 
-print '("Environmental interpolation costs ",f8.3," hours.")', dt1/3600.0 
-print '("Biology costs ",f8.3," hours.")', dt2/3600.0 
-print '("Saving data costs ",f8.3," hours.")', dt3/3600.0 
-print '("Random walk costs ",f8.3," hours.")', dt4/3600.0 
-print '("Diffusion and detritus sinking cost ",f8.3," hours.")', dt5/3600.0 
+if (taskid == 0) then
+  print '("Environmental interpolation costs ",f8.3," hours.")', dt1/3600.0 
+  print '("Biology costs ",f8.3," hours.")', dt2/3600.0 
+  print '("Saving data costs ",f8.3," hours.")', dt3/3600.0 
+  print '("Random walk costs ",f8.3," hours.")', dt4/3600.0 
+  print '("Diffusion and detritus sinking cost ",f8.3," hours.")', dt5/3600.0 
+endif
 
 100 format(A4,I0,A2,I0)
 101 format(A3,1x, I0, 1x, A25, 1x, F10.4)

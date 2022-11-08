@@ -1,8 +1,22 @@
 PROGRAM IBM
 USE GRID
+USE MPI_Setting
 IMPLICIT NONE
 real(4) :: start,finish, t1
 
+! ***** Initialize MPI *****
+call MPI_INIT(ierr)
+
+! Returns the size of the group associated with a communicator.
+call MPI_COMM_SIZE(MPI_COMM_WORLD, numtasks, ierr)
+
+! Determines the rank of the calling process in the communicator
+call MPI_COMM_RANK(MPI_COMM_WORLD, taskid, ierr)
+
+write(6,*) 'Taskid = ', taskid
+write(6,*) 'numtasks = ', numtasks
+call MPI_BARRIER (MPI_COMM_WORLD,ierr)
+stop
 !Count time
 call cpu_time(start) 
 
@@ -14,12 +28,17 @@ call setup_grid
 
 !Initialization
 call initialize
-
 call cpu_time(t1) 
-print '("Initialization costs ",f8.3," hours.")', (t1-start)/3600.0 
+
+if (taskid .eq. 0) then
+  print '("Initialization costs ",f8.3," hours.")', (t1-start)/3600.0 
+endif
 
 !Timestep
 call Timestep
+
+!End mpi
+call MPI_finalize(ierr)
 
 call cpu_time(finish)
 print '("Whole simulation time = ",f8.3," hours.")', (finish-start)/3600.0 
