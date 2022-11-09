@@ -13,10 +13,6 @@ call MPI_COMM_SIZE(MPI_COMM_WORLD, numtasks, ierr)
 ! Determines the rank of the calling process in the communicator
 call MPI_COMM_RANK(MPI_COMM_WORLD, taskid, ierr)
 
-write(6,*) 'Taskid = ', taskid
-write(6,*) 'numtasks = ', numtasks
-call MPI_BARRIER (MPI_COMM_WORLD,ierr)
-stop
 !Count time
 call cpu_time(start) 
 
@@ -41,6 +37,6 @@ call Timestep
 call MPI_finalize(ierr)
 
 call cpu_time(finish)
-print '("Whole simulation time = ",f8.3," hours.")', (finish-start)/3600.0 
+if (taskid.eq.0) print '("Whole simulation time = ",f8.3," hours.")', (finish-start)/3600.0 
 
 end program

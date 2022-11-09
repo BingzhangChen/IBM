@@ -167,8 +167,8 @@ DO j = (taskid*N_chunk + 1), ((taskid+1)*N_chunk)
    Zr_MPI(j) = zp
 ENDDO  !End of particle j
 
-!Return the information of Zi_MPI and Zr_MPI back to the parent process
 IF (TASKID .GT. 0) THEN
+  !Return the information of Zi_MPI and Zr_MPI back to the parent process
   call MPI_SEND(Zi_MPI((taskid*N_chunk + 1):(taskid+1)*N_chunk), N_chunk, MPI_INT, 0, tag6(TASKID), MPI_COMM_WORLD, ierr)
   call MPI_SEND(Zr_MPI((taskid*N_chunk + 1):(taskid+1)*N_chunk), N_chunk, MPI_REAL8,0,tag7(TASKID), MPI_COMM_WORLD, ierr)
 
@@ -177,8 +177,19 @@ ELSE
     call MPI_RECV(Zi_MPI((j*N_chunk + 1):(j+1)*N_chunk), N_chunk, MPI_INT, j, tag6(j), MPI_COMM_WORLD, stat, ierr)
     call MPI_RECV(Zr_MPI((j*N_chunk + 1):(j+1)*N_chunk), N_chunk, MPI_REAL8,j,tag7(j), MPI_COMM_WORLD, stat, ierr)
   enddo
-ENDIF
 
+  !Transfer back the data of Zi and Zr to p_PHY and p_Pass
+  do m = 1, N_Pass + N_PAR
+     if (m .le. N_Pass) then
+         p_Pass(m)%rZ=Zr_MPI(m)
+         p_Pass(m)%iz =Zi_MPI(m)
+     else
+         p_PHY(m-N_Pass)%rZ=Zr_MPI(m) 
+         p_PHY(m-N_Pass)%iZ=Zi_MPI(m)
+     endif
+  enddo
+
+ENDIF
 return
 END SUBROUTINE LAGRANGE
 
