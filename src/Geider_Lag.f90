@@ -852,7 +852,8 @@ END subroutine GMK98_Ind_TempSizeLight
 !------------------------------------------------------------------------------------------------
 
 SUBROUTINE Par2PHY
-use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, ialphaChl, NTrait, N_birth, N_death, N_mutate
+use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, ialphaChl
+use state_variables, only : NTrait, N_birth, N_death, N_mutate
 use grid,            only : Hz, nlev
 use mGf90,           only : srand_mtGaus
 IMPLICIT NONE
