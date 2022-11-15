@@ -5,6 +5,7 @@ OS=`uname`
 echo "OPERATING SYSTEM IS: $OS"
 
 HOST=`hostname`
+echo "Host name is: $HOST"
 
 if [[ $OS == 'Darwin' ]]; then
 
