@@ -752,6 +752,7 @@ real, parameter   :: a1 = 0.d0        ! Allometric exponent between mumax and al
 real, parameter   :: b0 = 0.d0        ! Allometric exponent between mumax and size 
 real, parameter   :: b1 = 0.d0        ! Allometric exponent between mumax and size
 real, parameter   :: b2 = 0.d0        ! Allometric exponent between mumax and size
+real, parameter   :: NO3_min = 0.01   ! Minimal NO3 concentration
 !End of declaration
 
 
@@ -835,7 +836,8 @@ else
 endif
 
 !DIN uptake rate by phytoplankton [mol N mol C-1 d-1]:
-VCN  = Vcref * NO3 / (NO3 + KN) * ((QNmax - QN) / dQN)**nx  !Vcref already temperature dependent
+VCN  = Vcref * (NO3 - NO3_min)/ (NO3 + KN) * ((QNmax - QN) / dQN)**nx  !Vcref already temperature dependent
+VCN = max(VCN, 0d0)
 
 !Changes of cellular carbon [d-1]:
 dC   = C * (PC - zeta * VCN - RcT)
