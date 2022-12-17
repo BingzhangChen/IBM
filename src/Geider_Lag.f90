@@ -38,7 +38,7 @@ real,    allocatable :: Pmatrix(:,:)     !Phytoplankton mortality rates by each 
 real,    parameter   :: eta     = -1.d0*6.6  !Prey refuge parameter for nitrogen
 real,    parameter   :: A_g    = 21.9   !Intercept of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
 real,    parameter   :: B_g    = -0.16  !Slope of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
-real,    parameter   :: num_min = 1000 !Minimal number of cells per super-individual
+real,    parameter   :: Ct_min = 10 !Minimal amount carbon of each super-individual (number of cells * carbon content per cell)
 
 ! cellular carbon content threshold for division (pmol)
 INTEGER, ALLOCATABLE :: index_(:)    !The indexes of particles in each grid
@@ -281,7 +281,7 @@ DO k = nlev, 1, -1
          ! If celular carbon is lower than the susbsistence threshold (Cmin), it dies:
          Cmin = 0.25d0 * p_PHY(i)%Cdiv
       
-         if (p_PHY(i)%C < Cmin .or. p_PHY(i)%num < num_min) then  ! The superindividual Dies
+         if (p_PHY(i)%C < Cmin .or. p_PHY(i)%num * p_PHY(i)%C < Ct_min) then  ! The superindividual Dies
             N_death(k) = N_death(k) + 1
             Pmort = Pmort + p_PHY(i)%N * p_PHY(i)%num !Natural mortality of phytoplankton ==> DET
             p_PHY(i)%C   = 0d0
