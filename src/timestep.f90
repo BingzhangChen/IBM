@@ -14,6 +14,7 @@ real,       parameter  :: cnpar      = 0.6d0
 real,       parameter  :: Taur(nlev) = 1D12  !Relaxation time
 real,       parameter  :: zero       = 0.d0  !Vectors of zero
 real,       parameter  :: Vec0(nlev) = zero  !Vectors of zero
+real :: par_save_freq = 0d0           !scratch variable for saving frequency of particles
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
 integer :: i,j
@@ -69,7 +70,13 @@ DO it = 1, Nstep+1
 
     !Save the model output of particles to a separate file every day
     !And save the particles every hour
-    If (mod(current_sec, s_per_h) == 0) then
+    !If (current_year < 3) then
+    !  par_save_freq = d_per_s
+    !Else
+      par_save_freq = s_per_h
+    !Endif
+
+    If (mod(current_sec, par_save_freq) == 0) then  !Can be modified to save the particles at daily frequency
         if (current_hour == 0) then
 
            !Create the phyto. particle file
