@@ -297,7 +297,7 @@ DO k = nlev, 1, -1
   Pmort =  Pmort*1d-9/Hz(k) !Convert Pmort to mmol N m-3
 
   !Now calculate NO3 and DET
-  t(iNO3,k) = NO3 + dtdays*(pp_ND + RES - uptake)
+  t(iNO3,k) = max(NO3 + dtdays*(pp_ND + RES - uptake), 0d0)  !Temporary solution to keep nitrate positive
   Varout(iNO3, k) = t(iNO3, k)
 
   t(iDET,k) = DET + Pmort + dtdays*(pp_DZ - pp_ND)
