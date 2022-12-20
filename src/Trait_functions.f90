@@ -193,7 +193,7 @@ implicit none
 
 !Declaration of variables:
 real, intent(in) :: PAR_           !Irradiance [W m-2]
-real, intent(in) :: alpha_         !Slope of the P-I curve [Unit the same as aI0]
+real, intent(in) :: alpha_         !Slope of the P-I curve [Unit: molC/gChl m2/uE]
 real, intent(in) :: QN_            !N:C ratio of the phyto. super-individual [mol N mol C-1]
 real, intent(in) :: QNmin_         !Minimal N:C ratio
 real, intent(in) :: QNmax_         !Maximal N:C ratio
@@ -205,9 +205,9 @@ real, parameter  :: Kappa = 0.469  !Exponent of effective cross-section equation
 real, parameter  :: Kd    = 5d-6   !Damage constant of a photosynthetic unit [nd]
 
 real, parameter  :: WtouE = 4.57   !Constant to convert PAR units from [Wm-2] to [uE m-2 s-1]
-
-real, parameter  :: Kr_alpha_PROD = -2.35d-5 !The constant of log10(Kr) and alpha
-
+real, parameter  :: a_ = 2d-5      !The constant a in the equation relating Kr and alphaChl
+real, parameter  :: b_ = 5d-7      !The constant b in the equation relating Kr and alphaChl
+real, parameter  :: v_ = -6.64     !The constant v in the equation relating Kr and alphaChl
 real             :: Kr0            !Repair constant of a photosynthetic unit [s-1] under nutrient saturated conditions which depends on alpha to impose a tradeoff
 real             :: Kr             !Nutrient dependent Repair constant of a photosynthetic unit [s-1]
 real             :: K              !Ratio of damage to repair constants [s]
@@ -216,12 +216,16 @@ real             :: Sigma          !Effective cross-section of the PSU [m2 uE-1]
 real             :: thetaA         !Chl:C ratio (g Chl g C-1) to be consistent with Han (2001)
 real             :: PARWm2
 real             :: Lno3           !Nutrient limitation index
+real             :: alpha_new      !alphaChl with the correct unit
 !End of declaration
 
 !PAR, unit conversion:
 PARWm2 = PAR_ * WtouE    ![W m-2] to [uE m-2]
 
-!Carbon-speciﬁc chlorophyll quota, unit conversion:
+!Convert the unit of alpha from molC/gChl (W m-2)-1 d-1 to  molC/gChl m2/uE
+alpha_new = alpha_ /WtouE/864d2
+
+!Carbon-specific chlorophyll quota, uit conversion:
 thetaA = theta_ / 12d0     ![mg Chl mmol C] to [g Chl g C-1]
 
 !Effective cross-section of the PSU [m2 uE-1] Nikolaou et al. (2016)
@@ -232,9 +236,8 @@ Sigma = Beta * thetaA**Kappa
 !Nutrient limitation index
 Lno3 = (QN_ - QNmin_) / (QNmax_ - QNmin_)
 
-!Kr0 depends on alpha_ (we artificially assume that log10(Kr)*alpha_ is a
-!constant of -2.35d-5 
-Kr0 = 10**(Kr_alpha_PROD/alpha_)
+!Kr0 depends on alpha_ using an empirical equation
+Kr0 = a_ * (alpha_new / b_)**v_
 
 Kr = Kr0 * Lno3
 
@@ -245,7 +248,6 @@ K  = Kd / Kr
 Ainf = 1d0 / (1d0 + Tau * Sigma * PARWm2 + K * Tau * Sigma**2 * PARWm2**2)
 
 return 
-
 END FUNCTION Ainf
 !------------------------------------------------------------------------------------------------
 
