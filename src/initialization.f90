@@ -41,7 +41,7 @@ open(namlst,file='time.nml',status='old',action='read')
 read(namlst,nml=timelist)
 close(namlst)
 
-!Update total number of time ! Number of time steps
+!Total Number of time steps
 Nstep  = NDay_Run*INT(d_per_s)/INT(dtsec) 
 
 !Calculate dtdays

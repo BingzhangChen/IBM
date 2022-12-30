@@ -70,11 +70,11 @@ DO it = 1, Nstep+1
 
     !Save the model output of particles to a separate file every day
     !And save the particles every hour
-    !If (current_year < 3) then
-    !  par_save_freq = d_per_s
-    !Else
-      par_save_freq = s_per_h
-    !Endif
+    If (current_year < NDay_Run/365) then
+      par_save_freq = d_per_s
+    Else
+     par_save_freq = s_per_h
+    Endif
 
     If (mod(current_sec, par_save_freq) == 0) then  !Can be modified to save the particles at daily frequency
         if (current_hour == 0) then
