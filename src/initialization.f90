@@ -216,7 +216,15 @@ IF (TASKID==0) THEN
   Labelout(oNPP) = 'NPP'
   Labelout(oTEMP)= 'TEMP'
   Labelout(oPAR) = 'PAR'
-  
+  Labelout(oN_ind) = 'N_ind'
+  Labelout(oN_cell) = 'Abun'
+  Labelout(oCDiv_avg) = 'MCDiv'
+  Labelout(oCDiv_var) = 'VCDiv'
+  Labelout(oTopt_avg) = 'MTopt'
+  Labelout(oTopt_var) = 'VTopt'
+  Labelout(oLnalpha_avg) = 'MLnap'
+  Labelout(oLnalpha_var) = 'VLnap'
+   
   do k = 1, NZOO
      write(Labelout(iZOO(k)),  format_string) 'ZOO', k
      write(Labelout( oFZ(k)),  format_string) 'FZO',k

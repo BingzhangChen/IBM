@@ -9,6 +9,7 @@ USE Time_setting,     only : dtdays, sec_of_day
 implicit none
 INTEGER :: k, i, j, m,kk
 INTEGER :: N_ = 0   !Number of particles in each grid
+INTEGER :: Abun_ = 0   !Total abundance in each grid
 real    :: NO3 = 0.
 real    :: ZOO(NZOO) = 0. 
 real    :: DET = 0. 
@@ -95,6 +96,9 @@ DO k = nlev, 1, -1
       endif
    enddo
 
+   !Save number of super-individuals per m3
+   Varout(oN_ind, k) = dble(N_)/Hz(k)
+
    !Allocate Pmatrix (matrix for super-individual grazing mortality)
    IF (N_ > 0) THEN
       allocate(Pmatrix(N_, NZOO), stat=AllocateStatus)
@@ -108,6 +112,7 @@ DO k = nlev, 1, -1
    ENDIF
 
    ! calculate the amount of nitrogen in each super-individual
+   Abun_ = 0
    DO m = 1, N_
 
       i = index_(m)
@@ -115,7 +120,10 @@ DO k = nlev, 1, -1
       !The amount of  N in the super-individual m
       BN(m) = p_PHY(i)%N * p_PHY(i)%num*1d-9/Hz(k)
 
+      !Count the number of cells in each layer
+      Abun_ = Abun_ + p_PHY(i)%num
    ENDDO
+   Varout(oN_cell, k) = dble(Abun_)/Hz(k)
 
    !The multiple zooplankton size class model follows Ward et al. L&O 2012
    ! In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
@@ -857,6 +865,8 @@ END subroutine GMK98_Ind_TempSizeLight
 SUBROUTINE Par2PHY
 use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, ialphaChl
 use state_variables, only : NTrait, N_birth, N_death, N_mutate
+use state_variables, only : oN_cell, oCDiv_avg, oCDiv_var, oTopt_avg, oTopt_var 
+use state_variables, only : oLnalpha_var, oLnalpha_avg
 use grid,            only : Hz, nlev
 use mGf90,           only : srand_mtGaus
 IMPLICIT NONE
@@ -866,6 +876,12 @@ IMPLICIT NONE
 real      :: PHYC(nlev) = 0d0
 real      ::    PHY(nlev) = 0d0
 real      ::    CHL(nlev) = 0d0
+real      ::   mTopt_(nlev) = 0d0
+real      ::   vTopt_(nlev) = 0d0
+real      ::   mCDiv_(nlev) = 0d0
+real      ::   vCDiv_(nlev) = 0d0
+real      ::   mlnalpha_(nlev) = 0d0
+real      ::   vlnalpha_(nlev) = 0d0
 real      ::  nu_ = 0d0   !Basic Mutation rate
 real      :: cff = 0.d0   !Random number [0,1]
 real      :: oldtt(1) = 0.   !Scratch variable for storing the old trait
@@ -878,13 +894,16 @@ integer :: k,i,m, ipar
 PHYC(:)= 0.d0
 PHY(:) = 0.d0
 CHL(:) = 0.d0
+mCDiv_(:) = 0d0
+mTopt_(:) = 0d0
+mlnalpha_(:) = 0d0
 
 !loop through all super-individuals to convert into Eulerian concentrations
 DO i = 1, N_PAR
+   ipar = p_PHY(i)%iz  !The current grid of super-individual i
    !Handle cell division and mutation
    ! If cellular carbon is above the division threshold, it divides
    IF (p_PHY(i)%C >= p_PHY(i)%Cdiv) THEN  !Divide
-      ipar         = p_PHY(i)%iz  !The current grid of super-individual i
       N_birth(ipar)= N_birth(ipar) + 1
       p_PHY(i)%C   = p_PHY(i)%C/2d0
       p_PHY(i)%N   = p_PHY(i)%N/2d0
@@ -928,24 +947,59 @@ DO i = 1, N_PAR
       ENDDO
    ENDIF
 
-   !Calculate Eulerian concentrations of phyto C, N, and Chl for each layer
-   do k = 1, nlev
-     if (p_PHY(i)%iz == k) then
-         PHYC(k) = PHYC(k) + p_PHY(i)%num *1d-9*p_PHY(i)%C/Hz(k) 
-         PHY(k)  = PHY(k)  + p_PHY(i)%num *1d-9*p_PHY(i)%N/Hz(k)
-         CHL(k)  = CHL(k)  + p_PHY(i)%num *1d-9*p_PHY(i)%Chl/Hz(k)
-         EXIT
-      endif
-   enddo
+   !Calculate Eulerian concentrations of phyto C, N, and Chl, mean trait  for each layer
+   PHYC(ipar) = PHYC(ipar) + p_PHY(i)%num *p_PHY(i)%C 
+   PHY(ipar)  = PHY(ipar)  + p_PHY(i)%num *p_PHY(i)%N
+   CHL(ipar)  = CHL(ipar)  + p_PHY(i)%num *p_PHY(i)%Chl
+
+   mCDiv_(ipar) = mCDiv_(ipar) + p_PHY(i)%num * log(p_PHY(i)%Cdiv)
+   mTopt_(ipar) = mTopt_(ipar) + p_PHY(i)%num * p_PHY(i)%Topt
+   mlnalpha_(ipar) = mlnalpha_(ipar) + p_PHY(i)%num * p_PHY(i)%LnalphaChl
 ENDDO
 
-t(iPC, :) = PHYC(:)   !Convert Unit to mmol/m^3
-t(iPN, :) = PHY(:)   !Convert Unit to mmol/m^3
-t(iChl,:) = CHL(:)   !Convert Unit to mmol/m^3
+do k = 1, nlev
+  t(iPC, k) = PHYC(k) *1d-9/Hz(k)!Convert Unit to mmol/m^3
+  t(iPN,k) = PHY(k) *1d-9/Hz(k)   !Convert Unit to mmol/m^3
+  t(iChl,k) = CHL(k)*1d-9/Hz(k) !Convert Unit to mmol/m^3
+
+  if (Varout(oN_cell,k) > 0.) then
+    mCDiv_(k)      = mCDiv_(k)/(Varout(oN_cell, k) * Hz(k))
+    mTopt_(k)      = mTopt_(k)/(Varout(oN_cell, k) * Hz(k))
+    mlnalpha_(k) = mlnalpha_(k)/(Varout(oN_cell, k) * Hz(k))
+  endif
+enddo
 
 Varout(iPC, :) = t(iPC, :)
 Varout(iPN, :) = t(iPN, :)
-Varout(iChl,:) = t(iChl,:)
+Varout(iChl, :) = t(iChl,:)
+Varout(oCDiv_avg, :) = mCDiv_(:)
+Varout(oTopt_avg, :) = mTopt_(:)
+Varout(oLnalpha_avg, :) = mLnalpha_(:)
+
+!Compute trait variances
+vCDiv_(:) = 0d0
+vTopt_(:) = 0d0
+vlnalpha_(:) = 0d0
+
+DO i = 1, N_PAR
+   ipar = p_PHY(i)%iz  !The current grid of super-individual i
+   vCDiv_(ipar) = vCDiv_(ipar) + p_PHY(i)%num * (log(p_PHY(i)%Cdiv) - mCDiv_(ipar))**2
+   vTopt_(ipar) = vTopt_(ipar) + p_PHY(i)%num * (p_PHY(i)%Topt - mTopt_(ipar))**2
+   vlnalpha_(ipar) = vlnalpha_(ipar) + p_PHY(i)%num*(p_PHY(i)%LnalphaChl - mlnalpha_(ipar))**2
+
+ENDDO
+
+do k = 1, nlev
+  if (Varout(oN_cell,k) > 0.) then
+    vCDiv_(k)      = vCDiv_(k)/(Varout(oN_cell, k) * Hz(k))
+    vTopt_(k)      = vTopt_(k)/(Varout(oN_cell, k) * Hz(k))
+    vlnalpha_(k) = vlnalpha_(k)/(Varout(oN_cell, k) * Hz(k))
+  endif
+enddo
+
+Varout(oCDiv_var, :) = vCDiv_(:)
+Varout(oTopt_var, :) = vTopt_(:)
+Varout(oLnalpha_var, :) = vLnalpha_(:)
 
 return
 END subroutine Par2PHY

@@ -42,7 +42,33 @@ integer, parameter   :: oNPP = nvar + 1   !Daily net primary production integrat
 integer, parameter :: oFZ(NZOO) = (/ (oNPP + i , i = 1, NZOO) /)
 integer, parameter :: oTEMP     = oFZ(NZOO) + 1
 integer, parameter :: oPAR      = oTEMP     + 1
-integer, parameter :: Nout      = oPAR
+
+!Mean log maximal Size (pmol C per cell)
+integer, parameter :: oCDiv_avg    = oPAR     + 1
+
+!Variance of maximal Size (pmol C per cell^2)
+integer, parameter :: oCDiv_var    = oCDiv_avg  + 1
+
+!Mean Topt
+integer, parameter :: oTopt_avg    = oCDiv_var  + 1
+
+!Variance of Topt
+integer, parameter :: oTopt_var    = oTopt_avg  + 1
+
+!Mean Ln_alphaChl
+integer, parameter :: oLnalpha_avg = oTopt_var  + 1
+
+!Variance of Ln_alphaChl
+integer, parameter :: oLnalpha_var = oLnalpha_avg + 1
+
+!Number of super-individuals per unit volume of water
+integer, parameter :: oN_ind = oLnalpha_var + 1
+
+!Abundance of cells per unit volume of water (cells per m^3)
+integer, parameter :: oN_cell = oN_ind + 1
+
+!Total number of output variables
+integer, parameter :: Nout   = oN_cell
 real                              :: Varout(Nout, nlev) = 0.d0
 character(LEN=7)   :: Labelout(Nout)     = 'Unknown'
 
