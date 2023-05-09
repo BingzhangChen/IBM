@@ -61,8 +61,17 @@ integer, parameter :: oLnalpha_avg = oTopt_var  + 1
 !Variance of Ln_alphaChl
 integer, parameter :: oLnalpha_var = oLnalpha_avg + 1
 
+!Covariance between size and Topt
+integer, parameter :: oTLnV_cov    = oLnalpha_var + 1
+
+!Covariance between alphaChl and Topt
+integer, parameter :: oTalp_cov    = oTLnV_cov + 1
+
+!Covariance between alphaChl and size
+integer, parameter :: oALnV_cov    = oTalp_cov + 1
+
 !Number of super-individuals per unit volume of water
-integer, parameter :: oN_ind = oLnalpha_var + 1
+integer, parameter :: oN_ind = oALnV_cov + 1
 
 !Abundance of cells per unit volume of water (cells per m^3)
 integer, parameter :: oN_cell = oN_ind + 1

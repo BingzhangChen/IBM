@@ -53,7 +53,6 @@ DO it = 1, Nstep+1
     dt1 = t2 - t1 + dt1 !The time for interpolating environmental data
 
     call BIOLOGY
-
     call cpu_time(t3) 
     dt2 = t3 - t2 + dt2 !The time for biology
 
@@ -62,7 +61,9 @@ DO it = 1, Nstep+1
 
        ! Add calculations of total nitrogen and save to Eulerian output files
        call Cal_total_N
+
        write(6, 101) "Day", current_day, ": Total Nitrogen =", Ntot
+
        call save_Eulerian
        call save_Kv
 

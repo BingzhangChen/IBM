@@ -9,7 +9,7 @@ USE Time_setting,     only : dtdays, sec_of_day
 implicit none
 INTEGER :: k, i, j, m,kk
 INTEGER :: N_ = 0   !Number of particles in each grid
-INTEGER :: Abun_ = 0   !Total abundance in each grid
+real    :: Abun_ = 0   !Total abundance in each grid
 real    :: NO3 = 0.
 real    :: ZOO(NZOO) = 0. 
 real    :: DET = 0. 
@@ -73,6 +73,7 @@ DO k = nlev, 1, -1
    !Get the indexes of particles in this grid (for grazing loss)
    allocate(index_(0), stat=AllocateStatus)
    IF (AllocateStatus /= 0) STOP "*** Problem in allocating index_***"
+
    do i = 1, N_PAR
       if (p_PHY(i)%iz == k .and. p_PHY(i)%alive) then !Ignore dead super-individuals
          N_   = N_   + 1
@@ -100,6 +101,10 @@ DO k = nlev, 1, -1
    Varout(oN_ind, k) = dble(N_)/Hz(k)
 
    !Allocate Pmatrix (matrix for super-individual grazing mortality)
+   
+   !Reset total abundance
+   Abun_ = 0d0
+
    IF (N_ > 0) THEN
       allocate(Pmatrix(N_, NZOO), stat=AllocateStatus)
       IF (AllocateStatus /= 0) STOP "*** Problem in allocating Pmatrix***"
@@ -109,21 +114,20 @@ DO k = nlev, 1, -1
       IF (AllocateStatus /= 0) STOP "*** Problem in allocating BN***"
       BN(:) = 0d0
 
+      ! calculate the amount of nitrogen and total abundances (cells/m3) in each super-individual
+      DO m = 1, N_
+
+         i = index_(m)
+
+         !The amount of  N in the super-individual m
+         BN(m) = p_PHY(i)%N * p_PHY(i)%num*1d-9/Hz(k)
+
+         !Count the number of cells in each layer
+         Abun_ = Abun_ + p_PHY(i)%num
+      ENDDO
+
    ENDIF
-
-   ! calculate the amount of nitrogen in each super-individual
-   Abun_ = 0
-   DO m = 1, N_
-
-      i = index_(m)
-
-      !The amount of  N in the super-individual m
-      BN(m) = p_PHY(i)%N * p_PHY(i)%num*1d-9/Hz(k)
-
-      !Count the number of cells in each layer
-      Abun_ = Abun_ + p_PHY(i)%num
-   ENDDO
-   Varout(oN_cell, k) = dble(Abun_)/Hz(k)
+   Varout(oN_cell, k) = Abun_/Hz(k) !Abundances (cells m-3)
 
    !The multiple zooplankton size class model follows Ward et al. L&O 2012
    ! In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
@@ -136,23 +140,24 @@ DO k = nlev, 1, -1
    !Calculate the total amount of prey N biomass available to each size class of zooplankton
    DO kk = 1, NZOO
       gmax = A_g * VolZOO(kk)**B_g 
-
       FZoo(kk) = 0d0
 
       !First calculate total phyto. prey from super-individuals
-      do m = 1, N_
+      IF (N_ > 0) THEN
+         do m = 1, N_
 
-        i = index_(m)
+           i = index_(m)
 
-        !Volume of phytoplankton super-individual
-        phyV = PHY_C2Vol(p_PHY(i)%C)
+           !Volume of phytoplankton super-individual
+           phyV = PHY_C2Vol(p_PHY(i)%C)
 
-        !The amount of patalable prey in the super-individual m
-        Pmatrix(m,kk) = palatability(VolZOO(kk), phyV, SDZoo) * BN(m)
+           !The amount of patalable prey in the super-individual m
+           Pmatrix(m,kk) = palatability(VolZOO(kk), phyV, SDZoo) * BN(m)
 
-        !Calculate the palatability of each prey superindividual and add to the total amount palatable prey
-        FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
-      enddo
+           !Calculate the palatability of each prey superindividual and add to the total amount palatable prey
+           FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
+         enddo
+      ENDIF
 
 	  !Second, calculate the total zooplankton prey
 	  IF (kk > 1) THEN
@@ -187,7 +192,6 @@ DO k = nlev, 1, -1
 
         enddo
 	  ENDIF
-
    ENDDO !End of the zooplankton loop
 
    !Computing zooplankton mortality
@@ -316,7 +320,7 @@ DO k = nlev, 1, -1
   if (allocated(BN)) deallocate(BN)
 ENDDO
 
-!Needs to update t(iPN, :), t(iPC,:), and t(iChl,:)
+!update t(iPN, :), t(iPC,:), and t(iChl,:) and compute mean trait and trait variance
 call Par2PHY
 
 END SUBROUTINE BIOLOGY
@@ -867,6 +871,7 @@ use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, 
 use state_variables, only : NTrait, N_birth, N_death, N_mutate
 use state_variables, only : oN_cell, oCDiv_avg, oCDiv_var, oTopt_avg, oTopt_var 
 use state_variables, only : oLnalpha_var, oLnalpha_avg
+use state_variables, only : oTalp_cov, oALnV_cov, oTLnV_cov
 use grid,            only : Hz, nlev
 use mGf90,           only : srand_mtGaus
 IMPLICIT NONE
@@ -882,6 +887,9 @@ real      ::   mCDiv_(nlev) = 0d0
 real      ::   vCDiv_(nlev) = 0d0
 real      ::   mlnalpha_(nlev) = 0d0
 real      ::   vlnalpha_(nlev) = 0d0
+real      ::   cov_TA(nlev) = 0d0
+real      ::   cov_TL(nlev) = 0d0
+real      ::   cov_AL(nlev) = 0d0
 real      ::  nu_ = 0d0   !Basic Mutation rate
 real      :: cff = 0.d0   !Random number [0,1]
 real      :: oldtt(1) = 0.   !Scratch variable for storing the old trait
@@ -980,13 +988,18 @@ Varout(oLnalpha_avg, :) = mLnalpha_(:)
 vCDiv_(:) = 0d0
 vTopt_(:) = 0d0
 vlnalpha_(:) = 0d0
+cov_AL(:) = 0d0
+cov_TA(:) = 0d0
+cov_TL(:) = 0d0
 
 DO i = 1, N_PAR
    ipar = p_PHY(i)%iz  !The current grid of super-individual i
    vCDiv_(ipar) = vCDiv_(ipar) + p_PHY(i)%num * (log(p_PHY(i)%Cdiv) - mCDiv_(ipar))**2
    vTopt_(ipar) = vTopt_(ipar) + p_PHY(i)%num * (p_PHY(i)%Topt - mTopt_(ipar))**2
    vlnalpha_(ipar) = vlnalpha_(ipar) + p_PHY(i)%num*(p_PHY(i)%LnalphaChl - mlnalpha_(ipar))**2
-
+   cov_TL(ipar) = cov_TL(ipar) +p_PHY(i)%num * (log(p_PHY(i)%Cdiv) - mCDiv_(ipar))*(p_PHY(i)%Topt - mTopt_(ipar))
+   cov_AL(ipar) = cov_AL(ipar)+p_PHY(i)%num * (log(p_PHY(i)%Cdiv) - mCDiv_(ipar))*(p_PHY(i)%LnalphaChl - mlnalpha_(ipar))
+   cov_TA(ipar) = cov_TA(ipar)+p_PHY(i)%num * (p_PHY(i)%LnalphaChl - mlnalpha_(ipar))*(p_PHY(i)%Topt - mTopt_(ipar))
 ENDDO
 
 do k = 1, nlev
@@ -994,12 +1007,17 @@ do k = 1, nlev
     vCDiv_(k)      = vCDiv_(k)/(Varout(oN_cell, k) * Hz(k))
     vTopt_(k)      = vTopt_(k)/(Varout(oN_cell, k) * Hz(k))
     vlnalpha_(k) = vlnalpha_(k)/(Varout(oN_cell, k) * Hz(k))
+    cov_TL(k)      = cov_TL(k)/(Varout(oN_cell, k) * Hz(k))
+    cov_TA(k)      = cov_TA(k)/(Varout(oN_cell, k) * Hz(k))
+    cov_AL(k)      = cov_AL(k)/(Varout(oN_cell, k) * Hz(k))
   endif
 enddo
 
 Varout(oCDiv_var, :) = vCDiv_(:)
 Varout(oTopt_var, :) = vTopt_(:)
 Varout(oLnalpha_var, :) = vLnalpha_(:)
-
+Varout(oALnV_cov, :) = cov_AL(:)
+Varout(oTalp_cov, :) = cov_TA(:)
+Varout(oTLnV_cov, :) = cov_TL(:)
 return
 END subroutine Par2PHY

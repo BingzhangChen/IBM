@@ -32,7 +32,7 @@ write(Euler_unit, 101) 'Type','Timestep','Day', 'Hour', Z_r
 close(Euler_unit)
 
 101 format(4(A10,1x), 200(2x,F12.5))
-end subroutine
+end subroutine create_Eulerian_file
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine create_Kv_file
@@ -49,12 +49,12 @@ end subroutine create_Kv_file
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine save_Eulerian
-use state_variables, only : Labelout, Varout, Nout
+use state_variables, only : Labelout, Varout, Nout, oN_ind
 use Time_setting,    only : it, current_day, current_hour
 implicit none
-integer :: i
+integer :: i,j
 
-! save data into the Eulerian file
+! save data into the Eulerian file 
 open (unit=Euler_unit, file = Euler_file, status = 'old', action='write', position='append')
 do i = 1, Nout
    write(Euler_unit, 103) trim(Labelout(i)), it, current_day, current_hour, Varout(i,:)
@@ -63,7 +63,6 @@ close(Euler_unit)
 
 103 format(A5, 1x, I7, 1x, 2(I0, 1x), 200(1pe12.3, 1x))
 end subroutine save_Eulerian
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine save_Kv
 use forcing,         only : Kv

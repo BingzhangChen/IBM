@@ -224,6 +224,9 @@ IF (TASKID==0) THEN
   Labelout(oTopt_var) = 'VTopt'
   Labelout(oLnalpha_avg) = 'MLnap'
   Labelout(oLnalpha_var) = 'VLnap'
+  Labelout(oTalp_cov) = 'COVTA'
+  Labelout(oTLnV_cov) = 'COVTL'
+  Labelout(oALnV_cov) = 'COVAL'
    
   do k = 1, NZOO
      write(Labelout(iZOO(k)),  format_string) 'ZOO', k
