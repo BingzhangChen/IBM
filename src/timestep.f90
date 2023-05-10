@@ -60,7 +60,7 @@ DO it = 1, Nstep+1
     IF (mod(it, nsave) == 1) THEN
 
        ! Add calculations of total nitrogen and save to Eulerian output files
-       call Cal_total_N
+       call Cal_total_N !Including randomly split cells
 
        write(6, 101) "Day", current_day, ": Total Nitrogen =", Ntot
 
@@ -212,6 +212,7 @@ use state_variables, only : t, Ntot, iPC, iCHL,iPN, iZOO, iNO3, iDET,N_PAR, p_PH
 implicit none
 integer :: k,i,m
 real      :: rnd
+real      :: max_num = 0.d0
 
 Ntot = 0d0
 do k = 1, nlev
@@ -277,12 +278,20 @@ do k = 1, nlev
       stop 
    endif
 
+   !The code below computes the maximal number of cells per super-individual
+   max_num = 0.d0
+   DO i = 1, N_PAR
+      max_num = max(max_num, p_PHY(i)%num)
+   END DO
+
    !The following code tries to find dead superindividuals and split
-   !If there is a dead superindividual, choose a random live superindividual and split it
+   !If there is a dead superindividual, choose a random live superindividual 
+   !with a good number of cells (greater than 1/10 of maximal numbers of cells 
+   !per super-individual) and split it
    DO i = 1, N_PAR
       IF (.not. p_PHY(i)%alive) THEN
          m = i
-         do while (.not. p_PHY(m)%alive)
+         do while ((.not. p_PHY(m)%alive) .or. (p_PHY(m)%num .le. max_num/1d1))
             call random_number(rnd)
             m = max(int(dble(N_PAR-1)*rnd + 1.d0), 1)
          enddo
@@ -298,8 +307,10 @@ do k = 1, nlev
       ENDIF
    ENDDO
 
+   !Update total N
    Ntot = Ntot + Hz(k)*(t(iPN,k)  + t(iNO3, k) + t(iDET, k))
 
+   !Add total ZOOplankton N into total N
    do i = 1, NZOO
       Ntot = Ntot + t(iZOO(i), k) * Hz(k)
    enddo
