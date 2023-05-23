@@ -212,7 +212,7 @@ use state_variables, only : t, Ntot, iPC, iCHL,iPN, iZOO, iNO3, iDET,N_PAR, p_PH
 implicit none
 integer :: k,i,m
 real      :: rnd
-real      :: max_num = 0.d0
+real      :: geomean_num = 0.d0
 
 Ntot = 0d0
 do k = 1, nlev
@@ -279,10 +279,11 @@ do k = 1, nlev
    endif
 
    !The code below computes the maximal number of cells per super-individual
-   max_num = 0.d0
+   geomean_num = 0.d0
    DO i = 1, N_PAR
-      max_num = max(max_num, p_PHY(i)%num)
+      geomean_num = geomean_num + log(p_PHY(i)%num)
    END DO
+   geomean_num = exp(geomean_num/dble(N_PAR))
 
    !The following code tries to find dead superindividuals and split
    !If there is a dead superindividual, choose a random live superindividual 
@@ -291,7 +292,7 @@ do k = 1, nlev
    DO i = 1, N_PAR
       IF (.not. p_PHY(i)%alive) THEN
          m = i
-         do while ((.not. p_PHY(m)%alive) .or. (p_PHY(m)%num .le. max_num/1d1))
+         do while ((.not. p_PHY(m)%alive) .or. (p_PHY(m)%num .le. geomean_num))
             call random_number(rnd)
             m = max(int(dble(N_PAR-1)*rnd + 1.d0), 1)
          enddo
