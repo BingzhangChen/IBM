@@ -216,8 +216,8 @@ IF (TASKID==0) THEN
   Labelout(oNPP) = 'NPP'
   Labelout(oTEMP)= 'TEMP'
   Labelout(oPAR) = 'PAR'
-  Labelout(oN_ind) = 'N_ind'
-  Labelout(oN_cell) = 'Abun'
+  Labelout(oN_ind) = 'N_ind'   !Number of super-individuals
+  Labelout(oN_cell) = 'Abun'   !Number of cells
   Labelout(oCDiv_avg) = 'MCDiv'
   Labelout(oCDiv_var) = 'VCDiv'
   Labelout(oTopt_avg) = 'MTopt'

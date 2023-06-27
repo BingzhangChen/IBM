@@ -237,11 +237,7 @@ DO k = nlev, 1, -1
 
          !Calculate all the zooplankton ingestion for this superindividual (unit: mmol N m-3 d-1)
          do m = 1, NZOO
-              if (FZOO(m) > 0d0) then
-                 Graz = Graz + INGES(m) * Pmatrix(j, m)/FZoo(m)
-              else
-                 Graz = Graz 
-              endif
+              if (FZOO(m) > 0d0) Graz = Graz + INGES(m) * Pmatrix(j, m)/FZoo(m)
          enddo
 
          p_PHY(i)%num = p_PHY(i)%num*(1d0 - Graz*dtdays/BN(j))   !Apply grazing

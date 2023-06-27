@@ -206,13 +206,14 @@ DEALLOCATE(zout)
 DEALLOCATE(zp)
 END SUBROUTINE UPDATE_PARTICLE_FORCING
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine Cal_total_N
 use grid, only : nlev, Hz, Z_r
 use state_variables, only : t, Ntot, iPC, iCHL,iPN, iZOO, iNO3, iDET,N_PAR, p_PHY, IDmax, NZOO
 implicit none
-integer :: k,i,m
+integer :: k,i,j,m
 real      :: rnd
-real      :: geomean_num = 0.d0
+real      :: Max_N = 0.d0
 
 Ntot = 0d0
 do k = 1, nlev
@@ -278,24 +279,19 @@ do k = 1, nlev
       stop 
    endif
 
-   !The code below computes the maximal number of cells per super-individual
-   geomean_num = 0.d0
-   DO i = 1, N_PAR
-      geomean_num = geomean_num + log(p_PHY(i)%num)
-   END DO
-   geomean_num = exp(geomean_num/dble(N_PAR))
-
    !The following code tries to find dead superindividuals and split
-   !If there is a dead superindividual, choose a random live superindividual 
-   !with a good number of cells (greater than 1/10 of maximal numbers of cells 
-   !per super-individual) and split it
+   !If there is a dead superindividual, find the superindividual with the maximal N content
+   !and split it
    DO i = 1, N_PAR
       IF (.not. p_PHY(i)%alive) THEN
-         m = i
-         do while ((.not. p_PHY(m)%alive) .or. (p_PHY(m)%num .le. geomean_num))
-            call random_number(rnd)
-            m = max(int(dble(N_PAR-1)*rnd + 1.d0), 1)
-         enddo
+         !The code below finds the particle with the maximal N
+         Max_N = 0.d0
+         DO j = 1, N_PAR
+            if (p_PHY(j)%num * p_PHY(j)%N .gt. Max_N) then
+               Max_N = p_PHY(j)%num * p_PHY(j)%N
+               m = j
+            endif
+         END DO
 
          !Split it in to two identical superindividuals
          !The first one is identical with the parent, except that the number of cells is halved
@@ -303,7 +299,7 @@ do k = 1, nlev
 
          !The second one is identical with its twin, but its ID needs to change to a new number (not overlapping with any ID of current superindividuals)
          p_PHY(i)        = p_PHY(m)
-         p_PHY(i)%ID     = IDmax+1
+         p_PHY(i)%ID = IDmax+1
          IDmax           = IDmax+1 !Update maximal ID
       ENDIF
    ENDDO
