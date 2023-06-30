@@ -39,17 +39,27 @@ real,    allocatable :: Pmatrix(:,:)     !Phytoplankton mortality rates by each 
 real,    parameter   :: eta     = -1.d0*6.6  !Prey refuge parameter for nitrogen
 real,    parameter   :: A_g    = 21.9   !Intercept of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
 real,    parameter   :: B_g    = -0.16  !Slope of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
-real,    parameter   :: Ct_min = 10 !Minimal amount carbon of each super-individual (number of cells * carbon content per cell)
+real   :: Nt_min = 0.0 !Minimal amount carbon of each super-individual (number of cells * N content per cell)
 
 ! cellular carbon content threshold for division (pmol)
 INTEGER, ALLOCATABLE :: index_(:)    !The indexes of particles in each grid
 INTEGER, ALLOCATABLE :: scratch(:)    !The scratch indexes of particles in each grid
 INTEGER              :: Allocatestatus = 0
+real :: PHY_t = 0d0  !Total phytoplankton N
 
 !End of declaration
 
-!Eulerian model for NO3, ZOO and DET and lagrangian model for PHY
+!Update Nt_min
+!Compute total phytoplankton nitrogen
+PHY_t = 0d0
+DO k = nlev, 1, -1
+   PHY_t = PHY_t + t(iPN, k) * Hz(k)
+ENDDO
 
+!Minimal N of each superindividual should be 0.1% of the average
+Nt_min = PHY_t*1d9/dble(N_PAR) * 0.001
+
+!Eulerian model for NO3, ZOO and DET and lagrangian model for PHY
 DO k = nlev, 1, -1
    NO3 = t(iNO3, k)
    DET = t(iDET, k)
@@ -135,7 +145,7 @@ DO k = nlev, 1, -1
    !1) being recycled to DIN; 2) being converted to detritus; and 3) supporting zooplankton growth. 
    !The natural mortality of zooplankton are converted to detritus which is recycled to DIN and also sinks.
 
-   tf_z = TEMPBOL(Ez,Temp(k))
+   tf_z = TEMPBOL(Ez,Temp(k))  !Temperature coefficient of zooplankton
 
    !Calculate the total amount of prey N biomass available to each size class of zooplankton
    DO kk = 1, NZOO
@@ -288,15 +298,15 @@ DO k = nlev, 1, -1
 
          ! If celular carbon is lower than the susbsistence threshold (Cmin), it dies:
          Cmin = 0.25d0 * p_PHY(i)%Cdiv
-      
-         if (p_PHY(i)%C < Cmin .or. p_PHY(i)%num * p_PHY(i)%C < Ct_min) then  ! The superindividual Dies
+
+         if (p_PHY(i)%C < Cmin .or. (p_PHY(i)%num*p_PHY(i)%N) < Nt_min) then  ! The superindividual Dies
             N_death(k) = N_death(k) + 1
             Pmort = Pmort + p_PHY(i)%N * p_PHY(i)%num !Natural mortality of phytoplankton ==> DET
             p_PHY(i)%C   = 0d0
             p_PHY(i)%N   = 0d0
             p_PHY(i)%Chl = 0d0
             p_PHY(i)%num = 0d0
-            p_PHY(i)%alive = .false.
+            p_PHY(i)%alive = .FALSE.
          endif
       enddo
   endif !End if of N_ > 0
@@ -305,7 +315,7 @@ DO k = nlev, 1, -1
   Pmort =  Pmort*1d-9/Hz(k) !Convert Pmort to mmol N m-3
 
   !Now calculate NO3 and DET
-  t(iNO3,k) = max(NO3 + dtdays*(pp_ND + RES - uptake), 0d0)  !Temporary solution to keep nitrate positive
+  t(iNO3,k) = NO3 + dtdays*(pp_ND + RES - uptake)
   Varout(iNO3, k) = t(iNO3, k)
 
   t(iDET,k) = DET + Pmort + dtdays*(pp_DZ - pp_ND)
@@ -708,9 +718,9 @@ real, intent(in)  :: Cdiv             !Cellular carbon content threshold for div
 
 real, intent(in)  :: Topt_            !Optimal temperature [degree C]
 real, intent(in)  :: alphaChl_        !Slope of the P-I curve [Unit the same as aI0]
-real, intent(out) :: dN               !Changes in the cellular nitrogen content [pmol N cell-1]
-real, intent(out) :: dC               !Changes in the cellular carbon content [pmol C cell-1]
-real, intent(out) :: dChl             !Changes in the cellular Chl content [pg Chl cell-1]
+real, intent(out) :: dN               !Changes in the cellular nitrogen content [pmol N cell-1 d-1]
+real, intent(out) :: dC               !Changes in the cellular carbon content [pmol C cell-1 d-1]
+real, intent(out) :: dChl             !Changes in the cellular Chl content [pg Chl cell-1 d-1]
 real              :: Vol    = 0d0     !Cell volume of phytoplankton [um3]
 real              :: QNmin  = 0.05    !Minimal N:C ratio [mmol N mmol C]
 real              :: QNmax  = 0.18    !Maximal N:C ratio [mmol N mmol C]
@@ -851,14 +861,13 @@ VCN = max(VCN, 0d0)
 !Changes of cellular carbon [d-1]:
 dC   = C * (PC - zeta * VCN - RcT)
 
-!Changes of cellular nitrogen [d-1]:
+!Changes of cellular nitrogen [pmol N cell-1 d-1]:
 dN   = N * (VCN / QN - RNT)
 
 !Changes of cellular Chl [d-1]:
 dChl = Chl * (rhochl * VCN / theta - RChlT)
 
 return
-
 END subroutine GMK98_Ind_TempSizeLight
 !------------------------------------------------------------------------------------------------
 

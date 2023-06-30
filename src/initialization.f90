@@ -103,18 +103,29 @@ IF (TASKID==0) THEN
   ! Initialize initial NO3:
   t(iNO3,:) = 0.5d0
   
-  do k = 1, NZOO
-     t(iZOO(k),:) = 0.1d0/dble(NZOO) !Assuming an initial condition of uniform biomass among different zoo. size classes
-  
-     !Initialize zooplankton size (logESD)
-     ESDZOO(k) = MinSzoo + dble(k-1)*dZOOESD
-  
-     !Make the model write out the zooplankton size
-     write(6,1001) "ZOO", k, "ESD = ", exp(ESDZOO(k)), "micron"
-  
-     !Compute volume of zooplankton
-     VolZOO(k) = pi/6d0*exp(ESDZOO(k))**3
-  enddo
+  If (Model_ID .eq. GMK98_Size .or. Model_ID .eq. GMK98_ToptSize .or.  &
+       Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
+
+    do k = 1, NZOO
+       t(iZOO(k),:) = 0.1d0/dble(NZOO) !Assuming an initial condition of uniform biomass among different zoo. size classes
+    
+       !Initialize zooplankton size (logESD)
+       ESDZOO(k) = MinSzoo + dble(k-1)*dZOOESD
+    
+       !Make the model write out the zooplankton size
+       write(6,1001) "ZOO", k, "ESD = ", exp(ESDZOO(k)), "micron"
+    
+       !Compute volume of zooplankton
+       VolZOO(k) = pi/6d0*exp(ESDZOO(k))**3
+    enddo
+   Else
+    !Check if NZOO is consistent with Model_ID (i.e., without size classes, NZOO should be one)
+    if(NZOO > 1) then
+      stop "Number of zooplankton size classes should be ONE if size is not modelled!"
+    endif
+    t(iZOO(1),:) = 0.1d0
+    VolZOO(1) = pi/6d0*20.0**3  !Assume zooplankton volume 20 micron
+   Endif
   
   !Following Verity et al. AME (1996)
   t(iDET,:) = .1d0
@@ -145,6 +156,7 @@ IF (TASKID==0) THEN
   !Print out the number of passive particles
   write(6, 1002)  N_Pass
   write(6, 1003)  Z_avg/dble(N_Pass)
+  !!End of initializing passive particles
   
   !Print out the number of phyto particles
   write(6, 1004)  N_Par
@@ -154,25 +166,38 @@ IF (TASKID==0) THEN
      p_PHY(k)%ID = k        
      p_PHY(k)%alive = .true.
   
-     !Initialize phytoplankton optimal temperature (Topt) from a uniform distribution between 2 and 30 degree celcius
-     call random_number(cff)
-     cff = 2. + cff * (30. - 2.)
-     p_PHY(k)%Topt = cff
-  
-     !Initialize phytoplankton size from a uniform distribution between 0.8 and 60 um
-     call random_number(cff)
-     cff = log(0.8d0) + cff * (log(60.d0) - log(0.8d0))
-     cff = exp(cff) !ESD
-  
-     p_PHY(k)%C    = PHY_ESD2C(cff)      !Unit: pmol C cell-1
+     if (Model_ID .eq. GMK98_Topt .or. Model_ID .eq. GMK98_ToptLight .or. &
+          Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_ToptSize) then
+        !Initialize phytoplankton optimal temperature (Topt) from a uniform distribution between 2 and 30 degree celcius
+        call random_number(cff)
+        cff = 2. + cff * (30. - 2.)
+        p_PHY(k)%Topt = cff
+     endif
+
+     If (Model_ID .eq. GMK98_Size .or. Model_ID .eq. GMK98_ToptSize .or.  &
+        Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
+
+         !Initialize phytoplankton size from a uniform distribution between 0.8 and 60 um
+         call random_number(cff)
+         cff = log(0.8d0) + cff * (log(60.d0) - log(0.8d0))
+         cff = exp(cff) !ESD
+         p_PHY(k)%C = PHY_ESD2C(cff)      !Unit: pmol C cell-1
+     else
+         p_PHY(k)%C = PHY_ESD2C(1.0)      !Unit: pmol C cell-1
+     endif
+
      p_PHY(k)%N    = p_PHY(k)%C/106.*16. !Unit: pmol N cell-1
      p_PHY(k)%Chl  = p_PHY(k)%C* 12./50. !Unit: pgChl cell-1
      p_PHY(k)%CDiv= p_PHY(k)%C* 2d0 !Unit: pmol C cell-1
-  
-     !Initialize log(alphaChl) from a uniform distribution from log(0.01) to log(0.5) (W m-2)-1 (gChl molC)-1 d-1
-     call random_number(cff)
-     cff = log(0.01d0) + cff * (log(0.5) - log(0.01d0))
-     p_PHY(k)%LnalphaChl = cff
+
+     if (Model_ID .eq. GMK98_Light .or. Model_ID .eq. GMK98_ToptLight .or. &
+         Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
+ 
+         !Initialize log(alphaChl) from a uniform distribution from log(0.01) to log(0.5) (W m-2)-1 (gChl molC)-1 d-1
+         call random_number(cff)
+         cff = log(0.01d0) + cff * (log(0.5) - log(0.01d0))
+         p_PHY(k)%LnalphaChl = cff
+      endif
   
      !Initialize the number of cells associated with each super-individual (assuming initial phytoplankton nitrogen is 0.1 mmol m-3)
      p_PHY(k)%num = 0.1 * hmax/dble(N_PAR)/p_PHY(k)%N * 1d9

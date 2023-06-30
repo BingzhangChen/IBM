@@ -74,7 +74,7 @@ DO it = 1, Nstep+1
     If (current_year < NDay_Run/365) then
       par_save_freq = d_per_s
     Else
-     par_save_freq = s_per_h
+      par_save_freq = s_per_h
     Endif
 
     If (mod(current_sec, par_save_freq) == 0) then  !Can be modified to save the particles at daily frequency
