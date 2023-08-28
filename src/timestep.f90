@@ -4,7 +4,7 @@ use forcing
 use Time_setting
 use state_variables
 use grid
-use IO
+use NETCDF_IO
 use Trait_functions,  only : PHY_C2Vol
 implicit none
 
@@ -17,7 +17,7 @@ real,       parameter  :: Vec0(nlev) = zero  !Vectors of zero
 real :: par_save_freq = 0d0           !scratch variable for saving frequency of particles
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
-integer :: i,j
+integer :: j
 
 !Benchmarking
 real(4) :: dt1, dt2, dt3, dt4, dt5, t1, t2, t3, t4, t5, t6
@@ -59,13 +59,15 @@ DO it = 1, Nstep+1
     !Save the Eulerian output every day
     IF (mod(it, nsave) == 1) THEN
 
-       ! Add calculations of total nitrogen and save to Eulerian output files
-       call Cal_total_N !Including randomly split cells
+      !Update record 
+      irec_Euler = irec_Euler + 1
 
-       write(6, 101) "Day", current_day, ": Total Nitrogen =", Ntot
+      ! Add calculations of total nitrogen and save to Eulerian output files
+      call Cal_total_N !Including randomly split cells
 
-       call save_Eulerian
-       call save_Kv
+      write(6, 101) "Day", current_day, ": Total Nitrogen =", Ntot
+
+      call write_Eulerfile(irec_Euler, current_day, current_hour)
 
     ENDIF
 
@@ -81,20 +83,25 @@ DO it = 1, Nstep+1
         if (current_hour == 0) then
 
            !Create the phyto. particle file
-           write(par_file, 100) 'ParY', current_year, '_D', current_DOY
-           call create_Particle_file(par_file, phyto)
+           write(par_file, 100) 'ParY', current_year, '_D', current_DOY, '.nc'
+           call Create_PHY_particlefile(par_file)
+
+           !reset record
+           irec_PHY = 0
 
            !Create the passive particle file
-           write(passive_file, 102) 'PassY', current_year, '_D', current_DOY
-           call create_Particle_file(passive_file, passive)
+           write(passive_file, 102) 'PassY', current_year, '_D', current_DOY, '.nc'
+           call Create_Pass_particlefile(passive_file)
 
+           !reset record
+           irec_Pass = 0
         endif
 
-        call save_particles(par_file, phyto)
-        call save_particles(passive_file, passive)
+        irec_Pass = irec_Pass + 1
+        call write_Pass_particlefile(passive_file, irec_Pass, current_DOY, current_hour)
 
-        !Save N_birth, N_death, and N_mutate into a single file every hour
-        call save_particles(Death_file, death)
+        irec_PHY = irec_PHY + 1
+        call write_PHY_particlefile(par_file, irec_PHY, current_DOY, current_hour)
     Endif
 
     call cpu_time(t4) 
@@ -146,9 +153,9 @@ if (taskid == 0) then
   print '("Diffusion and detritus sinking cost ",f8.3," hours.")', dt5/3600.0 
 endif
 
-100 format(A4,I0,A2,I0)
+100 format(A4,I0,A2,I0, A3)
 101 format(A3,1x, I0, 1x, A25, 1x, F10.4)
-102 format(A5,I0,A2,I0)
+102 format(A5,I0,A2,I0, A3)
 END SUBROUTINE TIMESTEP
 
 SUBROUTINE UPDATE_PARTICLE_FORCING
@@ -212,7 +219,6 @@ use grid, only : nlev, Hz, Z_r
 use state_variables, only : t, Ntot, iPC, iCHL,iPN, iZOO, iNO3, iDET,N_PAR, p_PHY, IDmax, NZOO
 implicit none
 integer :: k,i,j,m
-real      :: rnd
 real      :: Max_N = 0.d0
 
 Ntot = 0d0

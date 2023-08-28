@@ -183,7 +183,7 @@ DO k = nlev, 1, -1
 	  ENDIF
 
      !Save the total available prey for zooplankton
-     Varout(oFZ(kk),k) = FZOO(kk)
+     !Varout(oFZ(kk),k) = FZOO(kk)
 
      gbar = FZoo(kk)/(FZoo(kk) + Kp)*(1.d0 - exp(eta *FZoo(kk)))
 
@@ -596,7 +596,6 @@ real :: VCN = 0.
 ! Indices for nutrient, light and temperature limitation
 real :: Lno3 = 0.   ! Nutrient limitation [pmol N m-3]
 real :: SI   = 0.   ! Light limitation index [fpar]
- real :: tf_p = 0.  ! Temperature limitation for phytoplankton growth [nd]
 
 real :: PCmax  = 0. ! Maximal photosynthesis rate (regulated by QN) [d-1]
 real :: PC     = 0. ! Carbon specific rate of photosynthesis [d-1]

@@ -1,10 +1,10 @@
 SUBROUTINE INITIALIZE
 USE params
 USE state_variables
-USE Time_setting, only: d_per_s, dtsec, dtdays, Nstep, nsave,NDay_Run,Nrand
+USE Time_setting
 USE grid,                   only: Z_w, hmax
 USE Trait_functions,  only: PHY_ESD2C
-USE IO
+USE NETCDF_IO
 USE forcing
 USE MPI_Setting
 IMPLICIT NONE
@@ -15,14 +15,13 @@ integer    :: j_     = 0
 real          :: cff      = 0.d0
 real          :: Z_avg = 0.d0
 integer, parameter :: namlst   = 20   !Unit time for namelist files
-character(len=10)  :: par_file = 'Filename'
-character(len=12)  :: passive_file = 'Passive'
-character(len=10), parameter :: format_string = "(A3,I0)"
+character(len=20)  :: par_file = 'Filename.nc'
+character(len=20)  :: passive_file = 'Passive.nc'
 integer           :: AllocateStatus = 0
 !==========================================================
 
 !Namelist definition of time settings
-namelist /timelist/  NDay_Run, dtsec, nsave, Nrand
+namelist /timelist/  NDay_Run, dtsec, nsave, Nrand, read_previous_output, NR_Euler
 
 !Namelist definition of model choice and parameters
 namelist /paramlist/ Model_ID, N_pass, N_Par, mu0, aI0, KN, gmax, Kp, mz,GGE, unass, RDN, &
@@ -63,6 +62,23 @@ open(namlst,file='param.nml',status='old',action='read')
 read(namlst,nml=paramlist)
 close(namlst)
 
+! Check if need to read previous model output
+if (read_previous_output .eq. 1) then
+  inquire (file=restart_fname, iostat=rc)
+  
+  if (rc /= 0) then
+     write (6, '(a)') 'Error: restart.nc does not exist.'
+     stop
+  else
+     !Read Euler.out
+
+     !Find last timestep
+
+     !Find last Day and hour
+     
+  end if
+endif
+
 !Allocate vectors for MPI data transfer
 if (mod(N_Par + N_Pass, numtasks) .ne. 0) stop "Number of CPUs incorrect!"
 N_chunk = (N_Par + N_Pass)/numtasks
@@ -91,6 +107,14 @@ do k = 1, numtasks-1
 enddo
 
 IF (TASKID==0) THEN
+
+  ! Prepare forcing
+  ! Prepare temperature for temporal interpolation
+  call extract_WOAtemp
+  
+  ! Prepare Kv
+  call extract_Kv
+
   write(6,'(A15,1x,I1)') 'Select Model ID', Model_ID
   
   !Initialize state variables
@@ -232,72 +256,35 @@ IF (TASKID==0) THEN
   
   call UPDATE_PHYTO  !Initialize Eulerian concentrations of phytoplankton carbon, nitrogen and Chl
   
-  !Initialiaze labels for model output
-  Labelout(iNO3) = 'NO3'
-  Labelout(iDET) = 'DET'
-  Labelout(iPC)  = 'PC '
-  Labelout(iPN)  = 'PN '
-  Labelout(iCHL) = 'CHL'
-  Labelout(oNPP) = 'NPP'
-  Labelout(oTEMP)= 'TEMP'
-  Labelout(oPAR) = 'PAR'
-  Labelout(oN_ind) = 'N_ind'   !Number of super-individuals
-  Labelout(oN_cell) = 'Abun'   !Number of cells
-  Labelout(oCDiv_avg) = 'MCDiv'
-  Labelout(oCDiv_var) = 'VCDiv'
-  Labelout(oTopt_avg) = 'MTopt'
-  Labelout(oTopt_var) = 'VTopt'
-  Labelout(oLnalpha_avg) = 'MLnap'
-  Labelout(oLnalpha_var) = 'VLnap'
-  Labelout(oTalp_cov) = 'COVTA'
-  Labelout(oTLnV_cov) = 'COVTL'
-  Labelout(oALnV_cov) = 'COVAL'
-   
-  do k = 1, NZOO
-     write(Labelout(iZOO(k)),  format_string) 'ZOO', k
-     write(Labelout( oFZ(k)),  format_string) 'FZO',k
-  enddo
-  
-  write(6, '(a)') 'Write out the labels for output for validation:'
-  do k = 1, Nout
-     write(6, 1000) 'Labelout(',k,') = ',trim(Labelout(k))
-  enddo
-
   !Initialize Varout
   do k = 1, NVAR
      Varout(k,:) = t(k,:)
   enddo
   
+  !Initialize time
+  it = 1
+  call update_time
+
   !Save initial state to external file
   call create_Eulerian_file
-  call save_Eulerian
-  
-  !Save Kv
-  call create_Kv_file
-  call save_Kv
-  
-  !Save N_birth, N_death, and N_mutate
-  call create_Particle_file(Death_file, Death)
-  call       save_particles(Death_file, death)
+
+  irec_Euler = 1
+  call write_Eulerfile(irec_Euler, current_day, current_hour) !Assuming initial state is day 1 and hour 0
   
   !Name the initial phyto. particle file
-  par_file = 'ParY1_D0'
+  par_file = 'ParY1_D1.nc'
+  irec_PHY = 1
   
-  call create_Particle_file(par_file, phyto)
-  call         save_particles(par_file, phyto)
+  call Create_PHY_particlefile(par_file)
+  call write_PHY_particlefile(par_file, irec_PHY, current_day, current_hour)
   
   !Name the initial passive particle file
-  passive_file = 'PassY1_D0'
+  passive_file = 'PassY1_D1.nc'
+  irec_Pass = 1
   
-  call create_Particle_file(passive_file, passive)
-  call         save_particles(passive_file, passive)
+  call Create_Pass_particlefile(passive_file)
+  call write_Pass_particlefile(passive_file, irec_Pass, current_day, current_hour)
   
-  ! Prepare forcing
-  ! Prepare temperature for temporal interpolation
-  call extract_WOAtemp
-  
-  ! Prepare Kv
-  call extract_Kv
 ENDIF   !End of parent process (taskid == 0)
 
 !Sinking rate
@@ -310,7 +297,6 @@ do k = 0,nlev-1
 enddo
 return
 
-1000 format(A9, I0, A4, A5)
 1001 format(A3, 1x, I0, 1x, A6, F8.2, 1x, A6 )
 1002 format('Number of passive particles is:', 1x, I0)
 1003 format('Their average position is:', 1x, F12.2, 1x, 'm')

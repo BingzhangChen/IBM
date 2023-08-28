@@ -1,6 +1,8 @@
 &timelist
-   NDay_Run = 1095, 
-   dtsec    = 6, 
-   nsave    = 14400, ! if save Eulerian model outputs at daily frequencies, nsave = 86400/dtsec; if save output at hourly frequences, nsave = 3600/dtsec
-   Nrand    = 2, !Number of time steps of random walk per biological timestep
+   NDay_Run = 5, 
+   dtsec    = 60, 
+   nsave    = 1440, ! if save Eulerian model outputs at daily frequencies, nsave = 86400/dtsec; if save output at hourly frequences, nsave = 3600/dtsec
+   Nrand    = 20, !Number of time steps of random walk per biological timestep
+   read_previous_output = 0, !Whether to read previous model output and start from there
+   NR_Euler =  41418 !Number of rows of previous Euler.out
 /

@@ -17,6 +17,8 @@ elif [[ $OS == 'Linux' ]]; then
       export MPIINC="-I$MPIDIR"
       export LFLAGS="-L/usr/lib64/openmpi/lib -lmpi"
       export MPILIB="-lmpi"
+      export NETCDFLIB="-L/usr/lib64 -lnetcdff"
+      export NETCDFINC="-I/usr/lib64/gfortran/modules"
   else
       export MPIDIR=/opt/intel/oneapi/mpi/2021.1.1
   fi
@@ -29,7 +31,7 @@ export SCRATCHDIR=Compile
 export SRCDIR=../src
 
 MPI=1
-Test=0
+Test=1
 
 if [[ $MPI == 1 ]]; then
   CFT=mpifort
@@ -99,7 +101,7 @@ fi
 
 export LD_LIBRARY_PATH=/local/tmp/oneapi/compiler/2021.1.1/linux/compiler/lib/intel64_lin/
 
-FFLAGS="$FFLAGS $MPIINC"
+FFLAGS="$FFLAGS $MPIINC $NETCDFINC $NETCDFLIB"
 cd ${SCRATCHDIR}
 echo 's?$(FFLAGS)?'$FFLAGS'?g' >> flags.tmp
 export MAKEFILE=Makefile

@@ -33,6 +33,13 @@ real     :: dtsec        = 0.d0
 !Number of iterations to save. Save everyday (86400/dtsec); save every hour (3600/dtsec)
 integer  :: nsave        = 0 ! 
 
+!Settings of reading previous outputs
+integer :: read_previous_output = 0
+integer :: NR_Euler = 0
+integer :: Last_timestep = 0
+integer :: Last_Day = 0
+integer :: Last_hr = 0
+
 CONTAINS
 
 subroutine update_time

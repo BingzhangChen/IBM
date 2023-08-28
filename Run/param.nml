@@ -22,8 +22,8 @@
    wDET  = 1.00, !Detritus sinking rate [m d-1]
 
 !Mutation parameters:
-   nu(1)    = 1d-12, 1d-12, 1d-12,  !Mutation rate (Topt, size, alphaChl)
-   sigma(1) =  0.10,  0.10,  0.10,  !Standard deviation of mutation rates
+   !nu(1)    = 0.0001, 0.0001, 0.0001,  !Mutation rate (Topt, size, alphaChl)
+   !sigma(1) =  0.10,  0.10,  0.10,  !Standard deviation of mutation rates
 
 !Model selection:
    Model_ID = 8,

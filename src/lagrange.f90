@@ -14,7 +14,7 @@ REAL     :: bio_w(0:nlev) = 0d0  !Scratch sinking rate in 1D
 INTEGER         :: i,j, zi, iit
 integer           :: m = 0
 REAL               :: rnd, rnd_var_inv, dt, step1, step2, zloc, zp
-REAL               :: dzn(nlev),step
+REAL               :: step
 REAL               :: visc,rat,dt_inv, vs
 REAL               :: wint  !interpolated w
 REAL               :: dKvdz(nlev) = 0.d0  !Gradient of Kv

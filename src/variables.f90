@@ -39,12 +39,11 @@ real               :: ww(0:nlev, NVsinkterms) = 0.d0
 integer, parameter   :: oNPP = nvar + 1   !Daily net primary production integrated over a whole day
 
 ! Total available prey biomass for each zoo. size class
-integer, parameter :: oFZ(NZOO) = (/ (oNPP + i , i = 1, NZOO) /)
-integer, parameter :: oTEMP     = oFZ(NZOO) + 1
-integer, parameter :: oPAR      = oTEMP     + 1
+integer, parameter :: oTEMP     = oNPP + 1
+integer, parameter :: oPAR      = oTEMP + 1
 
 !Mean log maximal Size (pmol C per cell)
-integer, parameter :: oCDiv_avg    = oPAR     + 1
+integer, parameter :: oCDiv_avg    = oPAR + 1
 
 !Variance of maximal Size (pmol C per cell^2)
 integer, parameter :: oCDiv_var    = oCDiv_avg  + 1
@@ -79,7 +78,6 @@ integer, parameter :: oN_cell = oN_ind + 1
 !Total number of output variables
 integer, parameter :: Nout   = oN_cell
 real                              :: Varout(Nout, nlev) = 0.d0
-character(LEN=7)   :: Labelout(Nout)     = 'Unknown'
 
 !Particles
 !Declaration for phyto particles
