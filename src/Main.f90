@@ -30,8 +30,6 @@ if (taskid .eq. 0) then
   print '("Initialization costs ",f8.3," hours.")', (t1-start)/3600.0 
 endif
 
-stop
-
 !Timestep
 call Timestep
 
