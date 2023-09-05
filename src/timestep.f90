@@ -8,16 +8,16 @@ use NETCDF_IO
 use Trait_functions,  only : PHY_C2Vol
 implicit none
 
-character(LEN=20)  :: par_file   = 'Phyto'
-character(LEN=20)  :: passive_file = 'Passive'
+character(LEN=20)  :: par_file   = 'Phyto.nc'
+character(LEN=20)  :: passive_file = 'Passive.nc'
 real,       parameter  :: cnpar      = 0.6d0
 real,       parameter  :: Taur(nlev) = 1D12  !Relaxation time
 real,       parameter  :: zero       = 0.d0  !Vectors of zero
 real,       parameter  :: Vec0(nlev) = zero  !Vectors of zero
-real :: par_save_freq = 0d0           !scratch variable for saving frequency of particles
 integer,parameter  :: mode0      = 0
 integer,parameter  :: mode1      = 1
-integer :: j
+integer :: j = 0
+real    :: par_save_freq = 0d0           !scratch variable for saving frequency of particles
 
 !Benchmarking
 real(4) :: dt1, dt2, dt3, dt4, dt5, t1, t2, t3, t4, t5, t6
@@ -29,7 +29,7 @@ dt3 = 0.d0
 dt4 = 0.d0
 dt5 = 0.d0
 
-DO it = 1, Nstep+1
+DO it = restart_step, Nstep+1
 
   IF (TASKID .EQ. 0) THEN
     call cpu_time(t1) 
@@ -67,9 +67,15 @@ DO it = 1, Nstep+1
 
       write(6, 101) "Day", current_day, ": Total Nitrogen =", Ntot
 
+      !Save data of Eulerian fields to the Euler.nc
       call write_Eulerfile(irec_Euler, current_day, current_hour)
 
+      !Generate restart.nc
+      call create_restart
+      call write_restart(it)
+
     ENDIF
+
 
     !Save the model output of particles to a separate file every day
     !And save the particles every hour
@@ -80,17 +86,17 @@ DO it = 1, Nstep+1
     Endif
 
     If (mod(current_sec, par_save_freq) == 0) then  !Can be modified to save the particles at daily frequency
-        if (current_hour == 0) then
+        if (current_DOY .eq. 1) then !Create the particle files once a year
 
            !Create the phyto. particle file
-           write(par_file, 100) 'ParY', current_year, '_D', current_DOY, '.nc'
+           write(par_file, 100) 'ParY', current_year, '.nc'
            call Create_PHY_particlefile(par_file)
 
            !reset record
            irec_PHY = 0
 
            !Create the passive particle file
-           write(passive_file, 102) 'PassY', current_year, '_D', current_DOY, '.nc'
+           write(passive_file, 102) 'PassY', current_year, '.nc'
            call Create_Pass_particlefile(passive_file)
 
            !reset record
@@ -110,6 +116,8 @@ DO it = 1, Nstep+1
 
   ! Vertical random walk for both phyto. particles (that are not dead) and passive particles
   !Use openmpi to allocate particles to ntasks threads
+  !Synchronize all processes
+  call MPI_barrier(MPI_COMM_WORLD, ierr)
   call LAGRANGE
 
   IF (TASKID .EQ. 0) THEN
@@ -153,9 +161,9 @@ if (taskid == 0) then
   print '("Diffusion and detritus sinking cost ",f8.3," hours.")', dt5/3600.0 
 endif
 
-100 format(A4,I0,A2,I0, A3)
+100 format(A4,I0,A3)
 101 format(A3,1x, I0, 1x, A25, 1x, F10.4)
-102 format(A5,I0,A2,I0, A3)
+102 format(A5,I0,A3)
 END SUBROUTINE TIMESTEP
 
 SUBROUTINE UPDATE_PARTICLE_FORCING

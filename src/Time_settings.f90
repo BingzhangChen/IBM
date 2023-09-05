@@ -13,10 +13,13 @@ integer  :: current_day  = 0
 integer  :: current_DOY  = 0
 integer  :: current_hour = 0
 integer  :: current_year = 0
-real       :: current_sec  = 0.d0
+real     :: current_sec  = 0.d0
 
 !The current step
 integer  :: it           = 0
+
+!Timestep read from restart.nc
+integer  :: restart_step = 0
 
 !Total number of biological time steps
 integer  :: Nstep        = 0
@@ -35,10 +38,6 @@ integer  :: nsave        = 0 !
 
 !Settings of reading previous outputs
 integer :: read_previous_output = 0
-integer :: NR_Euler = 0
-integer :: Last_timestep = 0
-integer :: Last_Day = 0
-integer :: Last_hr = 0
 
 CONTAINS
 

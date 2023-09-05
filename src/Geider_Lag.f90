@@ -471,7 +471,7 @@ real :: Vcref    = 0.
 real :: VCN = 0.
 
 ! Indices for nutrient, light and temperature limitation
-real :: Lno3, SI, tf_p
+real :: Lno3, SI
 
 real :: PCmax, PC, rhochl, Ik
 

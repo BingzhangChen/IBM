@@ -16,15 +16,15 @@ integer, parameter :: iDET = iZOO(NZOO) + 1
 integer, parameter :: nvar = iDET !Total number of state variables
 real               :: t(nvar, nlev) = 0.d0
 real               :: Ntot = 0d0  !Total nitrogen in the domain
-real, parameter :: MinSzoo = log(0.8d0)!Minimal zooplankton log ESD (micron)
-real, parameter :: MaxSzoo = log(25d2) !Maximal zooplankton log ESD (micron)
-real, parameter :: dZOOESD =  (MaxSzoo - MinSzoo)/dble(NZOO-1)! ESD difference between adjacent zooplankton size class (log)
+real, parameter    :: MinSzoo = log(0.8d0)!Minimal zooplankton log ESD (micron)
+real, parameter    :: MaxSzoo = log(25d2) !Maximal zooplankton log ESD (micron)
+real, parameter    :: dZOOESD = (MaxSzoo-MinSzoo)/dble(NZOO-1)! ESD difference between adjacent zooplankton size class (log)
 
 !Log ESD of each zoo. size class
-real                    :: ESDZOO(NZOO) = 0d0
+real               :: ESDZOO(NZOO) = 0d0
 
 !Volume of each zooplankton size class
-real                    :: VolZOO(NZOO) = 0d0
+real               :: VolZOO(NZOO) = 0d0
 
 ! Define the number of sinking tracers:
 integer, parameter :: NVsinkterms =  1  ! DET
@@ -36,7 +36,7 @@ integer, parameter :: Windex(NVsinkterms) = [iDET]
 real               :: ww(0:nlev, NVsinkterms) = 0.d0
 
 !Labels for each state variable (for saving model output)
-integer, parameter   :: oNPP = nvar + 1   !Daily net primary production integrated over a whole day
+integer, parameter :: oNPP = nvar + 1   !Daily net primary production integrated over a whole day
 
 ! Total available prey biomass for each zoo. size class
 integer, parameter :: oTEMP     = oNPP + 1
