@@ -14,10 +14,9 @@ integer    :: k     = 0
 integer    :: j_    = 0
 real       :: cff   = 0.d0
 real       :: Z_avg = 0.d0
-integer, parameter :: namlst       = 20   !Unit time for namelist files
-character(len=20)  :: par_file     = 'Filename.nc'
-character(len=20)  :: passive_file = 'Passive.nc'
+integer, parameter :: namlst         = 20   !Unit time for namelist files
 integer            :: AllocateStatus = 0
+logical            :: exists         = .true.
 !==========================================================
 
 !Namelist definition of time settings
@@ -41,7 +40,7 @@ read(namlst,nml=timelist)
 close(namlst)
 
 !Total Number of time steps
-Nstep  = NDay_Run*INT(d_per_s)/INT(dtsec) 
+Nstep = NDay_Run * INT(d_per_s)/INT(dtsec) 
 
 !Calculate dtdays
 dtdays = dtsec/d_per_s
@@ -52,9 +51,9 @@ endif
 !==========================================================
 !Read parameter namelist
 !Check whether the namelist file exists.
-inquire (file='param.nml', iostat=rc)
+inquire (file='param.nml', exist = exists)
 
-if (rc /= 0) then
+if (.not. exists) then
     write (6, '(a)') 'Error: namelist file Model.nml does not exist.'
     stop
 end if
@@ -68,14 +67,15 @@ IF (taskid .EQ. 0) WRITE(6,'(A15,1x,I1)') 'Select Model ID', Model_ID
 
 ! Check if need to read previous model output
 IF (read_previous_output .EQ. 1) THEN
-  inquire (file=restart_fname, iostat=rc)
+  inquire (file=restart_fname, exist = exists)
   
-  if (rc .ne. 0) then
+  if (.not. exists) then
     write (6, '(a)') 'Error: restart.nc does not exist.'
     stop
   else
     !Read restart.nc
     call read_restart
+    write(6, '(a)') 'Restart file read successfully!'
 
     !Update time
     call update_time
@@ -120,12 +120,37 @@ IF (TASKID==0) THEN
   ! Prepare Kv
   call extract_Kv
 
+  !Initialize ZOOplankton size
+  If (Model_ID .eq. GMK98_Size          .or. Model_ID .eq. GMK98_ToptSize .or.  &
+      Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
+
+    do k = 1, NZOO
+    
+       !Initialize zooplankton size (logESD)
+       ESDZOO(k) = MinSzoo + dble(k-1)*dZOOESD
+    
+       !Make the model write out the zooplankton size
+       write(6,1001) "ZOO", k, "ESD = ", exp(ESDZOO(k)), "micron"
+    
+       !Compute volume of zooplankton
+       VolZOO(k) = pi/6d0*exp(ESDZOO(k))**3
+    enddo
+  Else
+
+    !Check if NZOO is consistent with Model_ID (i.e., without size classes, NZOO should be one)
+    if(NZOO > 1) then
+      stop "Number of zooplankton size classes should be ONE if size is not modelled!"
+    endif
+
+    VolZOO(1) = pi/6d0*20.0**3  !Assume zooplankton volume 20 micron
+  Endif
+ 
   IF (read_previous_output .EQ. 1) THEN
 
     !Check whether Euler.nc exists
-    inquire (file=Euler_FNAME, iostat=rc)
+    inquire (file=Euler_FNAME, exist = exists)
     
-    if (rc .eq. 0) then
+    if (exists) then
         write (6, '(a)') 'Warning: Euler.nc already exists and will be overwritten!'
         stop
     end if
@@ -140,15 +165,6 @@ IF (TASKID==0) THEN
 
       do k = 1, NZOO
          t(iZOO(k),:) = 0.1d0/dble(NZOO) !Assuming an initial condition of uniform biomass among different zoo. size classes
-      
-         !Initialize zooplankton size (logESD)
-         ESDZOO(k) = MinSzoo + dble(k-1)*dZOOESD
-      
-         !Make the model write out the zooplankton size
-         write(6,1001) "ZOO", k, "ESD = ", exp(ESDZOO(k)), "micron"
-      
-         !Compute volume of zooplankton
-         VolZOO(k) = pi/6d0*exp(ESDZOO(k))**3
       enddo
     Else
 
@@ -158,7 +174,6 @@ IF (TASKID==0) THEN
       endif
 
       t(iZOO(1),:) = 0.1d0
-      VolZOO(1) = pi/6d0*20.0**3  !Assume zooplankton volume 20 micron
     Endif
   
     !Following Verity et al. AME (1996)
@@ -286,13 +301,13 @@ IF (TASKID==0) THEN
   enddo
   
   !Initialize time
+  it = restart_step
   call update_time
 
   !Save initial state to external file
   call create_Eulerian_file
 
   irec_Euler = 1
-  call write_Eulerfile(irec_Euler, current_day, current_hour) !Assuming initial state is day 1 and hour 0
   
   !Name the initial phyto. particle file
   write(par_file, 1005) 'ParY', current_year, '.nc'
@@ -307,7 +322,7 @@ IF (TASKID==0) THEN
   
   call Create_Pass_particlefile(passive_file)
   call write_Pass_particlefile(passive_file, irec_Pass, current_day, current_hour)
-  
+ 
 ENDIF   !End of parent process (taskid == 0)
 
 !Sinking rate

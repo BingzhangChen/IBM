@@ -187,6 +187,7 @@ DO k = nlev, 1, -1
 
      gbar = FZoo(kk)/(FZoo(kk) + Kp)*(1.d0 - exp(eta *FZoo(kk)))
 
+
      !Total ingestion of zooplankton kk (mmol N m-3 d-1)
      INGES(kk) = ZOO(kk)*gmax*tf_z*gbar
 
@@ -235,7 +236,7 @@ DO k = nlev, 1, -1
    ! For production/destruction matrix:
    pp_ND = RDN*DET*tf_z                   !Flux from DET to DIN
    pp_DZ = EGES + mz*tf_z*sum(ZOO(:))     !Flux from ZOO to DET 
-  
+
    !Now calculate new cell numbers associated with each particle
    ! Impose the zooplankton grazing (the number of cells associated with each superindividual changes)
    IF (N_ > 0) THEN
@@ -319,6 +320,7 @@ DO k = nlev, 1, -1
   Varout(iNO3, k) = t(iNO3, k)
 
   t(iDET,k) = DET + Pmort + dtdays*(pp_DZ - pp_ND)
+
   Varout(iDET,k) = t(iDET,k)
 
   if (allocated(index_))  deallocate(index_)

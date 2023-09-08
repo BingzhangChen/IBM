@@ -8,8 +8,6 @@ use NETCDF_IO
 use Trait_functions,  only : PHY_C2Vol
 implicit none
 
-character(LEN=20)  :: par_file   = 'Phyto.nc'
-character(LEN=20)  :: passive_file = 'Passive.nc'
 real,       parameter  :: cnpar      = 0.6d0
 real,       parameter  :: Taur(nlev) = 1D12  !Relaxation time
 real,       parameter  :: zero       = 0.d0  !Vectors of zero
@@ -76,7 +74,6 @@ DO it = restart_step, Nstep+1
 
     ENDIF
 
-
     !Save the model output of particles to a separate file every day
     !And save the particles every hour
     If (current_year < NDay_Run/365) then
@@ -86,6 +83,7 @@ DO it = restart_step, Nstep+1
     Endif
 
     If (mod(current_sec, par_save_freq) == 0) then  !Can be modified to save the particles at daily frequency
+ 
         if (current_DOY .eq. 1) then !Create the particle files once a year
 
            !Create the phyto. particle file

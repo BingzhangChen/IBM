@@ -18,9 +18,9 @@ public :: Create_PHY_particlefile, write_PHY_particlefile
 public :: Create_Pass_particlefile, write_Pass_particlefile
 public :: read_restart, create_restart, write_restart
 
-character (len=20), public :: Particle_FNAME = 'Par.nc'
-character (len=20), public :: Passive_FNAME = 'Passive.nc'
-character (len=20), public ::    Euler_FNAME = 'Euler.nc'
+character (len=20), public :: par_file      = 'Par.nc'
+character (len=20), public :: Passive_file  = 'Passive.nc'
+character (len=8),  public ::   Euler_FNAME = 'Euler.nc'
 character (len=20), public :: restart_FNAME = 'restart.nc'
 
 character (len=2),  parameter  ::   ID_NAME = 'ID'
@@ -810,14 +810,13 @@ if (new_N_PAR .ne. N_PAR) stop "N_PAR read from restart.nc is unequal to that fr
 ! Read the Eulerian data
 call check(NF90_GET_VAR(ncid, NO3_varid, t(iNO3,:), start=[1], count=[nlev]) )
 call check(NF90_GET_VAR(ncid, DET_varid, t(iDET,:), start=[1], count=[nlev]) )
-call check(NF90_GET_VAR(ncid, DET_varid, cff, start=[1,1], count=[NZOO, nlev]))
+call check(NF90_GET_VAR(ncid, ZOO_varid, cff, start=[1,1], count=[NZOO, nlev]))
 
 do i = 1, NZOO
    t(iZOO(i), :) = cff(i, :)
 enddo
 
 !Initialize particles
-
 IF (.not. allocated(p_pass)) ALLOCATE(p_pass(N_Pass), stat=AllocateStatus)
 IF (AllocateStatus /= 0) STOP "*** Problem in allocating p_pass ***"
 
