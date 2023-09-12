@@ -36,6 +36,7 @@ character (len=3),  parameter  ::   Zr_NAME = 'Z_r'
 character (len=3),  parameter  ::   Zw_NAME = 'Z_w'
 character (len=4),  parameter  :: hr_NAME = 'Hour'
 character (len=3),  parameter  ::  DAY_NAME = 'Day'
+character (len=3),  parameter  ::  DOY_NAME = 'DOY'
 character (len=4),  parameter  ::  timestep_NAME = 'Step'   !For restart file
 character (len=6),  parameter  ::  N_Pass_NAME   = 'N_Pass' !For restart file
 character (len=5),  parameter  ::   N_PHY_NAME   = 'N_PHY'  !For restart file
@@ -79,7 +80,7 @@ INTEGER :: N_death_varid, N_birth_varid, N_mutate_varid
 INTEGER :: CDiv_avg_varid, CDiv_var_varid, Topt_avg_varid, Topt_var_varid
 INTEGER :: Lnalpha_avg_varid, Lnalpha_var_varid
 INTEGER :: TLnV_cov_varid, Talp_cov_varid, ALnV_cov_varid
-INTEGER :: Zr_varid, Zw_varid, step_varid, DAY_varid, hr_varid
+INTEGER :: Zr_varid, Zw_varid, step_varid, DAY_varid, DOY_varid, hr_varid
 INTEGER :: Z_varid, IZ_varid, ID_varid, P_PAR_varid, P_temp_varid, P_NO3_varid
 INTEGER :: C_varid, N_varid, P_CHL_varid, P_num_varid, CDiv_varid, Topt_varid
 INTEGER :: alpha_varid, CHL_varid, DET_varid, NO3_varid, PC_varid
@@ -547,7 +548,7 @@ CALL check(nf90_create(FNAME, nf90_clobber, ncid) )
 CALL check(nf90_def_dim(ncid, PAT_NAME, N_Pass, PAT_dimid) )
 CALL check(nf90_def_dim(ncid, REC_NAME, NF90_UNLIMITED, rec_dimid) )
 
-CALL check(nf90_def_var(ncid, DAY_NAME, NF90_INT, rec_dimid, DAY_varid) )
+CALL check(nf90_def_var(ncid, DOY_NAME, NF90_INT, rec_dimid, DOY_varid) )
 CALL check(nf90_def_var(ncid,   Hr_NAME, NF90_INT, rec_dimid, Hr_varid) )
 
 ! The dimids array is used to pass the dimids of the dimensions of the netCDF variables. 
@@ -567,7 +568,7 @@ CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Date', date))
 CALL check( nf90_put_att(ncid, Z_varid,   UNITS, UNIT_dist))
 CALL check( nf90_put_att(ncid, IZ_varid,  UNITS, 'no. of grid'))
 CALL check( nf90_put_att(ncid, ID_varid,  UNITS, 'No'))
-CALL check( nf90_put_att(ncid, DAY_varid, UNITS, 'days'))
+CALL check( nf90_put_att(ncid, DOY_varid, UNITS, 'Date of the Year'))
 CALL check( nf90_put_att(ncid, hr_varid, UNITS, 'hour'))
 
 ! End define mode.
@@ -577,11 +578,11 @@ RETURN
 END SUBROUTINE Create_Pass_particlefile
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_Pass_particlefile(fname, rec, day, hour)
+SUBROUTINE write_Pass_particlefile(fname, rec, DOY, hour)
 IMPLICIT NONE
 character (len=*), intent(in) :: fname
 INTEGER, INTENT(IN)  :: rec  !The time index to be written
-INTEGER, INTENT(IN)  :: day 
+INTEGER, INTENT(IN)  :: DOY 
 INTEGER, INTENT(IN)  :: hour
 INTEGER :: start(NDIM_PARTICLE)
 INTEGER :: ncid = 0
@@ -596,16 +597,16 @@ CALL check(NF90_OPEN(FNAME, NF90_WRITE, ncid))
 CALL check(NF90_INQ_VARID(ncid, ID_NAME, ID_varid))    
 CALL check(NF90_INQ_VARID(ncid, IZ_NAME, IZ_varid))    
 CALL check(NF90_INQ_VARID(ncid, Z_NAME,     Z_varid))     
-CALL check(NF90_INQ_VARID(ncid, DAY_NAME, DAY_varid))
+CALL check(NF90_INQ_VARID(ncid, DOY_NAME, DOY_varid))
 CALL check(NF90_INQ_VARID(ncid, hr_NAME, hr_varid))
 
-CALL check(NF90_PUT_VAR(ncid, DAY_varid, day, start=(/rec/))) !Add data into the nc file
+CALL check(NF90_PUT_VAR(ncid, DOY_varid, DOY, start=(/rec/))) !Add data into the nc file
 
 DO j = 1, N_Pass
    start = (/j, rec/)
    CALL check(NF90_PUT_VAR(ncid, ID_varid, p_Pass(j)%ID, start=start))
    CALL check(NF90_PUT_VAR(ncid, IZ_varid, p_Pass(j)%iz, start=start))
-   CALL check(NF90_PUT_VAR(ncid, Z_varid, p_Pass(j)%rz, start=start))
+   CALL check(NF90_PUT_VAR(ncid, Z_varid,  p_Pass(j)%rz, start=start))
 ENDDO
 
 ! Close the file. This causes netCDF to flush all buffers and make
@@ -639,8 +640,8 @@ CALL check(nf90_def_dim(ncid, REC_NAME, NF90_UNLIMITED, rec_dimid) )
 ! Ordinarily we would need to provide an array of dimension IDs for each variable's dimensions, but
 ! since group and particle variables only have one dimension, we can
 ! simply provide the address of that dimension ID
-CALL check(nf90_def_var(ncid, DAY_NAME, NF90_INT, rec_dimid, DAY_varid) )
-CALL check(nf90_def_var(ncid,   Hr_NAME, NF90_INT, rec_dimid, Hr_varid) )
+CALL check(nf90_def_var(ncid, DOY_NAME, NF90_INT, rec_dimid, DOY_varid) )
+CALL check(nf90_def_var(ncid,  Hr_NAME, NF90_INT, rec_dimid, Hr_varid) )
 
 ! The dimids array is used to pass the dimids of the dimensions of the netCDF variables. 
 ! In Fortran, the unlimited dimension must come last on the list of dimids.
@@ -669,7 +670,7 @@ CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Date', date))
 CALL check( nf90_put_att(ncid, Z_varid,   UNITS, UNIT_dist))
 CALL check( nf90_put_att(ncid, IZ_varid,  UNITS, 'no. of grid'))
 CALL check( nf90_put_att(ncid, ID_varid,  UNITS, 'No'))
-CALL check( nf90_put_att(ncid, DAY_varid, UNITS, 'days'))
+CALL check( nf90_put_att(ncid, DOY_varid, UNITS, 'Date of the Year'))
 CALL check( nf90_put_att(ncid, hr_varid, UNITS, 'hour'))
 CALL check( nf90_put_att(ncid, C_varid, UNITS, 'pmol C cell-1'))
 CALL check( nf90_put_att(ncid, N_varid, UNITS, 'pmol N cell-1'))
@@ -688,11 +689,11 @@ CALL check( nf90_close(ncid) )
 RETURN
 END SUBROUTINE Create_PHY_particlefile
   
-SUBROUTINE write_PHY_particlefile(fname, rec, day, hour)
+SUBROUTINE write_PHY_particlefile(fname, rec, DOY, hour)
 IMPLICIT NONE
 character (len=*), intent(in) :: fname
 INTEGER, INTENT(IN)  :: rec  !The time index to be written
-INTEGER, INTENT(IN)  :: day 
+INTEGER, INTENT(IN)  :: DOY 
 INTEGER, INTENT(IN)  :: hour
 INTEGER :: start(NDIM_PARTICLE)
 INTEGER :: ncid
@@ -707,7 +708,7 @@ CALL check(NF90_OPEN(FNAME, NF90_WRITE, ncid))
 CALL check(NF90_INQ_VARID(ncid, ID_NAME, ID_varid))    
 CALL check(NF90_INQ_VARID(ncid, IZ_NAME, IZ_varid))    
 CALL check(NF90_INQ_VARID(ncid, Z_NAME,     Z_varid))     
-CALL check(NF90_INQ_VARID(ncid, DAY_NAME, DAY_varid))
+CALL check(NF90_INQ_VARID(ncid, DOY_NAME, DOY_varid))
 CALL check(NF90_INQ_VARID(ncid, hr_NAME, hr_varid))
 CALL check(NF90_INQ_VARID(ncid, PAR_NAME, P_PAR_varid))
 CALL check(NF90_INQ_VARID(ncid, Temp_NAME, p_Temp_varid))
@@ -719,7 +720,7 @@ CALL check(NF90_INQ_VARID(ncid, Topt_NAME, Topt_varid))
 CALL check(NF90_INQ_VARID(ncid, CDiv_NAME, CDiv_varid))
 CALL check(NF90_INQ_VARID(ncid, alp_NAME, alpha_varid))
 
-CALL check(NF90_PUT_VAR(ncid, DAY_varid, day, start=(/rec/))) !Add data into the nc file
+CALL check(NF90_PUT_VAR(ncid, DOY_varid, DOY, start=(/rec/))) !Add data into the nc file
 
 DO j = 1, N_PAR
    start = (/j, rec/)

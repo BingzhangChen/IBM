@@ -306,22 +306,23 @@ IF (TASKID==0) THEN
 
   !Save initial state to external file
   call create_Eulerian_file
-
   irec_Euler = 1
+  call write_Eulerfile(irec_Euler, current_day, current_hour)
+
   
   !Name the initial phyto. particle file
   write(par_file, 1005) 'ParY', current_year, '.nc'
   irec_PHY = 1
   
   call Create_PHY_particlefile(par_file)
-  call write_PHY_particlefile(par_file, irec_PHY, current_day, current_hour)
+  call write_PHY_particlefile(par_file, irec_PHY, current_DOY, current_hour)
   
   !Name the initial passive particle file
   write(passive_file, 1006) 'PassY', current_year, '.nc'
   irec_Pass = 1
   
   call Create_Pass_particlefile(passive_file)
-  call write_Pass_particlefile(passive_file, irec_Pass, current_day, current_hour)
+  call write_Pass_particlefile(passive_file, irec_Pass, current_DOY, current_hour)
  
 ENDIF   !End of parent process (taskid == 0)
 

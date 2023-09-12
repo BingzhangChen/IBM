@@ -2,7 +2,7 @@
 
 !Particle parameters:
    N_pass = 1000,  !Number of passive particles
-   N_par =  2000,  !Number of phyto. particles
+   N_par =  10000,  !Number of phyto. particles
 
 !Phytoplankton parameters:
    mu0   = 5.00, !Maximal growth rate [d-1]
@@ -19,7 +19,7 @@
 
 !Detritus parameters:
    RDN   = 0.10, !Conversion rate of detritus to inorganic nitrogen [d-1]
-   wDET  = 0.20, !Detritus sinking rate [m d-1]
+   wDET  = 0.10, !Detritus sinking rate [m d-1]
 
 !Mutation parameters:
    !nu(1)    = 0.0001, 0.0001, 0.0001,  !Mutation rate (Topt, size, alphaChl)
