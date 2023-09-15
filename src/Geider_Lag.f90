@@ -39,6 +39,7 @@ real,    allocatable :: Pmatrix(:,:)     !Phytoplankton mortality rates by each 
 real,    parameter   :: eta     = -1.d0*6.6  !Prey refuge parameter for nitrogen
 real,    parameter   :: A_g    = 21.9   !Intercept of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
 real,    parameter   :: B_g    = -0.16  !Slope of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
+real,    parameter   :: mz_g   = -0.16  !Power of zooplankton mortality following Ward et al. (2013)
 real   :: Nt_min = 0.0 !Minimal amount carbon of each super-individual (number of cells * N content per cell)
 
 ! cellular carbon content threshold for division (pmol)
@@ -218,7 +219,7 @@ DO k = nlev, 1, -1
       EGES = EGES + INGES(kk)*unass
 
       !Calculate zooplankton mortality
-      Zmort = ZOO(kk)*mz *tf_z     !Linear Mortality term
+      Zmort = ZOO(kk)*mz *tf_z * VolZOO(kk)**mz_g   !zooplankton Mortality term
 
       !Loop through all predators
       if (kk .lt. NZOO) then
@@ -772,7 +773,7 @@ real, parameter   :: a1 = 0.d0        ! Allometric exponent between mumax and al
 real, parameter   :: b0 = 0.d0        ! Allometric exponent between mumax and size 
 real, parameter   :: b1 = 0.d0        ! Allometric exponent between mumax and size
 real, parameter   :: b2 = 0.d0        ! Allometric exponent between mumax and size
-real, parameter   :: NO3_min = 0.01   ! Minimal NO3 concentration
+real, parameter   :: NO3_min = 0.02   ! Minimal NO3 concentration
 !End of declaration
 
 
