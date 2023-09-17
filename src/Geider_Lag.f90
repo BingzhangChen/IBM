@@ -209,6 +209,7 @@ DO k = nlev, 1, -1
    !Computing zooplankton mortality
    RES = 0d0  !Total amount of nitrogen that is excreted by zooplankton and becomes DIN
    EGES= 0d0  !Total egestion by zooplankton to detritus
+   pp_DZ = 0d0 !Flux from ZOO to DET 
 
    DO kk = 1, NZOO
 
@@ -218,13 +219,17 @@ DO k = nlev, 1, -1
       !ZOOPLANKTON EGESTION (-> Detritus)
       EGES = EGES + INGES(kk)*unass
 
+      pp_DZ = pp_DZ + INGES(kk)*unass
+
       !Calculate zooplankton mortality
-      Zmort = ZOO(kk)*mz *tf_z * VolZOO(kk)**mz_g   !zooplankton Mortality term
+      Zmort = ZOO(kk)*mz *tf_z * VolZOO(kk)**mz_g   !zooplankton Mortality term due to natural death
+
+      pp_DZ = pp_DZ + Zmort
 
       !Loop through all predators
       if (kk .lt. NZOO) then
         do m = (kk + 1), NZOO
-          Zmort = Zmort + Gmatrix(kk,m)    !Linear Mortality term + grazing by other ZOO
+          Zmort = Zmort + Gmatrix(kk,m)    !Natural Mortality + grazing by other ZOO
         enddo
       endif
 
@@ -236,7 +241,6 @@ DO k = nlev, 1, -1
 
    ! For production/destruction matrix:
    pp_ND = RDN*DET*tf_z                   !Flux from DET to DIN
-   pp_DZ = EGES + mz*tf_z*sum(ZOO(:))     !Flux from ZOO to DET 
 
    !Now calculate new cell numbers associated with each particle
    ! Impose the zooplankton grazing (the number of cells associated with each superindividual changes)
