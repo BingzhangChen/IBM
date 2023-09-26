@@ -56,7 +56,6 @@ subroutine gridinterpol(N,cols,obs_z,obs_prof,nlev_,model_z,model_prof)
 
 !  Interpolate inner values linearly
    do i=1, nlev_, 1
-!   do i= nlev_, 1, -1
       if ((model_z(i) .lt. obs_z(N)) .and. (model_z(i) .gt. obs_z(1))) then
          ii=0
 224      ii=ii+1

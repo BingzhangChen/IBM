@@ -77,7 +77,10 @@ integer, parameter :: oN_cell = oN_ind + 1
 
 !Total number of output variables
 integer, parameter :: Nout   = oN_cell
-real                              :: Varout(Nout, nlev) = 0.d0
+real               :: Varout(Nout, nlev) = 0.d0
+
+!Minimal NO3 concentration
+real,    parameter :: NO3_min = 0.01
 
 !Particles
 !Declaration for phyto particles

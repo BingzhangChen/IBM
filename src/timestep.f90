@@ -166,14 +166,15 @@ END SUBROUTINE TIMESTEP
 
 SUBROUTINE UPDATE_PARTICLE_FORCING
 use forcing,         only : PARw, Temp
-use grid,              only : Z_w, Z_r, nlev
-use state_variables, only : p_PHY, t, iNO3
+use grid,            only : Z_w, Z_r, nlev
+use state_variables, only : p_PHY, t, iNO3, N_Par, NO3_min
 implicit none
 
 ! interpolation results for particles
 real, ALLOCATABLE :: zp(:), zout(:,:), dat_in(:,:)
 integer   :: AllocateStatus = 0
 integer   :: k              = 0
+integer   :: i              = 0
 !==================================================================
 
 ALLOCATE(zp(1), stat=AllocateStatus)
@@ -187,7 +188,7 @@ ALLOCATE(dat_in(0:nlev, 1), stat=AllocateStatus)
 IF (AllocateStatus /= 0) STOP "*** Problem in allocating dat_in ***"
 dat_in(:,1) = PARw(:)  !Observed profile of PAR
 
-do k = 1, size(p_PHY) 
+do k = 1, N_Par
    zp(1) = p_PHY(k)%rz
    call gridinterpol(nlev+1, 1, Z_w, dat_in, 1, zp, zout)
    p_PHY(k)%PAR = zout(1,1)
@@ -205,13 +206,26 @@ enddo
 
 dat_in(:,1) = t(iNO3,:)  !Observed profile of NO3
 
-do k = 1, size(p_PHY) 
+do k = 1, N_PAR
    zp(1) = p_PHY(k)%rz
    call gridinterpol(nlev, 1, Z_r, dat_in, 1, zp, zout)
 
    !Needs to set an upper limit to the NO3 concentration of the particle which cannot be greater than the current concentration of the grid
    p_PHY(k)%NO3 = min(zout(1,1), t(iNO3, p_PHY(k)%iz))
 
+  if (p_PHY(k)%NO3 .lt. 0.) then
+    !Write out observed NO3
+    do i = 1, nlev
+      write(6,*) 'Depth = ', Z_r(i)
+      write(6,*) 'NO3 = ', dat_in(i,1)
+    enddo
+
+    write(6,*) 'Grid of the particle = ', p_PHY(k)%iz
+    write(6,*) 'Depth of the particle = ', zp(1)
+    write(6,*) 'Interpolated NO3 = ', zout(1,1)
+    write(6,*) 'NO3 at grid = ', t(iNO3, p_PHY(k)%iz)
+    stop
+  endif
 enddo
 
 DEALLOCATE(dat_in)
@@ -225,7 +239,7 @@ use grid, only : nlev, Hz, Z_r
 use state_variables, only : t, Ntot, iPC, iCHL,iPN, iZOO, iNO3, iDET,N_PAR, p_PHY, IDmax, NZOO
 implicit none
 integer :: k,i,j,m
-real      :: Max_N = 0.d0
+real    :: Max_N = 0.d0
 
 Ntot = 0d0
 do k = 1, nlev
@@ -310,9 +324,9 @@ do k = 1, nlev
          p_PHY(m)%num = p_PHY(m)%num/2d0
 
          !The second one is identical with its twin, but its ID needs to change to a new number (not overlapping with any ID of current superindividuals)
-         p_PHY(i)        = p_PHY(m)
+         p_PHY(i)    = p_PHY(m)
          p_PHY(i)%ID = IDmax+1
-         IDmax           = IDmax+1 !Update maximal ID
+         IDmax       = IDmax+1 !Update maximal ID
       ENDIF
    ENDDO
 
@@ -324,4 +338,5 @@ do k = 1, nlev
       Ntot = Ntot + t(iZOO(i), k) * Hz(k)
    enddo
 enddo
-end subroutine Cal_total_N
+
+END subroutine Cal_total_N

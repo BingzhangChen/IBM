@@ -707,8 +707,8 @@ CALL check(NF90_OPEN(FNAME, NF90_WRITE, ncid))
 ! get variable IDs
 CALL check(NF90_INQ_VARID(ncid, ID_NAME, ID_varid))    
 CALL check(NF90_INQ_VARID(ncid, IZ_NAME, IZ_varid))    
-CALL check(NF90_INQ_VARID(ncid, Z_NAME,     Z_varid))     
-CALL check(NF90_INQ_VARID(ncid, DOY_NAME, DOY_varid))
+CALL check(NF90_INQ_VARID(ncid, Z_NAME,   Z_varid))     
+CALL check(NF90_INQ_VARID(ncid, DOY_NAME,DOY_varid))
 CALL check(NF90_INQ_VARID(ncid, hr_NAME, hr_varid))
 CALL check(NF90_INQ_VARID(ncid, PAR_NAME, P_PAR_varid))
 CALL check(NF90_INQ_VARID(ncid, Temp_NAME, p_Temp_varid))
@@ -720,7 +720,8 @@ CALL check(NF90_INQ_VARID(ncid, Topt_NAME, Topt_varid))
 CALL check(NF90_INQ_VARID(ncid, CDiv_NAME, CDiv_varid))
 CALL check(NF90_INQ_VARID(ncid, alp_NAME, alpha_varid))
 
-CALL check(NF90_PUT_VAR(ncid, DOY_varid, DOY, start=(/rec/))) !Add data into the nc file
+CALL check(NF90_PUT_VAR(ncid, DOY_varid, DOY, start=(/rec/))) !Add DOY  into the nc file
+CALL check(NF90_PUT_VAR(ncid,  hr_varid, hour,start=(/rec/))) !Add Hour into the nc file
 
 DO j = 1, N_PAR
    start = (/j, rec/)

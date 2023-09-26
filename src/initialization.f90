@@ -3,7 +3,7 @@ USE params
 USE state_variables
 USE Time_setting
 USE grid,             only: Z_w, hmax
-USE Trait_functions,  only: PHY_ESD2C
+USE Trait_functions,  only: PHY_ESD2C, PHY_C2Vol
 USE NETCDF_IO
 USE forcing
 USE MPI_Setting
@@ -14,6 +14,8 @@ integer    :: k     = 0
 integer    :: j_    = 0
 real       :: cff   = 0.d0
 real       :: Z_avg = 0.d0
+real       :: Vol   = 0.
+real       :: QN    = 0.
 integer, parameter :: namlst         = 20   !Unit time for namelist files
 integer            :: AllocateStatus = 0
 logical            :: exists         = .true.
@@ -24,7 +26,7 @@ namelist /timelist/  NDay_Run, dtsec, nsave, Nrand, read_previous_output
 
 !Namelist definition of model choice and parameters
 namelist /paramlist/ Model_ID, N_pass, N_Par, mu0, aI0, KN, gmax, Kp, mz,GGE, unass, RDN, &
-                     wDET, SDZoo, nu,sigma
+                     wDET, SDZoo, nu, sigma
 
 ! Check whether the namelist file exists.
 inquire (file='time.nml', iostat=rc)
@@ -230,20 +232,27 @@ IF (TASKID==0) THEN
        endif
 
        If (Model_ID .eq. GMK98_Size .or. Model_ID .eq. GMK98_ToptSize .or.  &
-          Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
+           Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
 
            !Initialize phytoplankton size from a uniform distribution between 0.8 and 60 um
            call random_number(cff)
            cff = log(0.8d0) + cff * (log(60.d0) - log(0.8d0))
            cff = exp(cff) !ESD
            p_PHY(k)%C = PHY_ESD2C(cff)      !Unit: pmol C cell-1
+           p_PHY(k)%CDiv = p_PHY(k)%C*2d0   !Maximal size, Unit: pmol C cell-1
+
+           !Assume nutrient replete for initial condition
+           Vol= PHY_C2Vol(p_PHY(k)%CDiv)
+           QN = QNmax_a * Vol**QNmax_b
+           p_PHY(k)%N = p_PHY(k)%C*QN !Unit: pmol N cell-1
+
        else
            p_PHY(k)%C = PHY_ESD2C(1.0)      !Unit: pmol C cell-1
+           p_PHY(k)%N = p_PHY(k)%C/106.*16. !Unit: pmol N cell-1
+           p_PHY(k)%CDiv = p_PHY(k)%C* 2d0     !Unit: pmol C cell-1
        endif
 
-       p_PHY(k)%N    = p_PHY(k)%C/106.*16. !Unit: pmol N cell-1
        p_PHY(k)%Chl  = p_PHY(k)%C* 12./50. !Unit: pgChl cell-1
-       p_PHY(k)%CDiv= p_PHY(k)%C* 2d0 !Unit: pmol C cell-1
 
        if (Model_ID .eq. GMK98_Light .or. Model_ID .eq. GMK98_ToptLight .or. &
            Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
@@ -294,6 +303,7 @@ IF (TASKID==0) THEN
   ENDIF
 
   call UPDATE_PHYTO  !Initialize Eulerian concentrations of phytoplankton carbon, nitrogen and Chl
+  call UPDATE_PARTICLE_FORCING
   
   !Initialize Varout
   do k = 1, NVAR

@@ -2,6 +2,7 @@ Module forcing
 !This module provides several analytic functions calculating temperature, surface PAR, MLD, maximal eddy diffusivity as a function of time
 use Time_setting, only: d_per_s, y_per_d, s_per_h
 use Grid,         only: nlev, Z_r, Hz, Z_w
+use params,       only: pi
 implicit none
 
 private
@@ -87,7 +88,6 @@ public :: Dirichlet, Neumann, bot_bound
 public :: extract_Kv
 
 ! Station latitude (Convert latitude to radians)
-real, public, parameter :: pi = 3.1415926535897932384633
 real, parameter :: Stn_lat = 31.67d0 *pi/180.d0  !BATS
 
 CONTAINS

@@ -1,4 +1,5 @@
 Module Trait_functions
+use params
 !This module provides several functions calculating phytoplankton physiological rates as a function of environmental conditions (e.g., temperature) and traits
 implicit none
 
@@ -6,7 +7,6 @@ private
 
 public :: TEMPBOL, temp_Topt, palatability, PHY_C2Vol, PHY_ESD2C, Ainf
 
-real, parameter :: pi= 3.1415926535
 
 CONTAINS
 
@@ -241,11 +241,15 @@ Kr0 = a_ * (alpha_new / b_)**v_
 
 Kr = Kr0 * Lno3
 
-!Ratio of damage to repair constants [s]:
-K  = Kd / Kr
-
-!Calculate photoinhibition [nd]:
-Ainf = 1d0 / (1d0 + Tau * Sigma * PARWm2 + K * Tau * Sigma**2 * PARWm2**2)
+if (Kr < 1d-10) then
+  Ainf = 0.d0
+else
+  !Ratio of damage to repair constants [s]:
+  K  = Kd / Kr
+  
+  !Calculate photoinhibition [nd]:
+  Ainf = 1d0 / (1d0 + Tau * Sigma * PARWm2 + K * Tau * Sigma**2 * PARWm2**2)
+endif
 
 return 
 END FUNCTION Ainf

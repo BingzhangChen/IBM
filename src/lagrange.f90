@@ -83,7 +83,7 @@ dt = dtsec/dble(Nrand)
 dt_inv = 1.d0/dt
 rnd_var_inv = 1.d0/rnd_var
 
-! Vertical random walk for passive particles
+! Vertical random walk for particles
 ! Real parallel computing
 DO j = (taskid*N_chunk + 1), ((taskid+1)*N_chunk)
 
@@ -131,7 +131,7 @@ DO j = (taskid*N_chunk + 1), ((taskid+1)*N_chunk)
             EXIT
         endif
      end do   !End of diffusivity correction
-     
+    
      rat  = (zloc-Z_w(i-1))/Hz(i)
      visc = rat*Kv(i)+(1.-rat)*Kv(i-1)  ! interpolate Kv
      wint= rat*bio_w(i) +(1.-rat)*bio_w(i-1)     ! interpolate w
