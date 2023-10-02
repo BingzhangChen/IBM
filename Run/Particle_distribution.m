@@ -9,11 +9,11 @@ t = tiledlayout(1,2,'TileSpacing','Compact');
 %plot number of super-individuals
 nexttile;
 h = pcolor(Days, Z_r, N_ind);
-xticks([0 180 365 540 730])
+xticks([0 180 365 540 730 910 1095])
 axHdl = get(h, 'Parent');
 z = get(axHdl, 'CLim');
 drawnow
-set(axHdl, 'CLim', [5, 12]);
+set(axHdl, 'CLim', [5, 30]);
 set(axHdl,'TickDir','out'); 
 colorbar
 shading flat;
