@@ -811,9 +811,14 @@ real, parameter   :: nx     = 1.d0
 real              :: KN     = 0.          !Half-saturation constant [uM]
 
 real, parameter   :: a1 = 0.d0        ! Allometric exponent between mumax and alphaChl
-real, parameter   :: b0 = 0.d0        ! Allometric exponent between mumax and size 
-real, parameter   :: b1 = 0.d0        ! Allometric exponent between mumax and size
-real, parameter   :: b2 = 0.d0        ! Allometric exponent between mumax and size
+real, parameter   :: b0 = 4.3d0       ! Intercept between mumax and size 
+real, parameter   :: b1 = -0.65d0     ! Allometric exponent between mumax and size
+real, parameter   :: b2 = -0.08d0     ! Allometric exponent between mumax and size
+
+!temperature correction
+real, parameter   :: Tempcorr = exp(0.32/(8.62d-5 * 288.15))
+
+real              :: CDiv1 = 0.       ! CDiv value with ug C per cell
 !End of declaration
 
 if (C .le. 0d0) then
@@ -850,8 +855,17 @@ dQN   = QNmax - QNmin
 !Maximal growth rate as a function of temperature under resource (nutrient and light) replete conditions:
 !(what value of mu0 should be?): mu0 should be a function of alphaChl
 muT    = mu0 * exp(a1 * (alphaChl_ - .1)) !0.1 is the average alphaChl value
+
+!Temperature dependent maximal growth rate at 1 ug C cell-1
 muT    = temp_Topt(Temp, muT, Topt_)
-muT    = muT * exp(b0 + b1 * log(Cdiv) + b2 * log(Cdiv)**2 )
+
+!Apply unimodal size-scaling relationship
+!First, convert the unit of CDiv to ugC cell-1
+CDiv1  = CDiv * 12.d0/1d6
+
+
+!Applying the size scaling following Chen and Liu (2011) Fig. 1B
+muT    = muT * 10**(b0 + b1 * log10(Cdiv1) + b2 * log10(Cdiv1)**2 )/Tempcorr
 
 !Assuming the same temperature dependence of nutrient uptake rate as on photosynthesis rate.
 !QNmax/QNmin may be also a function of temperature which needs being further investigated.
