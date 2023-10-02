@@ -12,7 +12,7 @@
 !Zooplankton parameters:
    gmax  = 2.00, !Maximal zooplankton grazing rate [pmol N m-3]
    Kp    = 0.15, !Half-saturation constant of zooplankton grazing [uM N]
-   mz    = 0.015, !Zooplankton mortality grazing coefficient at 1 um^3 [uM N−1 d-1]
+   mz    = 0.01, !Zooplankton mortality grazing coefficient at 1 um^3 [uM N−1 d-1]
    GGE   = 0.30, !Zooplankton Gross Growth Efficiency [pmol N m-3]
    unass = 0.24, !Fraction of unassimilated food ingested by zooplankton [nd]
    SDZoo = 0.5,  !Standard deviation of zooplankton feeding preference [nd]
