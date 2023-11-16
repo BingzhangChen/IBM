@@ -17,6 +17,19 @@ NPP = ncread(File, 'NPP');
 NYear = Days(end)/365;
 Years = double(Days)/365;
 
+h = pcolor(Years, Z_r, PC./PN);
+xticks([0:1:NYear])
+axHdl = get(h, 'Parent');
+z = get(axHdl, 'CLim');
+drawnow
+set(axHdl, 'CLim', [10, 40]);
+set(axHdl,'TickDir','out'); 
+
+colorbar
+shading flat;
+
+return;
+
 t = tiledlayout(3,3,'TileSpacing','Compact');
 
 %plot temperature
