@@ -135,7 +135,7 @@ real :: Ed, Ea, mumax
 mumax = alloscale(Topt_, mumax0,  Ei) 
 Ea    = alloscale(Topt_, Ea0,  beta) 
 Ed    = alloscale(Topt_, Ed0,  phi) 
-y       = JOHNSON(tC, mumax, Ea, Ed, Topt_)
+y     = JOHNSON(tC, mumax, Ea, Ed, Topt_)
 
 END function temp_Topt
 

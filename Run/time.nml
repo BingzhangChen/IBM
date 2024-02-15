@@ -1,5 +1,5 @@
 &timelist
-   NDay_Run = 1825, !Total number of days  
+   NDay_Run = 1095, !Total number of days  
    dtsec    = 120, 
    nsave    = 720, ! if save Eulerian model outputs at daily frequencies, nsave = 86400/dtsec; if save output at hourly frequences, nsave = 3600/dtsec
    Nrand    = 40, !Number of time steps of random walk per biological timestep

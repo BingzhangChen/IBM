@@ -8,12 +8,12 @@ use NETCDF_IO
 use Trait_functions,  only : PHY_C2Vol
 implicit none
 
-real,       parameter  :: cnpar      = 0.6d0
-real,       parameter  :: Taur(nlev) = 1D12  !Relaxation time
-real,       parameter  :: zero       = 0.d0  !Vectors of zero
-real,       parameter  :: Vec0(nlev) = zero  !Vectors of zero
-integer,parameter  :: mode0      = 0
-integer,parameter  :: mode1      = 1
+real,    parameter  :: cnpar      = 0.6d0
+real,    parameter  :: Taur(nlev) = 1D12  !Relaxation time
+real,    parameter  :: zero       = 0.d0  !Vectors of zero
+real,    parameter  :: Vec0(nlev) = zero  !Vectors of zero
+integer, parameter  :: mode0      = 0
+integer, parameter  :: mode1      = 1
 integer :: j = 0
 real    :: par_save_freq = 0d0           !scratch variable for saving frequency of particles
 
@@ -213,7 +213,7 @@ do k = 1, N_PAR
    !Needs to set an upper limit to the NO3 concentration of the particle which cannot be greater than the current concentration of the grid
    p_PHY(k)%NO3 = min(zout(1,1), t(iNO3, p_PHY(k)%iz))
 
-  if (p_PHY(k)%NO3 .lt. 0.) then
+  if (p_PHY(k)%NO3 .lt. 0. .OR. p_PHY(k)%NO3 .gt. 200.) then
     !Write out observed NO3
     do i = 1, nlev
       write(6,*) 'Depth = ', Z_r(i)

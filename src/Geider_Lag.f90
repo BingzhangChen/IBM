@@ -347,25 +347,25 @@ DO k = nlev, 1, -1
   !Now calculate NO3 and DET
   t(iNO3,k) = NO3 + dtdays*(pp_ND + RES - uptake)
 
-  if (t(iNO3, k) < 0.) then
-    write(6,*) 'Current grid = ', k
-    write(6,*) 'Number of PHY particles = ', N_
-    write(6,*) 'Previous NO3 = ', NO3
-    write(6,*) 'Phyto. uptake = ', dtdays*uptake
-    write(6,*) 'DET reg. = ', dtdays*pp_ND
-    write(6,*) 'ZOO excretion = ', dtdays*RES
-
-    do j = 1, N_
-      i = index_(j)
-      call GMK98_Ind_TempSizeLight(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt,&
-                 p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, exp(p_PHY(i)%LnalphaChl),&
-                 dC_, dN_, dChl_)
-
-      write(6,*) 'Particle ', i, ' num= ', p_PHY(i)%num
-      write(6,*) 'Nutrient change ',  dN_
-    enddo
-    stop
-  endif
+!  if (t(iNO3, k) < 0.) then
+!    write(6,*) 'Current grid = ', k
+!    write(6,*) 'Number of PHY particles = ', N_
+!    write(6,*) 'Previous NO3 = ', NO3
+!    write(6,*) 'Phyto. uptake = ', dtdays*uptake
+!    write(6,*) 'DET reg. = ', dtdays*pp_ND
+!    write(6,*) 'ZOO excretion = ', dtdays*RES
+!
+!    do j = 1, N_
+!      i = index_(j)
+!      call GMK98_Ind_TempSizeLight(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt,&
+!                 p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, exp(p_PHY(i)%LnalphaChl),&
+!                 dC_, dN_, dChl_)
+!
+!      write(6,*) 'Particle ', i, ' num= ', p_PHY(i)%num
+!      write(6,*) 'Nutrient change ',  dN_
+!    enddo
+!    stop
+!  endif
 
   Varout(iNO3, k) = t(iNO3, k)
 
@@ -440,6 +440,10 @@ if (C .le. 0d0) then
 endif
 
 QN       = N/C
+
+!Force QN to be between QNmin and QNmax
+QN = max(min(QNmax, QN), QNmin)
+
 theta    = Chl/C
 Vcref    = mu0 * QNmax
 
@@ -486,7 +490,7 @@ end subroutine GMK98_Ind
 !Adding optimal temperature into the Geider model
 SUBROUTINE GMK98_Ind_Temp(Temp, PAR, NO3, Topt_, C, N, Chl, dC, dN, dChl)
 USE Trait_functions, only : temp_Topt
-USE params,              only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
+USE params,          only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
 implicit none
 
 real, intent(in)  :: Temp, PAR, NO3

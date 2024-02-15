@@ -1,13 +1,25 @@
 #!/bin/bash
-module load fftw/intel-2020.4/3.3.10
+#module load fftw/intel-2020.4/3.3.10
+module load netcdf/intel-2018.2/4.6.1
+module load netcdf-fortran/intel-2018.2/4.4.4
+
 export SCRDIR=Compile
 export SOURCE=../src
 
+# Set your own NETCDF directories
+NFDIR='/opt/software/netcdf/intel-2018.2/fortran-4.4.4'
+NCDIR='/opt/software/netcdf/intel-2018.2/4.6.1'
+NETCDFLIB="-L$NFDIR/lib -lnetcdff -L$NCDIR/lib -lnetcdf"
+NETCDFINC="-I$NFDIR/include"
+
+LDFLAGS1="$NETCDFLIB"
+CPPFLAGS1="$NETCDFINC"
+
 echo "set MPI directories"
-MPIDIR='/opt/software/intel/2020/compilers_and_libraries_2020.4.304/linux/mpi/intel64'
+MPIDIR='/opt/software/intel/2018/compilers_and_libraries_2018.2.199/linux/mpi/intel64'
 MPIINC="-I$MPIDIR/include"
 LFLAGS="-L$MPIDIR/lib -lmpi"
-MPILIB="-lmpi"
+LFLAGS="$LFLAGS $LDFLAGS1"
 MPIF90="mpiifort"
 
 
@@ -69,7 +81,7 @@ cp -f ${SOURCE}/Make* $SCRDIR
 # Change directory
 cd $SCRDIR
 
-FFLAGS="$FFLAGS $MPIINC"
+FFLAGS="$FFLAGS $MPIINC $CPPFLAGS1"
 echo 's?$(FFLAGS)?'$FFLAGS'?g' >> flags.tmp
 export MAKEFILE=Makefile
 sed -f flags.tmp $MAKEFILE > Makefile2
