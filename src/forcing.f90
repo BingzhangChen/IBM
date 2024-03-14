@@ -135,7 +135,7 @@ cfac   = (1d0-0.62*clouds*0.125 + 0.0019*(90d0-zen))                   ! cloud f
 Inoon  = Iclear*cfac*(1d0 - albedo)                                    ! noon irradiance: total solar
 noonparnow = parrac*Inoon   
 return
-end function noonparnow
+End function noonparnow
 
 ! ----------------------------------------------------------------------- #
 ! Calculation of day length as function of day of year and latitude       #

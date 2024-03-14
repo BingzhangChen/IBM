@@ -23,7 +23,7 @@
 #SBATCH --distribution=cyclic
 #
 # Specify (hard) runtime (HH:MM:SS)
-#SBATCH --time=96:00:00
+#SBATCH --time=160:00:00
 #
 # Job name
 #SBATCH --job-name=IBM

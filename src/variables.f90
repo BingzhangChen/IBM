@@ -129,6 +129,12 @@ TYPE Particle
     !Ln alphaChl (slope of the P-I curve; unit: (W m-2)-1 (gChl molC)-1 d-1 instead of micro mol quanta m-2 s-1)
     real :: LnalphaChl = -2.3  !log(0.1)
 
+    !Carbon-specific growth rate
+    real :: mu_C = 0.d0
+
+    !Fitness represented by net growth rate (growth - mortality)
+    real :: fitness = 0.d0
+
 END TYPE Particle
 
 !Passive particles for diagosing random walk
@@ -158,26 +164,22 @@ real, allocatable ::  C_mpi(:)
 integer, allocatable :: Zi_mpi(:)
 
 !Model choices
-integer, parameter :: GMK98_simple                 = 1 
-integer, parameter :: GMK98_Topt                    = 2 
-integer, parameter :: GMK98_Size                     = 3 
-integer, parameter :: GMK98_Light                  = 4 
-integer, parameter :: GMK98_ToptLight          = 5 
-integer, parameter :: GMK98_ToptSize            = 6 
-integer, parameter :: GMK98_SizeLight          = 7 
-integer, parameter :: GMK98_ToptSizeLight  = 8 
+integer, parameter :: GMK98_simple        = 1 
+integer, parameter :: GMK98_Topt          = 2 
+integer, parameter :: GMK98_Size          = 3 
+integer, parameter :: GMK98_Light         = 4 
+integer, parameter :: GMK98_ToptLight     = 5 
+integer, parameter :: GMK98_ToptSize      = 6 
+integer, parameter :: GMK98_SizeLight     = 7 
+integer, parameter :: GMK98_ToptSizeLight = 8 
 
 !Current model selection
 integer :: Model_ID = 8
 
 !Number of traits
-integer, parameter :: NTrait = 3
 integer, parameter :: iTopt = 1     !Trait index for Topt
 integer, parameter :: iSize = 2     !Trait index for Size (ESD)
 integer, parameter :: ialphaChl = 3    !Trait index for optimal light
-
-real :: nu(NTrait) = [1d-12, 1d-12, 1d-12] !Probability per generation per cell
-real :: sigma(NTrait) = [0.1, 0.1, 0.1]    !Standard deviation of mutation of the three traits
 
 integer :: N_birth(nlev) = 0  !Number of birth events during one hour
 integer :: N_death(nlev) = 0  !Number of death events during one hour

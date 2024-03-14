@@ -23,7 +23,7 @@ real    :: NPPc_(nlev)  = 0.  !C-based phytoplankton production (mg C m-3 d-1)
 real    ::  IPAR(nlev)  = 0.  !Daily integrated PAR at each depth
 real    :: pp_DZ = 0.   
 real    :: pp_ND = 0.   
-real    :: Pmort  = 0.   
+real    :: Pmort = 0.   
 real    :: Cmin  = 0. !Phytoplankton subsistence carbon quota below which the cell will die   
 real    :: FZoo(NZOO) = 0.   !The total amount of palatable prey (in Nitrogen)
                              !for each zooplankton size class
@@ -34,7 +34,8 @@ real    :: gbar  = 0.
 real    :: INGES(NZOO) = 0.   
 real    :: Zmort = 0.   
 real    :: Gmatrix(NZOO,NZOO) = 0.d0     !Grazer biomass specific grazing rate matrix
-real,    allocatable :: BN(:)                !The amount of nitrogen in each super-individual
+real,    allocatable :: BN(:)            !The amount of nitrogen in each super-individual
+real,    allocatable :: BC(:)            !The amount of carbon in each super-individual
 real,    allocatable :: Pmatrix(:,:)     !Phytoplankton mortality rates by each zooplankton size class for each superindividual
 real,    parameter   :: eta     = -1.d0*6.6  !Prey refuge parameter for nitrogen
 real,    parameter   :: A_g    = 21.9   !Intercept of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
@@ -131,13 +132,21 @@ DO k = nlev, 1, -1
       IF (AllocateStatus /= 0) STOP "*** Problem in allocating BN***"
       BN(:) = 0d0
 
+      allocate(BC(N_), stat=AllocateStatus)
+      IF (AllocateStatus /= 0) STOP "*** Problem in allocating BC***"
+      BC(:) = 0d0
+
       ! calculate the amount of nitrogen and total abundances (cells/m3) in each super-individual
       DO m = 1, N_
 
          i = index_(m)
 
-         !The amount of  N in the super-individual m
+         !The amount of N in the super-individual m
          BN(m) = p_PHY(i)%N * p_PHY(i)%num*1d-9/Hz(k)
+
+         !The amount of C in the super-individual m
+         BC(m) = p_PHY(i)%C * p_PHY(i)%num*1d-9/Hz(k)
+
 
          !Count the number of cells in each layer
          Abun_ = Abun_ + p_PHY(i)%num
@@ -272,23 +281,6 @@ DO k = nlev, 1, -1
       do j = 1, N_
          i = index_(j)
 
-         !Check forcing fields:
-         if (p_PHY(i)%NO3 .le. 0.d0) then
-           write(6,*) "Nonpositive Nitrate found for this particle!"
-           write(6,*) 'Particle at grid ',  p_PHY(i)%iz
-           write(6,*) 'Particle at depth ', p_PHY(i)%rz
-           write(6,*) 'NO3 of this particle ', p_PHY(i)%NO3
-           stop
-         endif
-
-         if (p_PHY(i)%PAR .lt. 0.d0) then
-           write(6,*) "Negative PAR found for this particle!"
-           write(6,*) 'Particle at grid ',  p_PHY(i)%iz
-           write(6,*) 'Particle at depth ', p_PHY(i)%rz
-           write(6,*) 'PAR of this particle ', p_PHY(i)%PAR
-           stop
-         endif
- 
          SELECTCASE (Model_ID)
          CASE(GMK98_simple)
             call GMK98_Ind(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,         &
@@ -300,7 +292,8 @@ DO k = nlev, 1, -1
          CASE(GMK98_Light)
             stop "To be developed..."
          CASE(GMK98_Size)
-            stop "To be developed..."
+            call GMK98_Ind_Size(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3, p_PHY(i)%C, &
+                                p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%Cdiv, dC_, dN_, dChl_)
          CASE(GMK98_SizeLight)
             stop "To be developed..."
          CASE(GMK98_ToptLight)
@@ -309,17 +302,18 @@ DO k = nlev, 1, -1
             call GMK98_Ind_TempSize(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt,&
                            p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, dC_, dN_, dChl_)
          CASE(GMK98_ToptSizeLight)
-
             call GMK98_Ind_TempSizeLight(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt,&
                  p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, exp(p_PHY(i)%LnalphaChl),&
                  dC_, dN_, dChl_)
-
          CASE DEFAULT
             stop "Model choice is wrong!!"
-         END SELECT
+         ENDSELECT
 
          uptake   =   uptake + dN_ * p_PHY(i)%num 
          NPPc_(k) = NPPc_(k) + dC_ * p_PHY(i)%num *1d-9/Hz(k)*12.d0*dtdays !Unit: mgC m-3 d-1
+
+         ! Save carbon-specific growth rate
+         p_PHY(i)%mu_C = dC_/p_PHY(i)%C
 
          ! Update cellular C, N, and Chl
          p_PHY(i)%C   =  p_PHY(i)%C   + dC_   * dtdays
@@ -338,34 +332,18 @@ DO k = nlev, 1, -1
             p_PHY(i)%num = 0d0
             p_PHY(i)%alive = .FALSE.
          endif
-      enddo
+
+         !Save fitness of each particle (per day)
+         p_PHY(i)%fitness = (p_PHY(i)%C*p_PHY(i)%num*1d-9/Hz(k) - BC(j))/BC(j)/dtdays
+
+      enddo !End of looping through particles
   endif !End if of N_ > 0
 
-  uptake= uptake*1d-9/Hz(k) !Convert uptake to mmol N m-3
-  Pmort =  Pmort*1d-9/Hz(k) !Convert Pmort to mmol N m-3
+  uptake = uptake*1d-9/Hz(k) !Convert uptake to mmol N m-3
+  Pmort  =  Pmort*1d-9/Hz(k) !Convert Pmort to mmol N m-3
 
   !Now calculate NO3 and DET
   t(iNO3,k) = NO3 + dtdays*(pp_ND + RES - uptake)
-
-!  if (t(iNO3, k) < 0.) then
-!    write(6,*) 'Current grid = ', k
-!    write(6,*) 'Number of PHY particles = ', N_
-!    write(6,*) 'Previous NO3 = ', NO3
-!    write(6,*) 'Phyto. uptake = ', dtdays*uptake
-!    write(6,*) 'DET reg. = ', dtdays*pp_ND
-!    write(6,*) 'ZOO excretion = ', dtdays*RES
-!
-!    do j = 1, N_
-!      i = index_(j)
-!      call GMK98_Ind_TempSizeLight(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt,&
-!                 p_PHY(i)%C, p_PHY(i)%N, p_PHY(i)%Chl, p_PHY(i)%CDiv, exp(p_PHY(i)%LnalphaChl),&
-!                 dC_, dN_, dChl_)
-!
-!      write(6,*) 'Particle ', i, ' num= ', p_PHY(i)%num
-!      write(6,*) 'Nutrient change ',  dN_
-!    enddo
-!    stop
-!  endif
 
   Varout(iNO3, k) = t(iNO3, k)
 
@@ -375,8 +353,9 @@ DO k = nlev, 1, -1
 
   if (allocated(index_))  deallocate(index_)
   if (allocated(Pmatrix)) deallocate(Pmatrix)
-  if (allocated(BN)) deallocate(BN)
-ENDDO
+  if (allocated(BN))      deallocate(BN)
+  if (allocated(BC))      deallocate(BC)
+ENDDO !End of looping across different depths
 
 !update t(iPN, :), t(iPC,:), and t(iChl,:) and compute mean trait and trait variance
 call Par2PHY
@@ -384,7 +363,7 @@ call Par2PHY
 END SUBROUTINE BIOLOGY
 
 SUBROUTINE GMK98_Ind(Temp, PAR, NO3, C, N, Chl, dC, dN, dChl)
-USE Trait_functions, only : TEMPBOL, palatability
+USE Trait_functions, only : TEMPBOL
 USE params,          only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
 implicit none
 
@@ -490,7 +469,7 @@ end subroutine GMK98_Ind
 !Adding optimal temperature into the Geider model
 SUBROUTINE GMK98_Ind_Temp(Temp, PAR, NO3, Topt_, C, N, Chl, dC, dN, dChl)
 USE Trait_functions, only : temp_Topt
-USE params,          only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L
+USE params,          only : Ep, aI0, thetaNmax, mu0, KN, rhoChl_L, nx
 implicit none
 
 real, intent(in)  :: Temp, PAR, NO3
@@ -535,8 +514,6 @@ real, PARAMETER   :: Rc   = 0.025  !Basic respiration rate at the reference temp
 real, PARAMETER   :: RN   = 0.025  !Basic N-based respiration rate at the reference temperature 15 C (d-1)
 real, PARAMETER   :: RChl = 0.025  !Basic Chl-based respiration rate at the reference temperature 15 C (d-1)
 real, PARAMETER   :: zeta = 3.0    !cost of biosynthesis (molC molN-1)
-
-real, PARAMETER   :: nx = 1.d0  !Exponent of nutrient uptake function in GMK98
 
 real :: RcT  = 0. !Temperature dependent respiration rate
 real :: RNT = 0. !Temperature dependent N-based respiration rate
@@ -603,10 +580,180 @@ dChl= Chl*(rhochl*VCN/theta - RChlT)
 return
 END SUBROUTINE GMK98_Ind_Temp
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine GMK98_Ind_Size(Temp, PAR, NO3, C, N, Chl, Cdiv, dC, dN, dChl)
+
+USE Trait_functions, only : PHY_C2Vol
+USE Trait_functions, only : TEMPBOL
+USE params,          only : Ep, aI0, thetaNmax, mu0, rhoChl_L
+USE params,          only : QNmin_a, QNmin_b, nx
+USE params,          only : QNmax_a, QNmax_b, KN_a, KN_b
+USE state_variables, only : NO3_min
+
+implicit none
+
+! Declaration of variables:
+real, intent(in)  :: Temp          ! Associated temperarure [degree C]
+real, intent(in)  :: PAR           ! Associated PAR [W m-2]
+real, intent(in)  :: NO3           ! Associated NO3 concentration [mmol N m-3]
+real, intent(in)  :: C             ! Current cellular carbon [mmol C cell-1]
+real, intent(in)  :: N             ! Current cellular nitrogen [mmol N cell-1]
+real, intent(in)  :: Chl           ! Current cellular Chl [mg C cell-1]
+real, intent(in)  :: Cdiv          ! Cellular carbon content threshold for division [pmol]
+
+real              :: KN    = 0.50  ! Nitrate half-saturation constant of phyto growth [uM]
+real              :: QNmin = 0.05  ! Minimal N:C ratio [mmol N mmol C]
+real              :: QNmax = 0.18  ! Maximal N:C ratio [mmol N mmol C]
+real              :: dQN   = 0.13  ! (Qmax - Qmin) [mmol N mmol C]
+real              :: QN    = 0.    ! Current N:C ratio [mmol N mmol C]
+real              :: theta = 0.    ! Current Chl:C ratio [mg Chl mmol C]
+
+! Changes in the cellular nitrogen content [pmol N cell-1]:
+real, intent(out) :: dN
+
+! Changes in the cellular carbon content [pmol N cell-1]:
+real, intent(out) :: dC
+
+! Changes in the cellular Chl content [pg Chl cell-1]:
+real, intent(out) :: dChl
+
+! Maximal growth rate as a function of temperature under resource (nutrient and light)
+! replete conditions [uM]:
+real :: muT = 0.
+
+! Maximal specific nitrogen uptake rate as a function of temperature under resource
+! (nutrient and light) replete conditions [mol N mol C-1 d-1]:
+! Vcref = Qmax * muT
+real :: Vcref = 0.
+
+! DIN uptake rate by phytoplankton [mol N mol C-1 d-1]:
+real :: VCN = 0.
+
+! Indices for nutrient, light and temperature limitation
+real :: Lno3 = 0.   ! Nutrient limitation [pmol N m-3]
+real :: SI   = 0.   ! Light limitation index [fpar]
+real :: tf_p = 0.   ! Light limitation index [fpar]
+
+real :: PCmax  = 0. ! Maximal photosynthesis rate (regulated by QN) [d-1]
+real :: PC     = 0. ! Carbon specific rate of photosynthesis [d-1]
+real :: rhoChl = 0. ! Phyto C production devoted to Chl synthesis [mg Chl mmol C-1]
+real :: Ik     = 0. ! Saturation parameter for the PI curve [umol photons m-2 s-1]
+
+real, parameter   :: RC   = 0.0d0  ! Basic respiration rate [d-1]
+real, parameter   :: RN   = 0.0d0  ! Basic respiration rate [d-1]
+real, parameter   :: RChl = 0.0d0  ! Basic respiration rate [d-1]
+real, parameter   :: zeta = 3.0d0    ! Cost of biosynthesis [mol C mol N-1]
+
+real, parameter   :: b0 = 4.3d0       ! Intercept between mumax and size 
+real, parameter   :: b1 = -0.65d0     ! Allometric exponent between mumax and size
+real, parameter   :: b2 = -0.08d0     ! Allometric exponent between mumax and size
+
+!temperature correction
+real, parameter   :: Tempcorr = exp(0.32/(8.62d-5 * 288.15))
+real              :: CDiv1 = 0.       ! CDiv value with ug C per cell
+!
+real :: RcT   = 0. ! Temperature dependent respiration rate
+real :: RNT   = 0. ! Temperature dependent N-based respiration rate
+real :: RChlT = 0. ! Temperature dependent Chl-based respiration rate
+real :: Vol = 0d0 !Cell volume of phytoplankton
+! End of declaration
+   
+! Check input
+if (NO3 .le. 0.d0) stop "Negative Nitrate concentration!"
+if (PAR .lt. 0.d0) stop "Negative PAR!"
+
+if (C .le. 0d0) then
+   dN   = 0.d0
+   dC   = 0.d0
+   dChl = 0.d0
+   return
+endif
+
+tf_p = TEMPBOL(Ep, Temp)  
+
+QN      = N / C
+theta   = Chl / C
+   
+!Convert phytoplankton CDiv to Volume
+Vol = PHY_C2Vol(CDiv)
+
+! Nitrate half-saturation constant of phyto growth based on cell volume [uM]:
+KN = KN_a * Vol**KN_b
+
+! Minimal N:C ratio [mmol N mmol C]:
+QNmin = QNmin_a * Vol**QNmin_b
+   
+! Maximal N:C ratio [mmol N mmol C]:
+QNmax = QNmax_a * Vol**QNmax_b
+
+QN = max(min(QN, QNmax), QNmin)
+
+dQN= QNmax - QNmin
+
+! Maximal growth rate increases with temperature 
+muT   = tf_P * mu0
+
+!Apply unimodal size-scaling relationship
+!First, convert the unit of CDiv to ugC cell-1
+CDiv1  = CDiv * 12.d0/1d6
+
+!Applying the size scaling following Chen and Liu (2011) Fig. 1B
+muT = muT*10**(b0 + b1 * log10(Cdiv1) + b2 * log10(Cdiv1)**2)/Tempcorr
+
+Vcref = muT * QNmax
+
+!Assume the same temperature dependence of respiration as on photosynthetic 
+!rate (long-term adaptation; Barton et al. 2020):
+RcT   = RC*tf_p
+RNT   = RN*tf_p
+RChlT = RChl*tf_p
+
+! Nutrient limitation [pmol N m-3]:
+Lno3 = (QN - QNmin) / dQN
+
+! Maximal photosynthesis rate (regulated by QN) [d-1]:
+PCmax = muT * Lno3
+Ik    = PCmax / aI0 / theta
+
+! Light limitation index [fpar]:
+if (abs(SI) < 1d-10) then
+   SI = 0d0
+else
+   SI = 1.d0 - exp(SI)
+endif
+
+PC = PCmax * SI
+
+! Define rhoChl [g Chl mol C-1]:
+! If dark, assume that rhoChl equaled the value calculated for the end of the 
+! preceding light period .
+if (PAR <= 0d0) then
+   rhoChl   = rhoChl_L
+else
+   rhoChl   = thetaNmax * PC / aI0 / theta / PAR
+   rhoChl_L = rhoChl
+endif
+
+! DIN uptake rate by phytoplankton [mol N mol C-1 d-1]:
+VCN = Vcref * NO3 / (NO3 + KN) * ((QNmax - QN) / dQN)**nx ! Vcref already temperature dependent
+
+! Changes of cellular carbon [pmol C cell-1 d-1]:
+dC  = C * (PC - zeta * VCN - RcT)
+
+! Changes of cellular nitrogen [pmol N cell-1 d-1]:
+dN  = N * (VCN / QN - RNT)
+
+! Changes of cellular Chl [pg Chl cell-1 d-1]:
+dChl= Chl * (rhoChl * VCN / theta - RChlT)
+
+return
+END subroutine GMK98_Ind_Size
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine GMK98_Ind_TempSize(Temp, PAR, NO3, Topt_, C, N, Chl, Cdiv, dC, dN, dChl)
 
 USE Trait_functions, only : temp_Topt, PHY_C2Vol
-USE params,          only : Ep, aI0, thetaNmax, mu0, rhoChl_L
+USE params,          only : Ep, aI0, thetaNmax, mu0, rhoChl_L, nx
 
 implicit none
 
@@ -673,8 +820,6 @@ real, parameter   :: QNmin_b = 0.95d0  ! Allometric exponent for QNmin
 real, parameter   :: QNmax_a = 0.2d0   ! Normalization constant for QNmax (pmol N per cell)
 real, parameter   :: QNmax_b = 1d0  ! Allometric exponent for QNmax
 
-real, parameter   :: nx   = 1.d0   ! Exponent of nutrient uptake function in GMK98
-
 real :: RcT   = 0. ! Temperature dependent respiration rate
 real :: RNT   = 0. ! Temperature dependent N-based respiration rate
 real :: RChlT = 0. ! Temperature dependent Chl-based respiration rate
@@ -726,7 +871,14 @@ PCmax = muT * Lno3
 Ik    = PCmax / aI0 / theta
 
 ! Light limitation index [fpar]:
-SI = 1.d0 - exp(-PAR/Ik)
+SI = -PAR/Ik
+
+if (abs(SI) < 1d-10) then
+   SI = 0d0
+else
+   SI = 1.d0 - exp(SI)
+endif
+
 PC = PCmax * SI
 
 ! Define rhoChl [g Chl mol C-1]:
@@ -755,197 +907,14 @@ return
 END subroutine GMK98_Ind_TempSize
 
 !------------------------------------------------------------------------------------------------
-SUBROUTINE GMK98_Ind_TempSizeLight(Temp, PAR, NO3, Topt_, C, N, Chl, Cdiv, alphaChl_, dC, dN, dChl)
-USE Trait_functions, only : temp_Topt, PHY_C2Vol, Ainf
-USE params,          only : thetaNmax, mu0, rhoChl_L, QNmin_a, QNmin_b
-USE params,          only : QNmax_a, QNmax_b, KN_a, KN_b
-USE state_variables, only : NO3_min
-
-implicit none
-
-!Declaration on variables:
-real, intent(in)  :: Temp             !Associated temperarure [degree C]
-real, intent(in)  :: PAR              !Associated PAR [W m-2]
-real, intent(in)  :: NO3              !Associated NO3 concentration [mmol N m-3]
-real, intent(in)  :: C                !Current cellular carbon [pmol C cell-1]
-real, intent(in)  :: N                !Current cellular nitrogen [pmol N cell-1]
-real, intent(in)  :: Chl              !Current cellular Chl [pg C cell-1]
-real, intent(in)  :: Cdiv             !Cellular carbon content threshold for division [pmol cell-1]
-
-real, intent(in)  :: Topt_            !Optimal temperature [degree C]
-real, intent(in)  :: alphaChl_        !Slope of the P-I curve [Unit the same as aI0]
-real, intent(out) :: dN               !Changes in the cellular nitrogen content [pmol N cell-1 d-1]
-real, intent(out) :: dC               !Changes in the cellular carbon content [pmol C cell-1 d-1]
-real, intent(out) :: dChl             !Changes in the cellular Chl content [pg Chl cell-1 d-1]
-real              :: Vol    = 0d0     !Cell volume of phytoplankton [um3]
-real              :: QNmin  = 0.05    !Minimal N:C ratio [mmol N mmol C]
-real              :: QNmax  = 0.18    !Maximal N:C ratio [mmol N mmol C]
-real              :: dQN    = 0.13    !(Qmax - Qmin) [mmol N mmol C]
-real              :: QN     = 0.      !Current N:C ratio [mmol N mmol C]
-real              :: theta  = 0.      !Current Chl:C ratio [mg Chl mmol C]
-real              :: VCN    = 0.      !DIN uptake rate by phytoplankton [mol N mol C-1 d-1]
-real              :: Lno3   = 0.      !Nutrient limitation [pmol N m-3]
-real              :: SI     = 0.      !Light limitation index [fpar]
-real              :: PCmax  = 0.      !Maximal photosynthesis rate (regulated by QN) [d-1]
-real              :: PC     = 0.      !Carbon specific rate of photosynthesis [d-1]
-real              :: rhoChl = 0.      !Phyto C production devoted to Chl synthesis [mg Chl mmol C-1]
-real              :: Ik     = 0.      !Saturation parameter for the PI curve [W m-2 s-1]
-real              :: A      = 0.      !Photoinhibition, following Nikolau et al. (2016)
-
-real, parameter   :: RC     = 0.0d0   !Basic C respiration rate [d-1]
-real, parameter   :: RN     = 0.0d0   !Basic N respiration rate [d-1]
-real, parameter   :: RChl   = 0.0d0   !Basic Chl respiration rate [d-1]
-real              :: RcT    = 0.d0    !Temperature dependent C-based respiration rate [d-1]
-real              :: RNT    = 0.d0    !Temperature dependent N-based respiration rate [d-1]
-real              :: RChlT  = 0.d0    !Temperature dependent Chl-based respiration rate [d-1]
-
-real, parameter   :: zeta   = 3.0d0   !Cost of biosynthesis [mol C mol N-1]
-
-! Maximal specific N uptake as a function of temp. under resource (nutrient and light) replete conditions [mol N mol C-1 d-1]:
-real              :: Vcref  = 0.
-
-!Maximal growth rate as a function of temperature under resource (nutrient and light) replete conditions [uM]:
-real              :: muT    = 0.
-
-!Exponent of nutrient uptake function in GMK98.
-!Factor that governs the down regulation of nutrient uptake as Q approaches Qmax:
-real, parameter   :: nx     = 1.d0
-
-!Kn is an allometric function of Vol (Cdiv) (Edwards et al. 2012) [uM]:
-real              :: KN     = 0.          !Half-saturation constant [uM]
-
-real, parameter   :: a1 = 0.d0        ! Allometric exponent between mumax and alphaChl
-real, parameter   :: b0 = 4.3d0       ! Intercept between mumax and size 
-real, parameter   :: b1 = -0.65d0     ! Allometric exponent between mumax and size
-real, parameter   :: b2 = -0.08d0     ! Allometric exponent between mumax and size
-
-!temperature correction
-real, parameter   :: Tempcorr = exp(0.32/(8.62d-5 * 288.15))
-
-real              :: CDiv1 = 0.       ! CDiv value with ug C per cell
-!End of declaration
-
-if (C .le. 0d0) then
-   dN   = 0.d0
-   dC   = 0.d0
-   dChl = 0.d0
-   return
-endif
-
-!Current N:C ratio [mmol N mmol C]:
-QN = N/C
-
-!Current Chl:C ratio [mg Chl mmol C]
-theta = Chl/C
-
-!Convert phytoplankton CDiv to Volume:
-Vol = PHY_C2Vol(CDiv)
-
-!Nitrate half-saturation constant of phyto growth based on cell volume [uM]:
-KN = KN_a * Vol**KN_b
-
-!Minimal N:C ratio [mmol N mmol C] following Ward et al. (2012):
-QNmin = QNmin_a * Vol**QNmin_b
-
-!Maximal N:C ratio [mmol N mmol C] following Ward et al. (2012):
-QNmax = QNmax_a * Vol**QNmax_b
-
-!Constrain QN between QNmin and QNmax due to numerical issues
-QN = max(min(QN, QNmax), QNmin)
-
-!(Qmax - Qmin) [mmol N mmol C]:
-dQN   = QNmax - QNmin
-
-!Maximal growth rate as a function of temperature under resource (nutrient and light) replete conditions:
-!(what value of mu0 should be?): mu0 should be a function of alphaChl
-muT    = mu0 * exp(a1 * (alphaChl_ - .1)) !0.1 is the average alphaChl value
-
-!Temperature dependent maximal growth rate at 1 ug C cell-1
-muT    = temp_Topt(Temp, muT, Topt_)
-
-!Apply unimodal size-scaling relationship
-!First, convert the unit of CDiv to ugC cell-1
-CDiv1  = CDiv * 12.d0/1d6
-
-
-!Applying the size scaling following Chen and Liu (2011) Fig. 1B
-muT    = muT * 10**(b0 + b1 * log10(Cdiv1) + b2 * log10(Cdiv1)**2 )/Tempcorr
-
-!Assuming the same temperature dependence of nutrient uptake rate as on photosynthesis rate.
-!QNmax/QNmin may be also a function of temperature which needs being further investigated.
-Vcref  = muT * QNmax
-
-!Assume the same temperature dependence of respiration as on photosynthetic rate (long-term adaptation; Barton et al. 2020):
-RcT   = temp_Topt(Temp, Rc,   Topt_)
-RNT   = temp_Topt(Temp, RN,   Topt_)
-RChlT = temp_Topt(Temp, RChl, Topt_)
-
-!Nutrient limitation [nd]:
-Lno3 = (QN - QNmin) / dQN
-
-if (Lno3 .le. 0d0) then
-   PC = 0d0
-else
-   !Maximal photosynthesis rate (regulated by QN) [d-1]:
-   PCmax = muT * Lno3
-
-   !Light saturation parameter [W m-2 d-1]:
-   Ik = PCmax / alphachl_ / theta
-
-   !Calculate the fraction of open PSU [nd]:
-   if (PAR > 0.) then !Photoinhibition
-      A = Ainf(PAR, alphachl_, QN, QNmin, QNmax, theta)
-   else
-      A = 1d0
-   endif
-
-   !Light limitation index [nd]:
-   SI = - A * PAR / Ik
-
-   if (abs(SI) < 1d-10) then
-      SI = 0.d0
-   else
-      SI = 1.d0 - exp(SI)
-   endif
-
-   !Photosynthesis rate [d-1]:
-   PC = PCmax * SI
-Endif
-
-!Define rhochl [g Chl mol C-1]: fraction of phytoplankton carbon production that is devoted to Chl synthesis.
-!If dark, assume that rhochl equaled the value calculated for the end of the preceding light period.
-if (PAR <= 0d0) then
-   rhochl   = rhoChl_L
-else
-   rhochl   = thetaNmax * PC / alphachl_ / theta / PAR
-   rhoChl_L = rhochl
-endif
-
-!DIN uptake rate by phytoplankton [mol N mol C-1 d-1]:
-VCN = Vcref * (NO3 - NO3_min)/ (NO3 + KN) * ((QNmax - QN) / dQN)**nx  !Vcref already temperature dependent
-VCN = max(VCN, 0d0)
-
-!Changes of cellular carbon [d-1]:
-dC = C * (PC - zeta * VCN - RcT)
-
-!Changes of cellular nitrogen [pmol N cell-1 d-1]:
-!RNT has to be zero to avoid continuous decline of N per cell
-dN = N * (VCN / QN - RNT)
-
-!Changes of cellular Chl [d-1]:
-dChl = Chl * (rhochl * VCN / theta - RChlT)
-
-return
-END subroutine GMK98_Ind_TempSizeLight
-!------------------------------------------------------------------------------------------------
-
 SUBROUTINE Par2PHY
-use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, nu, sigma, iTopt, iSize, ialphaChl
-use state_variables, only : NTrait, N_birth, N_death, N_mutate
+use state_variables, only : t, N_PAR, iPC, iPN, iChl, p_PHY, Varout, iTopt, iSize, ialphaChl
+use state_variables, only : N_birth, N_death, N_mutate
 use state_variables, only : oN_cell, oCDiv_avg, oCDiv_var, oTopt_avg, oTopt_var 
 use state_variables, only : oLnalpha_var, oLnalpha_avg
 use state_variables, only : oTalp_cov, oALnV_cov, oTLnV_cov
 use grid,            only : Hz, nlev
+use params,          only : NTrait, nu, sigma 
 use mGf90,           only : srand_mtGaus
 IMPLICIT NONE
 

@@ -26,7 +26,7 @@ namelist /timelist/  NDay_Run, dtsec, nsave, Nrand, read_previous_output
 
 !Namelist definition of model choice and parameters
 namelist /paramlist/ Model_ID, N_pass, N_Par, mu0, aI0, KN, gmax, Kp, mz,GGE, unass, RDN, &
-                     wDET, SDZoo, nu, sigma
+                     wDET, SDZoo
 
 ! Check whether the namelist file exists.
 inquire (file='time.nml', iostat=rc)

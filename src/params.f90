@@ -16,6 +16,9 @@ real :: wDET    =  0d0 ! Sinking rate of detritus
 ! Standard deviation of log zooplankton feeding preference
 real :: SDZoo   =  0d0 
 
+! Acclimation parameter
+real, parameter :: nx = 1.d0
+
 ! Activation energy for phytoplankton growth
 real, parameter :: Ep  = 0.32d0
 
@@ -32,11 +35,16 @@ real            :: rhochl_L  = 0d0
 real, parameter   :: QNmin_a = 0.07d0     !Normalization constant for QNmin [molN:molC]
 real, parameter   :: QNmin_b = -0.17d0    !Allometric exponent for QNmin
 real, parameter   :: QNmax_a = 0.25d0     ! Normalization constant for QNmax [molN:molC]
-real, parameter   :: QNmax_b = -0.13d0    ! Allometric exponent for QNmax
+real, parameter   :: QNmax_b = -0.07d0    ! Allometric exponent for QNmax
 
 !Kn is an allometric function of Vol (Cdiv) (Edwards et al. 2012) [uM]:
 real, parameter   :: KN_a   = 0.14d0      !Normalization constant for KN
 real, parameter   :: KN_b   = 0.33d0      !Allometric exponent for KN
 
 real, parameter   :: pi= 3.1415926535
+
+integer, parameter :: NTrait = 3
+real :: nu(NTrait) = [1d-12, 1d-12, 1d-12] !Probability per generation per cell
+real :: sigma(NTrait) = [0.1, 0.1, 0.1]    !Standard deviation of mutation of the three traits
+
 end module params

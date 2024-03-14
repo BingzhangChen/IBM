@@ -1,5 +1,4 @@
 #!/bin/bash
-#module load fftw/intel-2020.4/3.3.10
 module load netcdf/intel-2018.2/4.6.1
 module load netcdf-fortran/intel-2018.2/4.4.4
 
@@ -77,6 +76,7 @@ mkdir $SCRDIR
 #
 cp -f ${SOURCE}/*.f90 $SCRDIR
 cp -f ${SOURCE}/Make* $SCRDIR
+cp -f *.f90 $SCRDIR
  
 # Change directory
 cd $SCRDIR

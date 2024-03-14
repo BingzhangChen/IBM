@@ -6,6 +6,7 @@ implicit none
 private
 
 public :: TEMPBOL, temp_Topt, palatability, PHY_C2Vol, PHY_ESD2C, Ainf
+public :: Pmax_size, respiration
 
 
 CONTAINS
@@ -98,6 +99,52 @@ else
 endif
 return
 end function palatability
+
+pure real function Pmax_size(ESD, Pmax0) result(y)
+implicit none
+real, intent(in) :: ESD
+
+!Pmax0: Maximal photosynthesis rate (d-1)
+real, intent(in) :: Pmax0
+
+!Maximal growth rate of phytoplankton as a function of size following Wirtz (2011)
+!Scaling exponent of excess density rho' (Menden-Deuer and Lessard 2000)
+real, parameter :: alpha_rho = 0.33
+
+!Intracellular photosynthetic depletion (micron-1; Wirtz 2011)
+real, parameter :: a_star = 0.09 
+
+
+!l: log ESD
+real :: l
+
+l = log(ESD)
+
+y = Pmax0/(1.d0 + a_star*exp(1.d0 - alpha_rho/3.d0)*l)
+
+return
+end function 
+
+pure real function respiration(ESD, r_s) result(y)
+implicit none
+real, intent(in):: ESD
+real, intent(in):: r_s !respiration rate (d-1) at V_s
+
+real, parameter :: b_rho = 0.d0 !Size scaling of C density
+
+!Cell volume when rho_dia = rho_green
+real, parameter :: V_s = 8.d0 !micron^3
+
+real :: V, ESD_s
+
+V = pi/6.d0*ESD**3 
+ESD_s = (6.d0*V_s/pi)**0.333333
+
+y = r_s*ESD_s/ESD * (V/V_s)**b_rho
+
+return
+end function 
+
 
 pure real function TEMPBOL(Ea,tC)
 implicit none

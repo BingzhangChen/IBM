@@ -51,11 +51,13 @@ character (len=3),  parameter  ::  NPP_NAME = 'NPP'
 character (len=2),  parameter  ::  Kv_NAME = 'Kv'
 character (len=4),  parameter  ::  Temp_NAME = 'Temp'
 character (len=5),  parameter  ::  N_ind_NAME = 'N_ind'
-character (len=6),  parameter  ::  N_cell_NAME = 'N_cell'
-character (len=3),  parameter  ::  PAR_NAME = 'PAR'
-character (len=4),  parameter  ::  CDiv_NAME = 'CDiv'
-character (len=4),  parameter  ::  Topt_NAME = 'Topt'
-character (len=5),  parameter  ::  alp_NAME = 'alpha'
+character (len=6),  parameter  ::  N_cell_NAME   = 'N_cell'
+character (len=3),  parameter  ::  PAR_NAME      = 'PAR'
+character (len=4),  parameter  ::  CDiv_NAME     = 'CDiv'
+character (len=4),  parameter  ::  Topt_NAME     = 'Topt'
+character (len=5),  parameter  ::  alp_NAME      = 'alpha'
+character (len=4),  parameter  ::  muC_NAME      = 'mu_C'
+character (len=7),  parameter  ::  fitness_NAME  = 'Fitness'
 character (len=8),  parameter  ::  CDiv_avg_NAME = 'CDiv_avg'
 character (len=8),  parameter  ::  CDiv_var_NAME = 'CDiv_var'
 character (len=8),  parameter  ::  Topt_avg_NAME = 'Topt_avg'
@@ -83,7 +85,8 @@ INTEGER :: TLnV_cov_varid, Talp_cov_varid, ALnV_cov_varid
 INTEGER :: Zr_varid, Zw_varid, step_varid, DAY_varid, DOY_varid, hr_varid
 INTEGER :: Z_varid, IZ_varid, ID_varid, P_PAR_varid, P_temp_varid, P_NO3_varid
 INTEGER :: C_varid, N_varid, P_CHL_varid, P_num_varid, CDiv_varid, Topt_varid
-INTEGER :: alpha_varid, CHL_varid, DET_varid, NO3_varid, PC_varid
+INTEGER :: alpha_varid, CHL_varid, DET_varid, NO3_varid, PC_varid, muC_varid
+INTEGER :: fitness_varid
 INTEGER :: PN_varid, ZOO_varid
 INTEGER :: Pass_ID_varid, Pass_IZ_varid, Pass_Z_varid
 INTEGER :: PHY_ID_varid, PHY_IZ_varid, PHY_Z_varid
@@ -157,6 +160,7 @@ CALL check( nf90_def_var(ncid, PN_NAME, NF90_REAL, dimid_PHY, N_varid) )
 CALL check( nf90_def_var(ncid, CDiv_NAME, NF90_REAL, dimid_PHY, CDiv_varid) )
 CALL check( nf90_def_var(ncid, Topt_NAME, NF90_REAL, dimid_PHY, Topt_varid) )
 CALL check( nf90_def_var(ncid, alp_NAME, NF90_REAL, dimid_PHY, alpha_varid) )
+CALL check( nf90_def_var(ncid, muC_NAME, NF90_REAL, dimid_PHY, muC_varid) )
 CALL check( nf90_def_var(ncid, N_cell_NAME, NF90_REAL, dimid_PHY, P_num_varid) )
 
 ! Assign units attributes to the netCDF variables.
@@ -648,40 +652,44 @@ CALL check(nf90_def_var(ncid,  Hr_NAME, NF90_INT, rec_dimid, Hr_varid) )
 dimids = (/ PAT_dimid, rec_dimid /)
 
 ! Define the netCDF variables for the position data.
-CALL check( nf90_def_var(ncid, ID_NAME, NF90_INT, dimids, ID_varid) )
-CALL check( nf90_def_var(ncid, IZ_NAME, NF90_INT, dimids, IZ_varid) )
-CALL check( nf90_def_var(ncid, Z_NAME, NF90_REAL, dimids, Z_varid) )
-CALL check( nf90_def_var(ncid, PAR_NAME, NF90_REAL, dimids, P_PAR_varid) )
+CALL check( nf90_def_var(ncid, ID_NAME,   NF90_INT,  dimids, ID_varid) )
+CALL check( nf90_def_var(ncid, IZ_NAME,   NF90_INT,  dimids, IZ_varid) )
+CALL check( nf90_def_var(ncid, Z_NAME,    NF90_REAL, dimids, Z_varid) )
+CALL check( nf90_def_var(ncid, PAR_NAME,  NF90_REAL, dimids, P_PAR_varid) )
 CALL check( nf90_def_var(ncid, Temp_NAME, NF90_REAL, dimids, P_Temp_varid) )
-CALL check( nf90_def_var(ncid, NO3_NAME, NF90_REAL, dimids, P_NO3_varid) )
-CALL check( nf90_def_var(ncid, CHL_NAME, NF90_REAL, dimids, P_CHL_varid) )
-CALL check( nf90_def_var(ncid, PC_NAME, NF90_REAL, dimids, C_varid) )
+CALL check( nf90_def_var(ncid, NO3_NAME,  NF90_REAL, dimids, P_NO3_varid) )
+CALL check( nf90_def_var(ncid, CHL_NAME,  NF90_REAL, dimids, P_CHL_varid) )
+CALL check( nf90_def_var(ncid, PC_NAME,   NF90_REAL, dimids, C_varid) )
 CALL check( nf90_def_var(ncid, CDiv_NAME, NF90_REAL, dimids, CDiv_varid) )
 CALL check( nf90_def_var(ncid, Topt_NAME, NF90_REAL, dimids, Topt_varid) )
-CALL check( nf90_def_var(ncid, alp_NAME, NF90_REAL, dimids, alpha_varid) )
-CALL check( nf90_def_var(ncid, PN_NAME, NF90_REAL, dimids, N_varid) )
-CALL check( nf90_def_var(ncid, N_cell_NAME, NF90_REAL, dimids, P_num_varid) )
+CALL check( nf90_def_var(ncid, alp_NAME,  NF90_REAL, dimids, alpha_varid) )
+CALL check( nf90_def_var(ncid, muC_NAME,  NF90_REAL, dimids, muC_varid) )
+CALL check( nf90_def_var(ncid, PN_NAME,   NF90_REAL, dimids, N_varid) )
+CALL check( nf90_def_var(ncid, fitness_NAME, NF90_REAL, dimids, fitness_varid) )
+CALL check( nf90_def_var(ncid, N_cell_NAME,  NF90_REAL, dimids, P_num_varid) )
 
 ! Assign units attributes to the netCDF variables.
 ! Get the date of the nc file
 CALL date_and_time(DATE = date)
 CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Date', date))
 
-CALL check( nf90_put_att(ncid, Z_varid,   UNITS, UNIT_dist))
-CALL check( nf90_put_att(ncid, IZ_varid,  UNITS, 'no. of grid'))
-CALL check( nf90_put_att(ncid, ID_varid,  UNITS, 'No'))
-CALL check( nf90_put_att(ncid, DOY_varid, UNITS, 'Date of the Year'))
-CALL check( nf90_put_att(ncid, hr_varid, UNITS, 'hour'))
-CALL check( nf90_put_att(ncid, C_varid, UNITS, 'pmol C cell-1'))
-CALL check( nf90_put_att(ncid, N_varid, UNITS, 'pmol N cell-1'))
-CALL check( nf90_put_att(ncid, Topt_varid, UNITS, 'ºC'))
-CALL check( nf90_put_att(ncid, P_PAR_varid, UNITS, 'W m-2'))
-CALL check( nf90_put_att(ncid, P_num_varid, UNITS, 'cells ind-1'))
-CALL check( nf90_put_att(ncid, P_CHL_varid, UNITS, 'pg Chl cell-1'))
-CALL check( nf90_put_att(ncid, P_NO3_varid, UNITS, 'mmol N m-3'))
+CALL check( nf90_put_att(ncid, Z_varid,      UNITS, UNIT_dist))
+CALL check( nf90_put_att(ncid, IZ_varid,     UNITS, 'no. of grid'))
+CALL check( nf90_put_att(ncid, ID_varid,     UNITS, 'No'))
+CALL check( nf90_put_att(ncid, DOY_varid,    UNITS, 'Date of the Year'))
+CALL check( nf90_put_att(ncid, hr_varid,     UNITS, 'hour'))
+CALL check( nf90_put_att(ncid, C_varid,      UNITS, 'pmol C cell-1'))
+CALL check( nf90_put_att(ncid, N_varid,      UNITS, 'pmol N cell-1'))
+CALL check( nf90_put_att(ncid, Topt_varid,   UNITS, 'ºC'))
+CALL check( nf90_put_att(ncid, P_PAR_varid,  UNITS, 'W m-2'))
+CALL check( nf90_put_att(ncid, P_num_varid,  UNITS, 'cells ind-1'))
+CALL check( nf90_put_att(ncid, P_CHL_varid,  UNITS, 'pg Chl cell-1'))
+CALL check( nf90_put_att(ncid, P_NO3_varid,  UNITS, 'mmol N m-3'))
 CALL check( nf90_put_att(ncid, P_Temp_varid, UNITS, 'ºC'))
-CALL check( nf90_put_att(ncid, alpha_varid, UNITS, 'log((W m-2)-1 (gChl molC)-1 d-1)'))
-CALL check( nf90_put_att(ncid, CDiv_varid, UNITS, 'pmol C cell-1'))
+CALL check( nf90_put_att(ncid, alpha_varid,  UNITS, 'log((W m-2)-1 (gChl molC)-1 d-1)'))
+CALL check( nf90_put_att(ncid, CDiv_varid,   UNITS, 'pmol C cell-1'))
+CALL check( nf90_put_att(ncid, muC_varid,    UNITS, 'd-1'))
+CALL check( nf90_put_att(ncid, fitness_varid,UNITS, 'd-1'))
 
 ! End define mode.
 CALL check( nf90_enddef(ncid) )
@@ -720,25 +728,29 @@ CALL check(NF90_INQ_VARID(ncid, N_cell_NAME, p_num_varid))
 CALL check(NF90_INQ_VARID(ncid, Topt_NAME, Topt_varid))
 CALL check(NF90_INQ_VARID(ncid, CDiv_NAME, CDiv_varid))
 CALL check(NF90_INQ_VARID(ncid, alp_NAME, alpha_varid))
+CALL check(NF90_INQ_VARID(ncid, muC_NAME, muC_varid))
+CALL check(NF90_INQ_VARID(ncid, fitness_NAME, fitness_varid))
 
 CALL check(NF90_PUT_VAR(ncid, DOY_varid, DOY, start=(/rec/))) !Add DOY  into the nc file
 CALL check(NF90_PUT_VAR(ncid,  hr_varid, hour,start=(/rec/))) !Add Hour into the nc file
 
 DO j = 1, N_PAR
    start = (/j, rec/)
-   CALL check(NF90_PUT_VAR(ncid, ID_varid,     p_PHY(j)%ID,   start=start))
-   CALL check(NF90_PUT_VAR(ncid, IZ_varid,     p_PHY(j)%iz,   start=start))
-   CALL check(NF90_PUT_VAR(ncid, Z_varid,      p_PHY(j)%rz,   start=start))
-   CALL check(NF90_PUT_VAR(ncid, p_PAR_varid,  p_PHY(j)%PAR,  start=start))
-   CALL check(NF90_PUT_VAR(ncid, p_temp_varid, p_PHY(j)%temp, start=start))
-   CALL check(NF90_PUT_VAR(ncid, p_NO3_varid,  p_PHY(j)%NO3,  start=start))
-   CALL check(NF90_PUT_VAR(ncid, C_varid,      p_PHY(j)%C,    start=start))
-   CALL check(NF90_PUT_VAR(ncid, N_varid,      p_PHY(j)%N,    start=start))
-   CALL check(NF90_PUT_VAR(ncid, p_CHL_varid,  p_PHY(j)%CHL,  start=start))
-   CALL check(NF90_PUT_VAR(ncid, p_num_varid,  p_PHY(j)%num,  start=start))
-   CALL check(NF90_PUT_VAR(ncid, Topt_varid,   p_PHY(j)%Topt, start=start))
-   CALL check(NF90_PUT_VAR(ncid, CDiv_varid,   p_PHY(j)%CDiv, start=start))
+   CALL check(NF90_PUT_VAR(ncid, ID_varid,     p_PHY(j)%ID,         start=start))
+   CALL check(NF90_PUT_VAR(ncid, IZ_varid,     p_PHY(j)%iz,         start=start))
+   CALL check(NF90_PUT_VAR(ncid, Z_varid,      p_PHY(j)%rz,         start=start))
+   CALL check(NF90_PUT_VAR(ncid, p_PAR_varid,  p_PHY(j)%PAR,        start=start))
+   CALL check(NF90_PUT_VAR(ncid, p_temp_varid, p_PHY(j)%temp,       start=start))
+   CALL check(NF90_PUT_VAR(ncid, p_NO3_varid,  p_PHY(j)%NO3,        start=start))
+   CALL check(NF90_PUT_VAR(ncid, C_varid,      p_PHY(j)%C,          start=start))
+   CALL check(NF90_PUT_VAR(ncid, N_varid,      p_PHY(j)%N,          start=start))
+   CALL check(NF90_PUT_VAR(ncid, p_CHL_varid,  p_PHY(j)%CHL,        start=start))
+   CALL check(NF90_PUT_VAR(ncid, p_num_varid,  p_PHY(j)%num,        start=start))
+   CALL check(NF90_PUT_VAR(ncid, Topt_varid,   p_PHY(j)%Topt,       start=start))
+   CALL check(NF90_PUT_VAR(ncid, CDiv_varid,   p_PHY(j)%CDiv,       start=start))
    CALL check(NF90_PUT_VAR(ncid, alpha_varid,  p_PHY(j)%LnalphaChl, start=start))
+   CALL check(NF90_PUT_VAR(ncid, muC_varid,    p_PHY(j)%mu_C,       start=start))
+   CALL check(NF90_PUT_VAR(ncid, fitness_varid,p_PHY(j)%fitness,    start=start))
 ENDDO
 
 ! Close the file. This causes netCDF to flush all buffers and make

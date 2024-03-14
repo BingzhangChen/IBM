@@ -2,7 +2,7 @@
 
 !Particle parameters:
    N_pass = 1000,  !Number of passive particles
-   N_par =  2000, !Number of phyto. particles
+   N_par =  10000, !Number of phyto. particles
 
 !Phytoplankton parameters:
    mu0   = 5.00, !Maximal growth rate [d-1]
@@ -15,15 +15,11 @@
    mz    = 0.01, !Zooplankton mortality grazing coefficient at 1 um^3 [uM N−1 d-1]
    GGE   = 0.30, !Zooplankton Gross Growth Efficiency [pmol N m-3]
    unass = 0.24, !Fraction of unassimilated food ingested by zooplankton [nd]
-   SDZoo = 0.5,  !Standard deviation of zooplankton feeding preference [nd]
+   SDZoo = 0.25, !Standard deviation of zooplankton feeding preference [nd]
 
 !Detritus parameters:
    RDN   = 0.1, !Conversion rate of detritus to inorganic nitrogen [d-1]
    wDET  = 0.5, !Detritus sinking rate [m d-1]
-
-!Mutation parameters:
-   !nu(1)    = 0.0001, 0.0001, 0.0001,  !Mutation rate (Topt, size, alphaChl)
-   !sigma(1) =  0.10,  0.10,  0.10,  !Standard deviation of mutation rates
 
 !Model selection:
    Model_ID = 8,
