@@ -2,7 +2,7 @@ Module forcing
 !This module provides several analytic functions calculating temperature, surface PAR, MLD, maximal eddy diffusivity as a function of time
 use Time_setting, only: d_per_s, y_per_d, s_per_h
 use Grid,         only: nlev, Z_r, Hz, Z_w
-use params,       only: pi
+use params,       only: pi, VAR_noise_Kv
 implicit none
 
 private
@@ -219,8 +219,14 @@ return
 END subroutine VERTICAL_LIGHT
 
 subroutine extract_Kv
+use mGf90, only : srand_mtGaus
 !This subroutine extracts Kv0, Kvmax and MLD from external files and should be called only once during initialization
 implicit none
+integer :: i
+real :: rv(N_time_Kv) = 0.   !Scratch variable for storing the random variable
+real, parameter :: MEAN_rv(N_time_Kv) = 0.d0   !Mean of rv
+real :: VAR_rv(N_time_Kv,N_time_Kv) = 0.d0   !Covariance matrix of rv
+real :: cff = 0d0
 
 !Obtain time
 call Readcsv(temp_time_file, 1, N_time_Kv, obs_time_Kv) 
@@ -242,7 +248,25 @@ call Readcsv(Kv_file, N_obs_Kv, N_time_Kv, obs_Kv)
 call gridinterpol(N_obs_Kv, N_time_Kv, obs_Kv(:, 1), &
                   obs_Kv(:, 2:(N_time_Kv + 1)), nlev+1, Z_w, VKv)
 
-end subroutine extract_Kv
+!Add random noise to VKv 
+
+!A new variable is randomly sampled from a Gaussian distribution with mean of zero and variance of VAR_kv_noise
+
+!Parameterize VAR_rv
+VAR_rv(:,:) = 0d0
+do i = 1, N_time_Kv
+  VAR_rv(i,i) = VAR_noise_Kv
+enddo
+
+rv = srand_mtGaus(N_time_Kv, MEAN_rv, VAR_rv)
+
+!Convert rv to normal scale
+do i = 1, N_time_Kv
+  cff = dexp(rv(i))
+  VKv(:,i) = VKv(:,i)*cff
+enddo
+return
+End subroutine extract_Kv
 
 subroutine extract_WOAtemp
 !This subroutine extracts temperature data from WOA13 observations and should be called only once during initialization
