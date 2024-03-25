@@ -107,23 +107,15 @@ real, intent(in) :: ESD
 !Pmax0: Maximal photosynthesis rate (d-1)
 real, intent(in) :: Pmax0
 
-!Maximal growth rate of phytoplankton as a function of size following Wirtz (2011)
-!Scaling exponent of excess density rho' (Menden-Deuer and Lessard 2000)
-real, parameter :: alpha_rho = 0.33
+!Constant in Eqn. 14 of Wirtz (2011) (a' = (rho*/rho)^.333*a)
+real, parameter :: a_p = 0.27
 
-!Intracellular photosynthetic depletion (micron-1; Wirtz 2011)
-real, parameter :: a_star = 0.09 
+!End of declaration
 
-
-!l: log ESD
-real :: l
-
-l = log(ESD)
-
-y = Pmax0/(1.d0 + a_star*exp(1.d0 - alpha_rho/3.d0)*l)
+y = Pmax0/(1.d0 + a_p *ESD)
 
 return
-end function 
+End function Pmax_size
 
 pure real function respiration(ESD, r_s) result(y)
 implicit none
@@ -175,7 +167,6 @@ real, parameter   :: Ed0   = 2.3
 real, parameter   :: Ei      = 0.22  
 real, parameter   :: beta  =-0.2  !Exponent for Ea0
 real, parameter   :: phi    = 0.27  !Exponent for Ed
-!real, parameter   :: mumax0 = 0.59  !Normalized growth rate for mumax (d-1)
 
 real :: Ed, Ea, mumax
 
@@ -183,7 +174,7 @@ mumax = alloscale(Topt_, mumax0,  Ei)
 Ea    = alloscale(Topt_, Ea0,  beta) 
 Ed    = alloscale(Topt_, Ed0,  phi) 
 y     = JOHNSON(tC, mumax, Ea, Ed, Topt_)
-
+return
 END function temp_Topt
 
 REAL FUNCTION JOHNSON(tC, mumax, Ea, Ed, Topt_) RESULT(y)
