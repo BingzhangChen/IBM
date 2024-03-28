@@ -15,7 +15,7 @@
    mz    = 0.01, !Zooplankton mortality grazing coefficient at 1 um^3 [uM N−1 d-1]
    GGE   = 0.30, !Zooplankton Gross Growth Efficiency [pmol N m-3]
    unass = 0.24, !Fraction of unassimilated food ingested by zooplankton [nd]
-   SDZoo = 0.25, !Standard deviation of zooplankton feeding preference [nd]
+   SDZoo = 0.5,  !Standard deviation of zooplankton feeding preference [nd]
 
 !Detritus parameters:
    RDN   = 0.1, !Conversion rate of detritus to inorganic nitrogen [d-1]
