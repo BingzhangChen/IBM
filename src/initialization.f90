@@ -16,9 +16,13 @@ real       :: cff   = 0.d0
 real       :: Z_avg = 0.d0
 real       :: Vol   = 0.
 real       :: QN    = 0.
+real       :: NO3_Jan(nlev, 2) = 0.
 integer, parameter :: namlst         = 20   !Unit time for namelist files
 integer            :: AllocateStatus = 0
 logical            :: exists         = .true.
+
+character(LEN=16) :: NO3_file='BATS_NO3_Jan.dat'
+
 !==========================================================
 
 !Namelist definition of time settings
@@ -159,8 +163,13 @@ IF (TASKID==0) THEN
 
   ELSE
  
-    ! Initialize initial NO3:
-    t(iNO3,:) = 0.5d0
+    ! Initialize initial NO3 using WOA data:
+    ! Read NO3 data that are already matched to the grid:
+    call Readcsv(NO3_file, nlev, 2, NO3_Jan)
+
+    do k = 1, nlev
+      t(iNO3,k) = NO3_Jan(k,2)
+    enddo
   
     If (Model_ID .eq. GMK98_Size          .or. Model_ID .eq. GMK98_ToptSize .or.  &
         Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
