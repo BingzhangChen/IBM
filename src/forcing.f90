@@ -65,7 +65,7 @@ real                         :: VKv(0:nlev, N_time_Kv)          = 0.d0
 real                         :: Kv(0:nlev)                      = 0.d0
 
 !Background diffusivity
-real, parameter :: Kbg = 3d-5 !Kbg follows Christina L&O 2005
+real, parameter :: Kbg = 1d-5 
 
 !PAR
 real                         :: PARw(0:nlev)                      = 0.d0
