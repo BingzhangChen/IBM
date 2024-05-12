@@ -17,7 +17,7 @@ integer, parameter :: nvar = iDET !Total number of state variables
 real               :: t(nvar, nlev) = 0.d0
 real               :: Ntot = 0d0  !Total nitrogen in the domain
 real, parameter    :: MinSzoo = log(0.8d0)!Minimal zooplankton log ESD (micron)
-real, parameter    :: MaxSzoo = log(25d2) !Maximal zooplankton log ESD (micron)
+real, parameter    :: MaxSzoo = log(36d2) !Maximal zooplankton log ESD (micron)
 real, parameter    :: dZOOESD = (MaxSzoo-MinSzoo)/dble(NZOO-1)! ESD difference between adjacent zooplankton size class (log)
 
 !Log ESD of each zoo. size class
