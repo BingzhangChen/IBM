@@ -17,13 +17,13 @@
 #SBATCH --account=chen-dse
 #
 # No. of tasks required
-#SBATCH --ntasks=1 --nodes=1
+#SBATCH --ntasks=5 --nodes=1
 #
 # Distribute processes in round-robin fashion for load balancing
 #SBATCH --distribution=cyclic
 #
 # Specify (hard) runtime (HH:MM:SS)
-#SBATCH --time=160:00:00
+#SBATCH --time=120:00:00
 #
 # Job name
 #SBATCH --job-name=IBM
@@ -33,8 +33,8 @@
 #======================================================
 
 module purge
-module load netcdf/intel-2018.2/4.6.1
-module load netcdf-fortran/intel-2018.2/4.4.4
+module load netcdf/intel-2020.4/4.9.0
+module load netcdf-fortran/intel-2020.4/4.5.4
 
 #export LD_LIBRARY_PATH=/opt/software/netcdf/intel-2018.2/4.6.1/lib:$LD_LIBRARY_PATH
 #======================================================
@@ -44,7 +44,7 @@ module load netcdf-fortran/intel-2018.2/4.4.4
 /opt/software/scripts/job_prologue.sh  
 #------------------------------------------------------
 
-./IBM > out
+mpirun -np $SLURM_NPROCS ./IBM > out
 
 #======================================================
 # Epilogue script to record job endtime and runtime
