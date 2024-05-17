@@ -21,7 +21,7 @@ integer, parameter :: namlst         = 20   !Unit time for namelist files
 integer            :: AllocateStatus = 0
 logical            :: exists         = .true.
 
-character(LEN=16) :: NO3_file='BATS_NO3_Jan.dat'
+character(LEN=20) :: NO3_file='BATS_NO3_Jan.dat'
 
 !==========================================================
 

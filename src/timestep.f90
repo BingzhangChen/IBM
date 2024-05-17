@@ -40,7 +40,7 @@ DO it = restart_step, Nstep+1
     !Calculate PAR
     call VERTICAL_LIGHT(current_DOY, sec_of_day, t(iChl,:))
 
-    !Directly use the ROMS model output
+    !Directly use the ROMS model output of Kv profiles
     call time_interp(int(current_sec), N_time_Kv, nlev+1, obs_time_Kv, VKv, Kv)
 
     !Start biology

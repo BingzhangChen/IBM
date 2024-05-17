@@ -86,29 +86,29 @@ DO i = 1, N_PAR
             end select
          ENDIF
       ENDDO
-   ENDIF
+   ENDIF !End of division
 
    !Calculate Eulerian concentrations of phyto C, N, and Chl, mean trait  for each layer
    PHYC(ipar) = PHYC(ipar) + p_PHY(i)%num *p_PHY(i)%C 
    PHY(ipar)  = PHY(ipar)  + p_PHY(i)%num *p_PHY(i)%N
    CHL(ipar)  = CHL(ipar)  + p_PHY(i)%num *p_PHY(i)%Chl
 
-   mCDiv_(ipar) = mCDiv_(ipar) + p_PHY(i)%num * log(p_PHY(i)%Cdiv)
-   mTopt_(ipar) = mTopt_(ipar) + p_PHY(i)%num * p_PHY(i)%Topt
-   mlnalpha_(ipar) = mlnalpha_(ipar) + p_PHY(i)%num * p_PHY(i)%LnalphaChl
-ENDDO
+   mCDiv_(ipar) = mCDiv_(ipar) + p_PHY(i)%num *p_PHY(i)%C * log(p_PHY(i)%Cdiv)
+   mTopt_(ipar) = mTopt_(ipar) + p_PHY(i)%num *p_PHY(i)%C * p_PHY(i)%Topt
+   mlnalpha_(ipar) = mlnalpha_(ipar) + p_PHY(i)%num * p_PHY(i)%C *p_PHY(i)%LnalphaChl
+ENDDO !End of iterating over all super-individuals
 
-do k = 1, nlev
+DO k = 1, nlev
   t(iPC, k) = PHYC(k) *1d-9/Hz(k)!Convert Unit to mmol/m^3
   t(iPN,k) = PHY(k) *1d-9/Hz(k)   !Convert Unit to mmol/m^3
   t(iChl,k) = CHL(k)*1d-9/Hz(k) !Convert Unit to mmol/m^3
 
   if (Varout(oN_cell,k) > 0.) then
-    mCDiv_(k)      = mCDiv_(k)/(Varout(oN_cell, k) * Hz(k))
-    mTopt_(k)      = mTopt_(k)/(Varout(oN_cell, k) * Hz(k))
-    mlnalpha_(k) = mlnalpha_(k)/(Varout(oN_cell, k) * Hz(k))
+    mCDiv_(k)    = mCDiv_(k)/PHYC(k)
+    mTopt_(k)    = mTopt_(k)/PHYC(k)
+    mlnalpha_(k) = mlnalpha_(k)/PHYC(k)
   endif
-enddo
+ENDDO
 
 Varout(iPC, :) = t(iPC, :)
 Varout(iPN, :) = t(iPN, :)
@@ -117,7 +117,7 @@ Varout(oCDiv_avg, :) = mCDiv_(:)
 Varout(oTopt_avg, :) = mTopt_(:)
 Varout(oLnalpha_avg, :) = mLnalpha_(:)
 
-!Compute trait variances
+!Compute trait covariances
 vCDiv_(:) = 0d0
 vTopt_(:) = 0d0
 vlnalpha_(:) = 0d0
@@ -127,22 +127,22 @@ cov_TL(:) = 0d0
 
 DO i = 1, N_PAR
    ipar = p_PHY(i)%iz  !The current grid of super-individual i
-   vCDiv_(ipar) = vCDiv_(ipar) + p_PHY(i)%num * (log(p_PHY(i)%Cdiv) - mCDiv_(ipar))**2
-   vTopt_(ipar) = vTopt_(ipar) + p_PHY(i)%num * (p_PHY(i)%Topt - mTopt_(ipar))**2
-   vlnalpha_(ipar) = vlnalpha_(ipar) + p_PHY(i)%num*(p_PHY(i)%LnalphaChl - mlnalpha_(ipar))**2
-   cov_TL(ipar) = cov_TL(ipar) +p_PHY(i)%num * (log(p_PHY(i)%Cdiv) - mCDiv_(ipar))*(p_PHY(i)%Topt - mTopt_(ipar))
-   cov_AL(ipar) = cov_AL(ipar)+p_PHY(i)%num * (log(p_PHY(i)%Cdiv) - mCDiv_(ipar))*(p_PHY(i)%LnalphaChl - mlnalpha_(ipar))
-   cov_TA(ipar) = cov_TA(ipar)+p_PHY(i)%num * (p_PHY(i)%LnalphaChl - mlnalpha_(ipar))*(p_PHY(i)%Topt - mTopt_(ipar))
+   vCDiv_(ipar) = vCDiv_(ipar) + p_PHY(i)%num*p_PHY(i)%C*(log(p_PHY(i)%Cdiv) - mCDiv_(ipar))**2
+   vTopt_(ipar) = vTopt_(ipar) + p_PHY(i)%num*p_PHY(i)%C*(p_PHY(i)%Topt - mTopt_(ipar))**2
+   vlnalpha_(ipar) = vlnalpha_(ipar) + p_PHY(i)%num*p_PHY(i)%C*(p_PHY(i)%LnalphaChl - mlnalpha_(ipar))**2
+   cov_TL(ipar) = cov_TL(ipar)+p_PHY(i)%num*p_PHY(i)%C*(log(p_PHY(i)%Cdiv)-mCDiv_(ipar))*(p_PHY(i)%Topt - mTopt_(ipar))
+   cov_AL(ipar) = cov_AL(ipar)+p_PHY(i)%num*p_PHY(i)%C*(log(p_PHY(i)%Cdiv)-mCDiv_(ipar))*(p_PHY(i)%LnalphaChl - mlnalpha_(ipar))
+   cov_TA(ipar) = cov_TA(ipar)+p_PHY(i)%num*p_PHY(i)%C*(p_PHY(i)%LnalphaChl-mlnalpha_(ipar))*(p_PHY(i)%Topt - mTopt_(ipar))
 ENDDO
 
 do k = 1, nlev
   if (Varout(oN_cell,k) > 0.) then
-    vCDiv_(k)      = vCDiv_(k)/(Varout(oN_cell, k) * Hz(k))
-    vTopt_(k)      = vTopt_(k)/(Varout(oN_cell, k) * Hz(k))
-    vlnalpha_(k) = vlnalpha_(k)/(Varout(oN_cell, k) * Hz(k))
-    cov_TL(k)      = cov_TL(k)/(Varout(oN_cell, k) * Hz(k))
-    cov_TA(k)      = cov_TA(k)/(Varout(oN_cell, k) * Hz(k))
-    cov_AL(k)      = cov_AL(k)/(Varout(oN_cell, k) * Hz(k))
+    vCDiv_(k)    = vCDiv_(k)   / PHYC(k)
+    vTopt_(k)    = vTopt_(k)   / PHYC(k)
+    vlnalpha_(k) = vlnalpha_(k)/ PHYC(k)
+    cov_TL(k)    = cov_TL(k)   / PHYC(k)
+    cov_TA(k)    = cov_TA(k)   / PHYC(k)
+    cov_AL(k)    = cov_AL(k)   / PHYC(k)
   endif
 enddo
 

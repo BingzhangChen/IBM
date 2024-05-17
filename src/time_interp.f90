@@ -16,42 +16,42 @@ integer                :: i,j
 real                   :: timeMOD, rat
 
 ! Get time of the year (mod):
-   timeMOD = float(mod(time,y_per_s))
+timeMOD = float(mod(time,y_per_s))
 
 ! Deal with the case between two years:
-   IF ((timeMOD .lt. obs_time(1))) THEN 
+IF ((timeMOD .lt. obs_time(1))) THEN 
 
-      rat = (timeMOD    -obs_time(N)+float(y_per_s))   &
-          / (obs_time(1)-obs_time(N)+float(y_per_s))
+   rat = (timeMOD    -obs_time(N)+float(y_per_s))   &
+       / (obs_time(1)-obs_time(N)+float(y_per_s))
 
-      do i=1,nrow
-         mod_data(i)=obs_data(i,N)*(1d0-rat)+obs_data(i,1)*rat
-      enddo
+   do i=1,nrow
+      mod_data(i)=obs_data(i,N)*(1d0-rat)+obs_data(i,1)*rat
+   enddo
 
-   ELSEIF (timeMOD .ge. obs_time(N)) THEN
+ELSEIF (timeMOD .ge. obs_time(N)) THEN
 
-      rat = (timeMOD    -obs_time(N))   &
-          / (obs_time(1)-obs_time(N)+float(y_per_s))
+   rat = (timeMOD    -obs_time(N))   &
+       / (obs_time(1)-obs_time(N)+float(y_per_s))
 
-      do i=1,nrow
-         mod_data(i)=obs_data(i,N)*(1d0-rat)+obs_data(i,1)*rat
-      enddo
+   do i=1,nrow
+      mod_data(i)=obs_data(i,N)*(1d0-rat)+obs_data(i,1)*rat
+   enddo
 
-   ELSE
+ELSE
 
-      do j = 1, N-1
-         if ((timeMOD.lt.obs_time(j+1)) .and. (timeMOD.GE.obs_time(j))) then
-            
-            rat=(timeMOD-obs_time(j))/(obs_time(j+1)-obs_time(j))
-       
-            do i=1,nrow
-               mod_data(i)=obs_data(i,j)*(1d0-rat)+obs_data(i,j+1)*rat 
-            enddo
-            exit
-         endif
-      enddo 
- 
-   ENDIF
-   return
+   do j = 1, N-1
+      if ((timeMOD.lt.obs_time(j+1)) .and. (timeMOD.GE.obs_time(j))) then
+         
+         rat=(timeMOD-obs_time(j))/(obs_time(j+1)-obs_time(j))
+    
+         do i=1,nrow
+            mod_data(i)=obs_data(i,j)*(1d0-rat)+obs_data(i,j+1)*rat 
+         enddo
+         exit
+      endif
+   enddo 
+
+ENDIF
+return
 end subroutine time_interp
 

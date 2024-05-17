@@ -73,6 +73,9 @@ real :: Xprey_opt = 0. !Optimal prey ESD
 !Optimal predator:prey volume ratio
 real :: R_opt = 1d3 
 
+!Maximal predator:prey volume ratio following copepods (Hansen et al. 1994)
+real, parameter :: R_opt_max = 18.**3
+
 real :: cff = 0d0
 
 !First calculate prey and predator ESD (micron) from volume
@@ -86,6 +89,8 @@ Xprey_opt = 0.65 * Xpred**0.56
 Vprey_opt = pi/6d0 * Xprey_opt**3
 
 R_opt  = Vpred/Vprey_opt
+
+R_opt  = min(R_opt, R_opt_max)
 R_real = Vpred/Vprey
 
 cff = log(R_real/R_opt)
