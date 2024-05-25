@@ -36,9 +36,9 @@ real              :: rhoChl = 0.      !Phyto C production devoted to Chl synthes
 real              :: Ik     = 0.      !Saturation parameter for the PI curve [W m-2 s-1]
 real              :: A      = 0.      !Photoinhibition, following Nikolau et al. (2016)
 
-real, parameter   :: RC     = 0.025d0   !Basic C respiration rate [d-1]
-real, parameter   :: RN     = 0.025d0   !Basic N respiration rate [d-1]
-real, parameter   :: RChl   = 0.025d0   !Basic Chl respiration rate [d-1]
+real, parameter   :: RC     = 0.1d0  !Basic C respiration rate [d-1]
+real, parameter   :: RN     = 0.1d0  !Basic N respiration rate [d-1]
+real, parameter   :: RChl   = 0.1d0  !Basic Chl respiration rate [d-1]
 real              :: RcT    = 0.d0    !Temperature dependent C-based respiration rate [d-1]
 real              :: RNT    = 0.d0    !Temperature dependent N-based respiration rate [d-1]
 real              :: RChlT  = 0.d0    !Temperature dependent Chl-based respiration rate [d-1]

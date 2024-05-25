@@ -3,6 +3,7 @@ USE NETCDF
 USE Grid,            only : nlev,  Z_r, Z_w
 USE State_variables, only : t, NZOO, iNO3, iPC, iPN, iCHL, iZOO, iDET
 USE State_variables, only : Nout, Varout, oNPP, oTEMP, oPAR, oCDiv_avg
+USE State_variables, only : oFZ, oZmort
 USE State_variables, only : oCDiv_var, oTalp_cov, oALnV_cov, oTLnV_cov
 USE State_variables, only : oTopt_avg, oTopt_var, oLnalpha_avg, oLnalpha_var
 USE State_variables, only : p_pass, p_PHY, N_PAR, N_Pass, oN_cell, oN_ind
@@ -23,27 +24,27 @@ character (len=20), public :: Passive_file  = 'Passive.nc'
 character (len=8),  public ::   Euler_FNAME = 'Euler.nc'
 character (len=20), public :: restart_FNAME = 'restart.nc'
 
-character (len=2),  parameter  ::   ID_NAME = 'ID'
-character (len=7),  parameter  ::   Pass_ID_NAME = 'Pass_ID'
-character (len=7),  parameter  ::   PHY_ID_NAME = 'PHY_ID'
-character (len=2),  parameter  ::   IZ_NAME = 'IZ'
-character (len=7),  parameter  ::   Pass_IZ_NAME = 'Pass_IZ'
-character (len=7),  parameter  ::   PHY_IZ_NAME = 'PHY_IZ'
-character (len=1),  parameter  ::    Z_NAME = 'Z'
-character (len=7),  parameter  ::   Pass_Z_NAME = 'Pass_Z'
-character (len=7),  parameter  ::   PHY_Z_NAME = 'PHY_Z'
-character (len=3),  parameter  ::   Zr_NAME = 'Z_r'
-character (len=3),  parameter  ::   Zw_NAME = 'Z_w'
-character (len=4),  parameter  :: hr_NAME = 'Hour'
+character (len=2),  parameter  ::  ID_NAME = 'ID'
+character (len=7),  parameter  ::  Pass_ID_NAME = 'Pass_ID'
+character (len=7),  parameter  ::  PHY_ID_NAME = 'PHY_ID'
+character (len=2),  parameter  ::  IZ_NAME = 'IZ'
+character (len=7),  parameter  ::  Pass_IZ_NAME = 'Pass_IZ'
+character (len=7),  parameter  ::  PHY_IZ_NAME = 'PHY_IZ'
+character (len=1),  parameter  ::  Z_NAME = 'Z'
+character (len=7),  parameter  ::  Pass_Z_NAME = 'Pass_Z'
+character (len=7),  parameter  ::  PHY_Z_NAME = 'PHY_Z'
+character (len=3),  parameter  ::  Zr_NAME = 'Z_r'
+character (len=3),  parameter  ::  Zw_NAME = 'Z_w'
+character (len=4),  parameter  ::  hr_NAME = 'Hour'
 character (len=3),  parameter  ::  DAY_NAME = 'Day'
 character (len=3),  parameter  ::  DOY_NAME = 'DOY'
 character (len=4),  parameter  ::  timestep_NAME = 'Step'   !For restart file
 character (len=6),  parameter  ::  N_Pass_NAME   = 'N_Pass' !For restart file
-character (len=5),  parameter  ::   N_PHY_NAME   = 'N_PHY'  !For restart file
-character (len=3),  parameter  ::    NO3_NAME = 'NO3'
+character (len=5),  parameter  ::  N_PHY_NAME = 'N_PHY'  !For restart file
+character (len=3),  parameter  ::  NO3_NAME = 'NO3'
 character (len=5),  parameter  ::  P_NO3_NAME = 'p_NO3'
-character (len=2),  parameter  ::    PC_NAME = 'PC'
-character (len=2),  parameter  ::    PN_NAME = 'PN'
+character (len=2),  parameter  ::  PC_NAME = 'PC'
+character (len=2),  parameter  ::  PN_NAME = 'PN'
 character (len=3),  parameter  ::  CHL_NAME = 'CHL'
 character (len=3),  parameter  ::  ZOO_NAME = 'ZOO'
 character (len=3),  parameter  ::  DET_NAME = 'DET'
@@ -67,6 +68,8 @@ character (len=11), parameter  ::  Lnalpha_var_NAME = 'Lnalpha_var'
 character (len=8),  parameter  ::  TLnV_cov_NAME = 'TLnV_cov'
 character (len=8),  parameter  ::  Talp_cov_NAME = 'Talp_cov'
 character (len=8),  parameter  ::  ALnV_cov_NAME = 'ALnV_cov'
+character (len=8),  parameter  ::  FZ_NAME = 'FZ'
+character (len=8),  parameter  ::  Zmort_NAME = 'Zmort'
 character (len=8),  parameter  ::  N_birth_NAME = 'N_birth'
 character (len=8),  parameter  ::  N_death_NAME = 'N_death'
 character (len=8),  parameter  ::  N_mutate_NAME = 'N_mutate'
@@ -87,7 +90,7 @@ INTEGER :: Z_varid, IZ_varid, ID_varid, P_PAR_varid, P_temp_varid, P_NO3_varid
 INTEGER :: C_varid, N_varid, P_CHL_varid, P_num_varid, CDiv_varid, Topt_varid
 INTEGER :: alpha_varid, CHL_varid, DET_varid, NO3_varid, PC_varid, muC_varid
 INTEGER :: fitness_varid
-INTEGER :: PN_varid, ZOO_varid
+INTEGER :: PN_varid, ZOO_varid, FZ_varid, Zmort_varid
 INTEGER :: Pass_ID_varid, Pass_IZ_varid, Pass_Z_varid
 INTEGER :: PHY_ID_varid, PHY_IZ_varid, PHY_Z_varid
 
@@ -340,7 +343,9 @@ CALL check( nf90_def_var(ncid, PC_NAME,     NF90_REAL, dimid_r, PC_varid) )
 CALL check( nf90_def_var(ncid, PN_NAME,     NF90_REAL, dimid_r, PN_varid) )
 CALL check( nf90_def_var(ncid, CHL_NAME,    NF90_REAL, dimid_r, CHL_varid) )
 CALL check( nf90_def_var(ncid, DET_NAME,    NF90_REAL, dimid_r, DET_varid) )
-CALL check( nf90_def_var(ncid, ZOO_NAME,   NF90_REAL, dimid_zoo, ZOO_varid) )
+CALL check( nf90_def_var(ncid, ZOO_NAME,    NF90_REAL, dimid_zoo, ZOO_varid) )
+CALL check( nf90_def_var(ncid, FZ_NAME,     NF90_REAL, dimid_zoo, FZ_varid) )
+CALL check( nf90_def_var(ncid, Zmort_NAME,  NF90_REAL, dimid_zoo, Zmort_varid) )
 CALL check( nf90_def_var(ncid, CDiv_avg_NAME, NF90_REAL, dimid_r, CDiv_avg_varid) )
 CALL check( nf90_def_var(ncid, CDiv_var_NAME, NF90_REAL, dimid_r, CDiv_var_varid) )
 CALL check( nf90_def_var(ncid, Topt_avg_NAME, NF90_REAL, dimid_r, Topt_avg_varid) )
@@ -371,6 +376,8 @@ CALL check( nf90_put_att(ncid, PC_varid, UNITS, 'mmol C m-3'))
 CALL check( nf90_put_att(ncid, CHL_varid, UNITS, 'mg Chl m-3'))
 CALL check( nf90_put_att(ncid, DET_varid, UNITS, 'mmol N m-3'))
 CALL check( nf90_put_att(ncid, ZOO_varid, UNITS, 'mmol N m-3'))
+CALL check( nf90_put_att(ncid, Zmort_varid, UNITS, 'mmol N m-3 d-1'))
+CALL check( nf90_put_att(ncid, FZ_varid, UNITS, 'mmol N m-3'))
 CALL check( nf90_put_att(ncid, N_Cell_varid, UNITS, 'No. cells m-3'))
 CALL check( nf90_put_att(ncid, N_Ind_varid, UNITS, 'No. inds m-3'))
 CALL check( nf90_put_att(ncid, CDiv_avg_varid, UNITS, 'log(pmol C cell-1)'))
@@ -424,6 +431,8 @@ CALL check(NF90_INQ_VARID(ncid, PN_NAME, PN_varid))    ! get variable IDs
 CALL check(NF90_INQ_VARID(ncid, CHL_NAME, CHL_varid))    ! get variable IDs
 CALL check(NF90_INQ_VARID(ncid, DET_NAME, DET_varid))    ! get variable IDs
 CALL check(NF90_INQ_VARID(ncid, ZOO_NAME, ZOO_varid))    ! get variable IDs
+CALL check(NF90_INQ_VARID(ncid, FZ_NAME, FZ_varid))      ! get variable IDs
+CALL check(NF90_INQ_VARID(ncid, Zmort_NAME, Zmort_varid))      ! get variable IDs
 CALL check(NF90_INQ_VARID(ncid, CDiv_avg_NAME, CDiv_avg_varid))          ! get variable IDs
 CALL check(NF90_INQ_VARID(ncid, CDiv_var_NAME, CDiv_var_varid))          ! get variable IDs
 CALL check(NF90_INQ_VARID(ncid, Topt_avg_NAME, Topt_avg_varid))          ! get variable IDs
@@ -474,17 +483,34 @@ enddo
 CALL check(NF90_PUT_VAR(ncid, ZOO_varid, cff, start=[1,1,rec],  &
                                               count=[NZOO,nlev,1]))
 
+!save zooplankton FZ into a temporary matrix                                                   
+do i = 1, NZOO                                                
+  cff(i,:) = Varout(oFZ(i),:)
+enddo
+
+CALL check(NF90_PUT_VAR(ncid, FZ_varid, cff, start=[1,1,rec],  &
+                                             count=[NZOO,nlev,1]))
+
+!save zooplankton Zmort into a temporary matrix                                                   
+do i = 1, NZOO                                                
+  cff(i,:) = Varout(oZmort(i),:)
+enddo
+
+CALL check(NF90_PUT_VAR(ncid, Zmort_varid, cff, start=[1,1,rec],  &
+                                                count=[NZOO,nlev,1]))
+
+
 CALL check(NF90_PUT_VAR(ncid, NPP_varid, Varout(oNPP,:),start=[1,rec],  &
                                                         count=[nlev,1]))
 
 CALL check(NF90_PUT_VAR(ncid, N_cell_varid, Varout(oN_cell,:),start=[1,rec],  &
-                                                   count=[nlev,1]))
+                                                              count=[nlev,1]))
 
 CALL check(NF90_PUT_VAR(ncid, N_ind_varid, Varout(oN_ind,:),start=[1,rec],  &
-                                                   count=[nlev,1]))
+                                                            count=[nlev,1]))
 
 CALL check(NF90_PUT_VAR(ncid, TLnV_cov_varid, Varout(oTLnV_cov,:),start=[1,rec],  &
-                                                   count=[nlev,1]))
+                                                                  count=[nlev,1]))
 
 CALL check(NF90_PUT_VAR(ncid, Talp_cov_varid, Varout(oTalp_cov,:),start=[1,rec],  &
                                                    count=[nlev,1]))

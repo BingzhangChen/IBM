@@ -42,8 +42,14 @@ integer, parameter :: oNPP = nvar + 1   !Daily net primary production integrated
 integer, parameter :: oTEMP     = oNPP + 1
 integer, parameter :: oPAR      = oTEMP + 1
 
+! Zooplankton food availability
+integer, parameter :: oFZ(NZOO) = (/ (oPAR + i , i = 1, NZOO) /)
+
+! Zooplankton mortality including grazing by other predators and natural mortality
+integer, parameter :: oZmort(NZOO) = (/ (oFZ(NZOO) + i , i = 1, NZOO) /)
+
 !Mean log maximal Size (pmol C per cell)
-integer, parameter :: oCDiv_avg    = oPAR + 1
+integer, parameter :: oCDiv_avg = oZmort(NZOO) + 1
 
 !Variance of maximal Size (pmol C per cell^2)
 integer, parameter :: oCDiv_var    = oCDiv_avg  + 1

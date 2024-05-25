@@ -37,7 +37,7 @@ real    :: Gmatrix(NZOO,NZOO) = 0.d0     !Grazer biomass specific grazing rate m
 real,    allocatable :: BN(:)            !The amount of nitrogen in each super-individual
 real,    allocatable :: BC(:)            !The amount of carbon in each super-individual
 real,    allocatable :: Pmatrix(:,:)     !Phytoplankton mortality rates by each zooplankton size class for each superindividual
-real,    parameter   :: eta     = -1.d0*6.6  !Prey refuge parameter for nitrogen
+real,    parameter   :: eta    = -1.d0*6.6  !Prey refuge parameter for nitrogen
 real,    parameter   :: A_g    = 21.9   !Intercept of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
 real,    parameter   :: B_g    = -0.16  !Slope of the allometric equation of maximal zooplankton grazing rate (Ward et al. 2012)
 real,    parameter   :: mz_g   = 0.d0  !Power of zooplankton mortality following Ward et al. (2013)
@@ -199,7 +199,7 @@ DO k = nlev, 1, -1
 	  ENDIF
 
      !Save the total available prey for zooplankton
-     !Varout(oFZ(kk),k) = FZOO(kk)
+     Varout(oFZ(kk),k) = FZOO(kk)
 
      gbar = FZoo(kk)/(FZoo(kk) + Kp)*(1.d0 - exp(eta *FZoo(kk)))
 
@@ -246,6 +246,8 @@ DO k = nlev, 1, -1
           Zmort = Zmort + Gmatrix(kk,m)    !Natural Mortality + grazing by other ZOO
         enddo
       endif
+
+      Varout(oZmort(kk), k) = Zmort
 
       !Update the biomass of ZOOplankton kk
       t(iZOO(kk),k) = max(ZOO(kk) + dtdays*(GGE*INGES(kk) - Zmort), 0d0)
