@@ -15,13 +15,13 @@ The 1D-Hybrid Lagrangian-Eulerian NPZD model was developed to analyse the effect
 
 The Lagrangian module considers a fixed number of phytoplankton super-individuals, each one associated with a variable number of phytoplankton cells that share identical cell properties (cellular carbon, nitrogen, chlorophyll, etc.). The number of phytoplankton cells per super-individual depends on the associated initial cell size, randomly assigned following a log-uniform distribution between 0.8 and 60 $\mu m$ equivalent spherical diameter (ESD). Then, the number of phytoplankton cells per super-individual varies with time depending on growth and mortality.
 
-Phytoplankton physiological rates are determined by three master traits: (i) Size expressed in terms of the maximal carbon content per cell during its life cycle ($C_{div}$, mmol C cell $^{-1}$); (ii) Optimal temperature ($T_{opt}$, $^\circ C$); and (iii) Light affinity expressed as the initial slope of the Photosynthesis-Irradiance curve ($\alpha_{Chl}$, (W m $^{-2}$) $^{-1}$ (g Chl g C $^{-1}$) $^{-1}$ d $^{-1}$).
+Phytoplankton physiological rates are determined by three master traits: (i) Size expressed in terms of the maximal carbon content per cell during its life cycle ($C_{div}$, mmol C cell $^{-1}$); (ii) Optimal temperature ($T_{opt}$, $^\circ C$); and (iii) Light affinity expressed as the initial slope of the Photosynthesis-Irradiance curve ($\alpha^{Chl}$, (W m $^{-2}$) $^{-1}$ (g Chl g C $^{-1}$) $^{-1}$ d $^{-1}$).
 
 Phytoplankton cells are grazed by zooplankton. The Eulerian model resolves a number of (currently 20) zooplankton size classes distributed uniformly in log space from 0.8 to 3600 $\mu m$ ESD. Zooplankton optimal prey (phyto- and zooplankton) size varies allometrically depending on the predator size.
 
-Finally, when a phytoplankton cell reaches the maximum carbon content (equal to twice the initial content), it has a small probability of mutation of the three defined traits (log $C_{div}$, $T_{opt}$ and log $\alpha_{Chl}$) drawn from a Gaussian distribution with a mean equal to the current trait value and a standard deviation.
+Finally, when a phytoplankton cell reaches the maximum carbon content (equal to twice the initial content), it has a small probability of mutation of the three defined traits (log $C_{div}$, $T_{opt}$ and log $\alpha^{Chl}$) drawn from a Gaussian distribution with a mean equal to the current trait value and a standard deviation.
 
-Currently, the model is configured to simulate the Bermuda Atlantic Time-series Study (BATS) station (64.17$^\circ$ W - 31.67$^\circ$  N) in the subtropical north-western Atlantic Ocean.
+Currently, the model is configured to simulate the Bermuda Atlantic Time-series Study (BATS) station (64.17 $^\circ$ W - 31.67 $^\circ$  N) in the subtropical north-western Atlantic Ocean.
 
 The code developed for this study also includes the options for other more or less complex versions (Model_ID), considering the one developed by Geider et al. (1998) as the "base model". For example, to analyse the variability of the phytoplankton community considering only the light limitation (see below).
 
