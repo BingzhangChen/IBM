@@ -206,7 +206,7 @@ END subroutine VERTICAL_LIGHT
 
 subroutine extract_Kv
 use mGf90, only : srand_mtGaus
-!This subroutine extracts Kv0, Kvmax and MLD from external files and should be called only once during initialization
+!This subroutine extracts vertical Kv from external files and should be called only once during initialization
 implicit none
 integer :: i
 real :: rv(N_time_Kv) = 0.   !Scratch variable for storing the random variable
