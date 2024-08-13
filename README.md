@@ -164,15 +164,51 @@ The following files are located in the directory IBM/Run/:
 
 - **BATS_NO3_Jan.dat**: this file contains the vertical profile of nitrate plus nitrite concentration at BATS station in January, extracted from WOA13. This file is used for initializing nutrient data of the model.
 
+## Observational data
+
+- **BATS_Primary_Production.csv**: this file contains the measurements of primary production at BATS station.
+
+- **bats_NO3.csv**: this file contains the measurements of nitrate at BATS station.
+
+- **bats_pigments.csv**: this file contains the measurements of Chlorophyll a at BATS station.
+
 ## Bash file to compile the code
 
-- **job-Archie**: bash script to compile the Fortran files and generate the executable (./IBM).
+- **job-Archie**: bash script to compile the Fortran files and generate the executable (./IBM). This script only works on Archie-West, the supercomputer cluster hosted by the University of Strathclyde. The user needs to modify the script to specify the path to mpi, the fortran compiler, and the netcdf library of their own computing facility.
 
 ## Namelist files for defining model parameters
 
 - **param.nml**: namelist file containing several model parameters: maximal growth rate, the initial slope of the photosynthesis-irradiance curve, the half-saturation constant of nitrogen uptake, maximal zooplankton grazing rate, half-saturation constant of zooplankton grazing, zooplankton linear mortality, zooplankton gross growth efficiency, the fraction of unassimilated food ingested by zooplankton, the standard deviation of zooplankton feeding preference, the conversion rate from detritus to dissolved inorganic nitrogen and the detritus sinking. Here, the user can also define the Model_ID to select del modelling approach of interest.
 
 - **time.nml**: namelist file controlling the parameters for model run. Here, the user can define the time parameters that establish the total number of simulation days (*NDay_Run*, in days), the time step (*dtsec*, in seconds), and the frequency at which the model outputs will be saved (*nsave*). For example, if the user wants the model outputs to be saved at a daily interval (i.e., every 86400 s), *nsave* should be equal to 86400/*dtsec*.
+
+## R and Matlab scripts to generate figures in the manuscript
+
+We use both Matlab and R to analyze model outputs and plot figures.
+
+- **FIG02_PhysicalForcing.m**: Matlab script to plot physical forcing (vertical eddy diffusivity, temperature, and light) driving the 1D model (Fig. 2 in the manuscript).
+
+- **FIG03_FitnessLandscapes.m**: Matlab script to plot the fitness landscapes of phytoplankton cells (Fig. 3 in the manuscript).
+
+- **Fig4_BATS_obs_mod_knn.R**: R script to compare observations and model outputs of nitrate, Chl, and net primary production (Fig. 4 in the manuscript).
+
+- **FIG05_PassiveParticles_vs_SuperIndividuals.m**: Matlab script to plot distributions of passive particles and phytoplankton super-individuals (Fig. 5 in the manuscript).
+
+- **Fig6_Euler_PZD.m**: Matlab script to plot modelled patterns of phytoplankton carbon, nitrogen, total zooplankton nitrogen, and detritus (Fig. 6 in the manuscript). 
+
+- **Fig7_Qn_theta1D.R**: R script to plot modelled patterns of phytoplankton Chl:C ratio (g Chl mol C−1) and N:C ratios (Fig. 7 in the manuscript).
+
+- **get_FDiv.R**: R script to calculate functional diversity from phytoplankton superindividuals.
+
+- **Fig8_PHY_Trait_final_year.m**: Matlab script to plot modelled patterns of phytoplankton trait distributions (Fig. 8 in the manuscript). 
+
+- **Fig9_Phyto_funct_div.R**: R script to plot patterns of phytoplankton functional richness and evenness (Fig. 9 in the manuscript).
+
+- **Fig10Size_spectra.R**: R script to plot plankton size spectra in both summer and winter (Fig. 10 in the manuscript).
+
+- **FIG11_PartProp_DailyVariability.m**: Matlab script to show the trajectories of two randomly selected particles during summer and winter (Fig. 11 in the manuscript).
+
+- **Fig12_Num_particles.R**: R script to compare the simulations of different numbers of phytoplankton superindividuals (Fig. 12 in the manuscript).
 
 ## Funding
 
