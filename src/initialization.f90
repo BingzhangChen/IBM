@@ -54,6 +54,7 @@ if (taskid==0) then
    write(6,'(A13,1x,1pe12.2,A12)') 'Timestepping: ', dtdays, 'of one day.'
    write(6,'(A30,1x,I0)') 'Total number of simulation days: ', NDay_Run
 endif
+
 !==========================================================
 !Read parameter namelist
 !Check whether the namelist file exists.
@@ -89,6 +90,12 @@ IF (read_previous_output .EQ. 1) THEN
 ELSE
   restart_step = 1
 ENDIF
+
+!Check N_Pass
+if (N_Pass < 100) stop "Number of passive particles at least 100!"
+
+!Check N_Par
+if (N_Par < 1000) stop "Number of phytoplankton particles at least 1000!"
 
 !Allocate vectors for MPI data transfer
 if (mod(N_Par + N_Pass, numtasks) .ne. 0) stop "Number of CPUs incorrect!"
@@ -148,7 +155,8 @@ IF (TASKID==0) THEN
       stop "Number of zooplankton size classes should be ONE if size is not modelled!"
     endif
 
-    VolZOO(1) = pi/6d0*20.0**3  !Assume zooplankton volume 20 micron
+    ESDZOO(1) = 60.d0
+    VolZOO(1) = pi/6d0*ESDZOO(1)**3  !Assume zooplankton volume 60 micron
   Endif
  
   IF (read_previous_output .EQ. 1) THEN
@@ -191,7 +199,6 @@ IF (TASKID==0) THEN
     t(iDET,:) = .1d0
   
     !For lagrangian model, initialize individual particles
-  
     IF (.not. allocated(p_pass)) ALLOCATE(p_pass(N_Pass), stat=AllocateStatus)
     IF (AllocateStatus /= 0) STOP "*** Problem in allocating p_pass ***"
     
@@ -232,15 +239,17 @@ IF (TASKID==0) THEN
        p_PHY(k)%ID = k        
        p_PHY(k)%alive = .true.
   
-       if (Model_ID .eq. GMK98_Topt .or. Model_ID .eq. GMK98_ToptLight .or. &
+       if (Model_ID .eq. GMK98_Topt          .or. Model_ID .eq. GMK98_ToptLight .or. &
            Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_ToptSize) then
           !Initialize phytoplankton optimal temperature (Topt) from a uniform distribution between 2 and 30 degree celcius
           call random_number(cff)
           cff = 2. + cff * (30. - 2.)
           p_PHY(k)%Topt = cff
+       else
+          p_PHY(k)%Topt = 30.  !Assume one Topt, no practical use
        endif
 
-       If (Model_ID .eq. GMK98_Size .or. Model_ID .eq. GMK98_ToptSize .or.  &
+       If (Model_ID .eq. GMK98_Size          .or. Model_ID .eq. GMK98_ToptSize .or.  &
            Model_ID .eq. GMK98_ToptSizeLight .or. Model_ID .eq. GMK98_SizeLight) then
 
            !Initialize phytoplankton size from a uniform distribution between 0.8 and 60 um
@@ -256,9 +265,9 @@ IF (TASKID==0) THEN
            p_PHY(k)%N = p_PHY(k)%C*QN !Unit: pmol N cell-1
 
        else
-           p_PHY(k)%C = PHY_ESD2C(1.0)      !Unit: pmol C cell-1
-           p_PHY(k)%N = p_PHY(k)%C/106.*16. !Unit: pmol N cell-1
-           p_PHY(k)%CDiv = p_PHY(k)%C* 2d0     !Unit: pmol C cell-1
+           p_PHY(k)%C = PHY_ESD2C(3.0)         !Unit: pmol C cell-1 (Assuming phyto size 3 um)
+           p_PHY(k)%N = p_PHY(k)%C/106.*16.    !Unit: pmol N cell-1
+           p_PHY(k)%CDiv = p_PHY(k)%C * 2d0    !Unit: pmol C cell-1
        endif
 
        p_PHY(k)%Chl  = p_PHY(k)%C* 12./50. !Unit: pgChl cell-1
@@ -270,14 +279,17 @@ IF (TASKID==0) THEN
            call random_number(cff)
            cff = log(0.01d0) + cff * (log(0.5) - log(0.01d0))
            p_PHY(k)%LnalphaChl = cff
+        else
+           p_PHY(k)%LnalphaChl = log(0.15)
         endif
   
-       !Initialize the number of cells associated with each super-individual (assuming initial phytoplankton nitrogen is 0.1 mmol m-3)
-       p_PHY(k)%num = 0.1 * hmax/dble(N_PAR)/p_PHY(k)%N * 1d9
-  
-       !Compute rx (randomly distributed between Z_w(0) and Z_w(nlev)
-       CALL RANDOM_NUMBER(cff)
-       p_PHY(k)%rz = cff *(Z_w(nlev)-Z_w(0)) + Z_w(0)
+        !Initialize the number of cells associated with each super-individual 
+        !assuming initial phytoplankton nitrogen is 0.1 mmol m-3)
+        p_PHY(k)%num = 0.1 * hmax/dble(N_PAR)/p_PHY(k)%N * 1d9
+
+        !Compute rx (randomly distributed between Z_w(0) and Z_w(nlev)
+        CALL RANDOM_NUMBER(cff)
+        p_PHY(k)%rz = cff *(Z_w(nlev)-Z_w(0)) + Z_w(0)
   
        ! Find iz
        DO j_ = 1, nlev

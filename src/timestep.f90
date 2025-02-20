@@ -213,19 +213,6 @@ do k = 1, N_PAR
    !Needs to set an upper limit to the NO3 concentration of the particle which cannot be greater than the current concentration of the grid
    p_PHY(k)%NO3 = min(zout(1,1), t(iNO3, p_PHY(k)%iz))
 
-  if (p_PHY(k)%NO3 .lt. 0. .OR. p_PHY(k)%NO3 .gt. 200.) then
-    !Write out observed NO3
-    do i = 1, nlev
-      write(6,*) 'Depth = ', Z_r(i)
-      write(6,*) 'NO3 = ', dat_in(i,1)
-    enddo
-
-    write(6,*) 'Grid of the particle = ', p_PHY(k)%iz
-    write(6,*) 'Depth of the particle = ', zp(1)
-    write(6,*) 'Interpolated NO3 = ', zout(1,1)
-    write(6,*) 'NO3 at grid = ', t(iNO3, p_PHY(k)%iz)
-    stop
-  endif
 enddo
 
 DEALLOCATE(dat_in)

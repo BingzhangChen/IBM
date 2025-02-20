@@ -22,6 +22,7 @@ SRCS = Readcsv.f90 tridiagonal.f90\
 	Diff_center.f90\
 	GMK98_Ind.f90\
 	GMK98_Ind_Temp.f90\
+	GMK98_Ind_Size.f90\
 	GMK98_Ind_TempSize.f90\
 	GMK98_Ind_TempSizeLight.f90\
 	Par2PHY.f90\

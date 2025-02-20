@@ -2,7 +2,7 @@ PROGRAM IBM
 USE GRID
 USE MPI_Setting
 IMPLICIT NONE
-real(4) :: start,finish, t1
+real(4) :: start,finish
 
 ! ***** Initialize MPI *****
 call MPI_INIT(ierr)
@@ -24,11 +24,6 @@ call setup_grid
 
 !Initialization
 call initialize
-call cpu_time(t1) 
-
-if (taskid .eq. 0) then
-  print '("Initialization costs ",f8.3," hours.")', (t1-start)/3600.0 
-endif
 
 !Timestep
 call Timestep

@@ -193,7 +193,7 @@ ENDIF
 return
 END SUBROUTINE LAGRANGE
 
-!Phytoplankton sinking rate follow Durante et al. JPR 2019
+!Phytoplankton sinking rates follow Durante et al. JPR 2019
 pure real function phyto_sinking(Vol) result(y)
 implicit none
 real, intent(in) :: Vol  !Cell volume (um^3) 

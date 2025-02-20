@@ -81,12 +81,12 @@ DO k = nlev, 1, -1
    if (sec_of_day == 0) then
        Varout(oNPP, k) = NPPc_(k)  !NPP of the past day; this is real NPP (mg C d-1 m-3)
        Varout(oPAR, k) = IPAR(k)   !Integrated PAR of the past day (W m-2)
-       NPPc_(k)   = 0d0              !Reset NPPc_
-       IPAR(k)    = 0d0              !Reset IPAR
+       NPPc_(k) = 0d0              !Reset NPPc_
+       IPAR(k)  = 0d0              !Reset IPAR
    endif
 
    !Calculate the number of super-individuals (N_) in this vertical layer and obtain their indexes (index_)
-   N_  = 0
+   N_ = 0
 
    !Get the indexes of particles in this grid (for grazing loss)
    allocate(index_(0), stat=AllocateStatus)
@@ -94,7 +94,7 @@ DO k = nlev, 1, -1
 
    do i = 1, N_PAR
       if (p_PHY(i)%iz == k .and. p_PHY(i)%alive) then !Ignore dead super-individuals
-         N_   = N_   + 1
+         N_ = N_ + 1
 
          if (N_ == 1) then
 	         allocate(scratch(1), stat=Allocatestatus)
@@ -117,16 +117,18 @@ DO k = nlev, 1, -1
 
    !Save number of super-individuals per m3
    Varout(oN_ind, k) = dble(N_)/Hz(k)
-
-   !Allocate Pmatrix (matrix for super-individual grazing mortality)
    
    !Reset total abundance
    Abun_ = 0d0
 
    IF (N_ > 0) THEN
-      allocate(Pmatrix(N_, NZOO), stat=AllocateStatus)
-      IF (AllocateStatus /= 0) STOP "*** Problem in allocating Pmatrix***"
-      Pmatrix(:,:) = 0d0
+
+      !Allocate Pmatrix (matrix for super-individual grazing mortality) for size-structured model
+      If (NZOO > 1) Then
+         allocate(Pmatrix(N_, NZOO), stat=AllocateStatus)
+         IF (AllocateStatus /= 0) STOP "*** Problem in allocating Pmatrix***"
+         Pmatrix(:,:) = 0d0
+      Endif
 
       allocate(BN(N_), stat=AllocateStatus)
       IF (AllocateStatus /= 0) STOP "*** Problem in allocating BN***"
@@ -147,16 +149,15 @@ DO k = nlev, 1, -1
          !The amount of C in the super-individual m
          BC(m) = p_PHY(i)%C * p_PHY(i)%num*1d-9/Hz(k)
 
-
          !Count the number of cells in each layer
          Abun_ = Abun_ + p_PHY(i)%num
       ENDDO
-
    ENDIF
+
    Varout(oN_cell, k) = Abun_/Hz(k) !Abundances (cells m-3)
 
    !The multiple zooplankton size class model follows Ward et al. L&O 2012
-   ! In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
+   !In the NPZD model, phytoplankton cells utilize DIN and are eaten by zooplankton. 
    !The ingested food by zooplankton has three fates: 
    !1) being recycled to DIN; 2) being converted to detritus; and 3) supporting zooplankton growth. 
    !The natural mortality of zooplankton are converted to detritus which is recycled to DIN and also sinks.
@@ -164,61 +165,79 @@ DO k = nlev, 1, -1
    tf_z = TEMPBOL(Ez,Temp(k))  !Temperature coefficient of zooplankton
 
    !Calculate the total amount of prey N biomass available to each size class of zooplankton
-   DO kk = 1, NZOO
-      gmax = A_g * VolZOO(kk)**B_g 
-      FZoo(kk) = 0d0
+   IF (NZOO > 1) THEN
+      DO kk = 1, NZOO
+         gmax = A_g * VolZOO(kk)**B_g 
+         FZoo(kk) = 0d0
 
-      !First calculate total phyto. prey from super-individuals
-      IF (N_ > 0) THEN
-         do m = 1, N_
+         !First calculate total phyto. prey from super-individuals
+         IF (N_ > 0) THEN
+            do m = 1, N_
 
-           i = index_(m)
+              i = index_(m)
 
-           !Volume of phytoplankton super-individual
-           phyV = PHY_C2Vol(p_PHY(i)%C)
+              !Volume of phytoplankton super-individual
+              phyV = PHY_C2Vol(p_PHY(i)%C)
 
-           !The amount of patalable prey in the super-individual m
-           Pmatrix(m,kk) = palatability(VolZOO(kk), phyV, SDZoo) * BN(m)
+              !The amount of patalable prey in the super-individual m
+              Pmatrix(m,kk) = palatability(VolZOO(kk), phyV, SDZoo) * BN(m)
 
-           !Calculate the palatability of each prey superindividual and add to the total amount palatable prey
-           FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
-         enddo
-      ENDIF
+              !Calculate the palatability of each prey superindividual and add to the total amount palatable prey
+              FZoo(kk) = FZoo(kk) + Pmatrix(m,kk)
+            enddo
+         ENDIF
 
-	  !Second, calculate the total zooplankton prey
-	  IF (kk > 1) THEN
-	    do m = 1, (kk - 1)
+	      !Second, calculate the total zooplankton prey
+	      IF (kk > 1) THEN
+	        do m = 1, (kk - 1)
 
-       !Save the palatability into Gmatrix
-       Gmatrix(m,kk) = palatability(VolZOO(kk), VolZOO(m), SDZoo) 
+             !Save the palatability into Gmatrix
+             Gmatrix(m,kk) = palatability(VolZOO(kk), VolZOO(m), SDZoo) 
 
-		 !Calculate the palatability of each zoo. prey and add to the total amount palatable prey
-		 FZoo(kk) = FZoo(kk) + Gmatrix(m,kk) * ZOO(m)
+		       !Calculate the palatability of each zoo. prey and add to the total amount palatable prey
+		       FZoo(kk) = FZoo(kk) + Gmatrix(m,kk) * ZOO(m)
 
-	    enddo
-	  ENDIF
+	        enddo
+	      ENDIF
 
-     !Save the total available prey for zooplankton
-     Varout(oFZ(kk),k) = FZOO(kk)
+         !Save the total available prey for zooplankton
+         Varout(oFZ(kk),k) = FZOO(kk)
 
-     gbar = FZoo(kk)/(FZoo(kk) + Kp)*(1.d0 - exp(eta *FZoo(kk)))
+         gbar = FZoo(kk)/(FZoo(kk) + Kp)*(1.d0 - exp(eta *FZoo(kk)))
 
-     !Total ingestion of zooplankton kk (mmol N m-3 d-1)
-     INGES(kk) = ZOO(kk)*gmax*tf_z*gbar
+         !Total ingestion of zooplankton kk (mmol N m-3 d-1)
+         INGES(kk) = ZOO(kk)*gmax*tf_z*gbar
 
-	  IF (kk > 1) THEN
-	    do m = 1, (kk - 1)
+	      IF (kk > 1) THEN
+	        do m = 1, (kk - 1)
 
-         !Calculate the total ingestion rate (mmol N m-3 d-1) of zooplankton kk on zooplankton m
-         if (FZOO(kk) > 0d0) then
-            Gmatrix(m,kk) = Gmatrix(m,kk)*ZOO(m)/FZoo(kk)*INGES(kk)
-         else
-            Gmatrix(m,kk) = 0d0
-         endif
+               !Calculate the total ingestion rate (mmol N m-3 d-1) of zooplankton kk on zooplankton m
+               if (FZOO(kk) > 0d0) then
+                  Gmatrix(m,kk) = Gmatrix(m,kk)*ZOO(m)/FZoo(kk)*INGES(kk)
+               else
+                  Gmatrix(m,kk) = 0d0
+               endif
+             enddo
+	      ENDIF
+      ENDDO !End of the zooplankton loop
+   ELSE !Only one zooplankton
 
-        enddo
-	  ENDIF
-   ENDDO !End of the zooplankton loop
+      !Calculate the sum of total phytoplankton biomass
+      FZOO(1) = 0d0
+      DO m = 1, N_
+         i = index_(m)
+         FZOO(1) = BN(m) + FZOO(1)
+      ENDDO
+
+      !Save the total available prey for zooplankton
+      Varout(oFZ(1),k) = FZOO(1)
+
+      gbar = FZoo(1)/(FZoo(1) + Kp)*(1.d0 - exp(eta *FZoo(1)))
+
+      !Total ingestion of zooplankton (mmol N m-3 d-1)
+      INGES(1) = ZOO(1)*gmax*tf_z*gbar
+
+   ENDIF
 
    !Computing zooplankton mortality
    RES   = 0d0  !Total amount of nitrogen that is excreted by zooplankton and becomes DIN
@@ -241,11 +260,13 @@ DO k = nlev, 1, -1
       pp_DZ = pp_DZ + Zmort
 
       !Loop through all predators
-      if (kk .lt. NZOO) then
-        do m = (kk + 1), NZOO
-          Zmort = Zmort + Gmatrix(kk,m)    !Natural Mortality + grazing by other ZOO
-        enddo
-      endif
+      If (NZOO > 1) Then
+         if (kk .lt. NZOO) then
+           do m = (kk + 1), NZOO
+             Zmort = Zmort + Gmatrix(kk,m)    !Natural Mortality + grazing by other ZOO
+           enddo
+         endif
+      Endif
 
       Varout(oZmort(kk), k) = Zmort
 
@@ -267,16 +288,21 @@ DO k = nlev, 1, -1
 
          Graz = 0d0 
 
-         !Calculate all the zooplankton ingestion for this superindividual (unit: mmol N m-3 d-1)
-         do m = 1, NZOO
-              if (FZOO(m) > 0d0) Graz = Graz + INGES(m) * Pmatrix(j, m)/FZoo(m)
-         enddo
+         !Calculate all the zooplankton ingestion for this superindividual (Graz, unit: mmol N m-3 d-1)
+         if (NZOO > 1) then
+            do m = 1, NZOO
+                 if (FZOO(m) > 0d0) Graz = Graz + INGES(m) * Pmatrix(j, m)/FZoo(m)
+            enddo
+            p_PHY(i)%num = p_PHY(i)%num*(1d0 - Graz*dtdays/BN(j))   !Apply grazing to super-individual j
+         else
+            Graz = Graz + INGES(1)/FZoo(1)
+            p_PHY(i)%num = p_PHY(i)%num*(1d0 - Graz*dtdays)   !Apply grazing to super-individual j
+         endif
 
-         p_PHY(i)%num = p_PHY(i)%num*(1d0 - Graz*dtdays/BN(j))   !Apply grazing
       enddo
    ENDIF
 
-   ! Calculate total phytoplankton nitrogen uptake, mortality,  and PP (must after calculation of num(t+dt))
+   ! Calculate total phytoplankton nitrogen uptake, mortality, and PP (must after calculation of num(t+dt))
    uptake  = 0d0
    Pmort   = 0d0
    if (N_ > 0) then
@@ -285,8 +311,10 @@ DO k = nlev, 1, -1
 
          SELECTCASE (Model_ID)
          CASE(GMK98_simple)
-            call GMK98_Ind(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,         &
-                           p_PHY(i)%C,    p_PHY(i)%N,   p_PHY(i)%Chl, dC_, dN_, dChl_)
+            call GMK98_Ind(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3, &
+                           p_PHY(i)%C,    p_PHY(i)%N,   p_PHY(i)%Chl, &
+                           dC_, dN_, dChl_)
+
          CASE(GMK98_Topt)
             call GMK98_Ind_Temp(p_PHY(i)%Temp, p_PHY(i)%PAR, p_PHY(i)%NO3,  p_PHY(i)%Topt, &
                            p_PHY(i)%C,    p_PHY(i)%N,   p_PHY(i)%Chl,  dC_, dN_, dChl_)
@@ -328,6 +356,7 @@ DO k = nlev, 1, -1
          if (p_PHY(i)%C < Cmin .or. (p_PHY(i)%num*p_PHY(i)%N) < Nt_min) then  ! The superindividual Dies
             N_death(k) = N_death(k) + 1
             Pmort = Pmort + p_PHY(i)%N * p_PHY(i)%num !Natural mortality of phytoplankton ==> DET
+
             p_PHY(i)%C   = 0d0
             p_PHY(i)%N   = 0d0
             p_PHY(i)%Chl = 0d0

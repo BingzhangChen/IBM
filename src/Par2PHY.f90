@@ -52,40 +52,43 @@ DO i = 1, N_PAR
       p_PHY(i)%num = p_PHY(i)%num*2d0
 
       !Mutation
-      DO m = 1, NTrait
-         nu_ = p_PHY(i)%num*nu(m)
-         call random_number(cff)
 
-         IF (cff < nu_) THEN !Mutation occurs
-            N_mutate(ipar) = N_mutate(ipar) + 1
+      If (NTrait > 0) Then
+         DO m = 1, NTrait
+            nu_ = p_PHY(i)%num*nu(m)
+            call random_number(cff)
 
-            select case(m)
-            case(iTopt)
-                oldtt(1) = p_PHY(i)%Topt
-            case(iSize)
-                oldtt(1) = log(p_PHY(i)%CDiv)
-            case(ialphaChl)
-                oldtt(1) = p_PHY(i)%LnalphaChl
-            case DEFAULT
-                stop "Trait index wrong!"
-            end select
+            IF (cff < nu_) THEN !Mutation occurs
+               N_mutate(ipar) = N_mutate(ipar) + 1
 
-            vartt(1,1)= sigma(m)**2   !Construct the covariance matrix for the selected trait
+               select case(m)
+               case(iTopt)
+                   oldtt(1) = p_PHY(i)%Topt
+               case(iSize)
+                   oldtt(1) = log(p_PHY(i)%CDiv)
+               case(ialphaChl)
+                   oldtt(1) = p_PHY(i)%LnalphaChl
+               case DEFAULT
+                   stop "Trait index wrong!"
+               end select
 
-            !A new Topt is randomly sampled from a Gaussian distribution with mean of previous Topt and SD of sigma
-            newtt = srand_mtGaus(1, oldtt, vartt)
-            select case(m)
-            case(iTopt)
-                p_PHY(i)%Topt = newtt(1)
-            case(iSize)
-                p_PHY(i)%CDiv = exp(newtt(1))
-            case(ialphaChl)
-                p_PHY(i)%LnalphaChl = newtt(1)
-            case DEFAULT
-                stop "Trait index wrong!"
-            end select
-         ENDIF
-      ENDDO
+               vartt(1,1)= sigma(m)**2   !Construct the covariance matrix for the selected trait
+
+               !A new Topt is randomly sampled from a Gaussian distribution with mean of previous Topt and SD of sigma
+               newtt = srand_mtGaus(1, oldtt, vartt)
+               select case(m)
+               case(iTopt)
+                   p_PHY(i)%Topt = newtt(1)
+               case(iSize)
+                   p_PHY(i)%CDiv = exp(newtt(1))
+               case(ialphaChl)
+                   p_PHY(i)%LnalphaChl = newtt(1)
+               case DEFAULT
+                   stop "Trait index wrong!"
+               end select
+            ENDIF
+         ENDDO !End of looping through Traits
+      ENDIF !End of if (NTrait > 0)
    ENDIF !End of division
 
    !Calculate Eulerian concentrations of phyto C, N, and Chl, mean trait  for each layer
@@ -103,7 +106,7 @@ DO k = 1, nlev
   t(iPN,k) = PHY(k) *1d-9/Hz(k)   !Convert Unit to mmol/m^3
   t(iChl,k) = CHL(k)*1d-9/Hz(k) !Convert Unit to mmol/m^3
 
-  if (Varout(oN_cell,k) > 0.) then
+  if (Varout(oN_cell,k) > 0. .and. PHYC(k) > 0.) then
     mCDiv_(k)    = mCDiv_(k)/PHYC(k)
     mTopt_(k)    = mTopt_(k)/PHYC(k)
     mlnalpha_(k) = mlnalpha_(k)/PHYC(k)
@@ -136,7 +139,7 @@ DO i = 1, N_PAR
 ENDDO
 
 do k = 1, nlev
-  if (Varout(oN_cell,k) > 0.) then
+  if (Varout(oN_cell,k) > 0. .and. PHYC(k) > 0d0) then
     vCDiv_(k)    = vCDiv_(k)   / PHYC(k)
     vTopt_(k)    = vTopt_(k)   / PHYC(k)
     vlnalpha_(k) = vlnalpha_(k)/ PHYC(k)

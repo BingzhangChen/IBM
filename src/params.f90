@@ -34,8 +34,8 @@ real            :: rhochl_L  = 0d0
 !QNmin and QNmax are allometric functions of Vol (Ward et al. 2012) [mol N: mol C]:
 real, parameter   :: QNmin_a = 0.07d0     !Normalization constant for QNmin [molN:molC]
 real, parameter   :: QNmin_b = -0.17d0    !Allometric exponent for QNmin
-real, parameter   :: QNmax_a = 0.25d0     ! Normalization constant for QNmax [molN:molC]
-real, parameter   :: QNmax_b = -0.07d0    ! Allometric exponent for QNmax
+real, parameter   :: QNmax_a = 0.166d0    !Normalization constant for QNmax [molN:molC]
+real, parameter   :: QNmax_b = 0.0d0      !Allometric exponent for QNmax which is independent from size
 
 !Kn is an allometric function of Vol (Cdiv) (Edwards et al. 2012) [uM]:
 real, parameter   :: KN_a   = 0.14d0      !Normalization constant for KN
