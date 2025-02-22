@@ -1,0 +1,97 @@
+#!/bin/bash
+module load netcdf/intel-2020.4/4.9.0
+module load netcdf-fortran/intel-2020.4/4.5.4
+
+export SCRDIR=Compile
+export SOURCE=../src
+
+# Set your own NETCDF directories
+NFDIR='/opt/software/netcdf/intel-2020.4/fortran-4.5.4'
+NCDIR='/opt/software/netcdf/intel-2020.4/4.9.0'
+NETCDFLIB="-L$NFDIR/lib -lnetcdff -L$NCDIR/lib -lnetcdf"
+NETCDFINC="-I$NFDIR/include"
+
+LDFLAGS1="$NETCDFLIB"
+CPPFLAGS1="$NETCDFINC"
+
+echo "set MPI directories"
+MPIDIR='/opt/software/intel/2020/compilers_and_libraries/linux/mpi/intel64'
+MPIINC="-I$MPIDIR/include"
+LFLAGS="-L$MPIDIR/lib -lmpi"
+LFLAGS="$LFLAGS $LDFLAGS1"
+MPIF90="mpiifort"
+
+
+CFT=$MPIF90
+Test=0
+
+if [[ $CFT == ifort ]]; then
+  if [[ $Test == 1 ]]; then
+     echo 'Run model with debug options...'
+     #FFLAGS="-O0 -r8 -i4 -g -check all -fpe-all=0 -nowarn -traceback -debug extended -nogen-interface -warn interfaces"
+     FFLAGS="-O0 -r8 -i4 -g -check all -fpe-all=0 -fp-model=precise -nowarn -traceback -debug all -gen-interface"
+  else
+     FFLAGS="-O3 -xHost -r8 -i4 -fp-model=precise"
+     echo 'Run model without debug options...'
+  fi
+elif [[ $CFT == mpiifort ]] || [[ $CFT ==  mpifort ]]; then
+  if [[ $Test == 1 ]]; then
+     echo 'Using mpi with debug options...'
+     FFLAGS="-O0 -r8 -i4 -g -check all -fpe-all=0 -fp-model=precise -nowarn -traceback -debug all -gen-interface"
+     #FFLAGS="-O0 -g -fdefault-real-8 -fdefault-double-8 -fimplicit-none -Wall -Wline-truncation  -Wcharacter-truncation  -Wsurprising  -Waliasing  -Wimplicit-interface  -Wunused-parameter  -fwhole-file  -fcheck=all  -std=f2008  -pedantic  -fbacktrace"
+     #FFLAGS="-O0 -g -fdefault-real-8 -fdefault-double-8 -fimplicit-none -Wno-all -Wno-line-truncation  -Wno-character-truncation  -Wno-surprising  -Wno-aliasing  -Wno-implicit-interface  -Wno-unused-parameter  -fwhole-file  -fcheck=all  -std=f2008  -pedantic  -fbacktrace"
+  else
+     FFLAGS="-O3 -xHost -r8 -i4 -fp-model=precise"
+     #FFLAGS="-O3 -fdefault-real-8 -fdefault-double-8 -march=native -fimplicit-none -Wall  -Wline-truncation  -fwhole-file -ffinite-math-only -std=f2008 -fstrength-reduce"
+     echo 'Using mpi without debug options...'
+  fi
+elif [[ $CFT == pgfortran ]]; then
+  if [[ $Test == 1 ]]; then
+     echo 'Run model with debug options...'
+     FFLAGS="-Mbounds -Minfo=all -traceback -Mchkfpstk -Mchkstk -Mdalign 
+-Mdclchk -Mdepchk -Miomutex -Mrecursive -Msave -Ktrap=fp -O0 -g -byteswapio"
+  else
+     FFLAGS="-fast -Mipa=fast,inline"
+     echo 'Run model without debug options...'
+  fi
+elif [[ $CFT == gfortran ]]; then
+  if [[ $Test == 1 ]]; then
+     echo 'Run model with debug options...'
+     FFLAGS="-O0 -g -fdefault-real-8 -fdefault-double-8 -fimplicit-none -Wall -Wline-truncation  -Wcharacter-truncation  -Wsurprising  -Waliasing  -Wimplicit-interface  -Wunused-parameter  -fwhole-file  -fcheck=all  -std=f2008  -pedantic  -fbacktrace"
+  else
+     FFLAGS="-O3  -fdefault-real-8 -fdefault-double-8 -march=native -fimplicit-none -Wall  -Wline-truncation  -fwhole-file  -std=f2008"
+     echo 'Run model without debug options...'
+  fi
+else
+  
+  echo "Unknown Fortran compiler"
+	exit
+fi
+
+rm -rf $SCRDIR
+mkdir $SCRDIR
+#
+#
+# copy SOURCE code
+#
+cp -f ${SOURCE}/*.f90 $SCRDIR
+cp -f ${SOURCE}/Make* $SCRDIR
+cp -f *.f90 $SCRDIR
+ 
+# Change directory
+cd $SCRDIR
+
+FFLAGS="$FFLAGS $MPIINC $CPPFLAGS1"
+echo 's?$(FFLAGS)?'$FFLAGS'?g' >> flags.tmp
+export MAKEFILE=Makefile
+sed -f flags.tmp $MAKEFILE > Makefile2
+rm -rf flags.tmp
+
+echo 's?$(CFT)?'$CFT'?g' >> flags.tmp
+sed -f flags.tmp Makefile2 > Makefile3
+rm -rf flags.tmp
+echo 's?$(LFLAGS)?'$LFLAGS'?g' >> flags.tmp
+sed -f flags.tmp Makefile3 > Makefile
+make
+rm -rf flags.tmp
+mv IBM ../
