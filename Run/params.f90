@@ -34,8 +34,8 @@ real            :: rhochl_L  = 0d0
 !QNmin and QNmax are allometric functions of Vol (Ward et al. 2012) [mol N: mol C]:
 real, parameter   :: QNmin_a = 0.07d0     !Normalization constant for QNmin [molN:molC]
 real, parameter   :: QNmin_b = -0.17d0    !Allometric exponent for QNmin
-real, parameter   :: QNmax_a = 0.167d0     ! Normalization constant for QNmax [molN:molC]
-real, parameter   :: QNmax_b = 0.0d0      ! Allometric exponent for QNmax
+real, parameter   :: QNmax_a = 0.25d0     ! Normalization constant for QNmax [molN:molC]
+real, parameter   :: QNmax_b = -0.07d0    ! Allometric exponent for QNmax
 
 !Kn is an allometric function of Vol (Cdiv) (Edwards et al. 2012) [uM]:
 real, parameter   :: KN_a   = 0.14d0      !Normalization constant for KN
@@ -43,7 +43,7 @@ real, parameter   :: KN_b   = 0.33d0      !Allometric exponent for KN
 
 !Mutation parameters
 integer, parameter :: NTrait = 3
-real,    parameter :: nu(NTrait)    = [1d-7, 1d-7, 1d-7] !Probability per generation per cell
+real,    parameter :: nu(NTrait)    = [1d-12, 1d-12, 1d-12] !Probability per generation per cell
 real,    parameter :: sigma(NTrait) = [0.1, 0.1, 0.1]       !Standard deviation of mutation of the three traits
 
 real, parameter   :: pi= 3.1415926535d0

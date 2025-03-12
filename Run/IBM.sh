@@ -23,10 +23,10 @@
 #SBATCH --distribution=cyclic
 #
 # Specify (hard) runtime (HH:MM:SS)
-#SBATCH --time=120:00:00
+#SBATCH --time=166:00:00
 #
 # Job name
-#SBATCH --job-name=IBM
+#SBATCH --job-name=IBM_TempLightSize
 #
 # Output file
 #SBATCH --output=IBM-%j.out

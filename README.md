@@ -95,25 +95,25 @@ The following files are located in the directory IBM/src/:
 
 - **Geider_Lag.f90**: this file contains all the main subroutines necessary to model the biological components of the Lagrangian-Eulerian NPZD model.
 
-	The subroutine *BIOLOGY* computes de Eulerian fields for nitrogen, zooplankton and detritus, and their interaction with the Lagrangian module for phytoplankton super-individuals. This subroutine calls the model approach (Model_ID) selected by the user:
+	The subroutine *BIOLOGY* computes de Eulerian fields for nitrogen, zooplankton and detritus, and their interaction with the Lagrangian module for phytoplankton super-individuals. This subroutine calls the model approach (Model_ID) selected by the user.
 
-	- The subroutine *GMK98_Ind* (Model_ID = 1) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content following Geider et al. (1998).
+- **GMK98_Ind.f90** (Model_ID = 1) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content following Geider et al. (1998).
 
-	- The subroutine *GMK98_Ind_Temp* (Model_ID = 2) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the optimal temperature limitation following Chen (2022).
+- **GMK98_Ind_Temp.f90** (Model_ID = 2) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the optimal temperature limitation following Chen (2022).
 	
-	- The subroutine *GMK98_Ind_Light* (Model_ID = 3) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the light limitation following Han (2002). This subroutine is not yet developed.
+- **GMK98_Ind_Light.f90** (Model_ID = 3) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the light limitation following Han (2002). 
 	
-	- The subroutine *GMK98_Ind_Size* (Model_ID = 4) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), considering the allometric relationships between the cell carbon content and the maximum and minimum cellular nitrogen content following Marañón et al. (2013), and the allometric relationship between the cellular volume and the half-saturation constant for nutrient uptake following Edwards et al. (2012). This subroutine is not yet developed.
+- **GMK98_Ind_Size.f90** (Model_ID = 4) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), considering the allometric relationships between the cell carbon content and the minimum cellular N:C ratio, and the allometric relationship between the cellular volume and the half-saturation constant for nutrient uptake following Edwards et al. (2012). 
 	
-	- The subroutine *GMK98_Ind_SizeLight* (Model_ID = 5) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), considering the allometric relationships between cell size parameters and maximum and minimum cellular nitrogen content, and half-saturation constant for nutrient uptake (Marañón et al., 2013; Edwards et al., 2012), and light limitation (Han, 2002). This subroutine is not yet developed.
+- **GMK98_Ind_SizeLight.f90** (Model_ID = 5) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), considering the allometric relationships between cell size parameters and minimum cellular N:C ratios, and half-saturation constant for nutrient uptake (Edwards et al., 2012), and light limitation (Han, 2002). 
 	
-	- The subroutine *GMK98_Ind_TempLight* (Model_ID = 6) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the optimal temperature limitation (Chen, 2022) and the light limitation (Han, 2002). This subroutine is not yet developed.
+- **GMK98_Ind_TempLight.f90** (Model_ID = 6) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the optimal temperature limitation (Chen, 2022) and the light limitation (Han, 2002). This subroutine is not yet developed.
 	
-	- The subroutine *GMK98_Ind_TempSize* (Model_ID = 7) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the optimal temperature limitation (Chen, 2022) and the allometric relationships between cell size parameters and maximum and minimum cellular nitrogen content, and half-saturation constant for nutrient uptake (Marañón et al., 2013; Edwards et al., 2012).
+-  **GMK98_Ind_TempSize.f90** (Model_ID = 7) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the optimal temperature limitation (Chen, 2022) and the allometric relationships between cell size parameters and minimum cellular N:C, and half-saturation constant for nutrient uptake (Edwards et al., 2012).
 	
-	- The subroutine *GMK98_Ind_TempSizeLight* (Model_ID = 8) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the optimal temperature limitation (Chen, 2022), the allometric relationships between cell size parameters and maximum and minimum cellular nitrogen content, and half-saturation constant for nutrient uptake (Marañón et al., 2013; Edwards et al., 2012), and the light limitation (Han, 2002).
+- **GMK98_Ind_TempSizeLight.f90** (Model_ID = 8) computes the changes of phytoplankton cellular carbon, nitrogen and chlorophyll content (Geider et al., 1998), adding the optimal temperature limitation (Chen, 2022), the allometric relationships between cell size parameters and minimum cellular N:C, and half-saturation constant for nutrient uptake (Edwards et al., 2012), and the light limitation (Han, 2002).
 	
-	- The subroutine *Par2PHY* calculates the total concentrations of phytoplankton carbon, nitrogen, and chlorophyll at each grid depth based on the super-individuals present.
+- **Par2PHY.f90** calculates the total concentrations of phytoplankton carbon, nitrogen, and chlorophyll at each grid depth based on the super-individuals present.
 
 - **grid.f90**: module file defining the model grid, which contains the *setup_grid* subroutine. Here the user can change the maximal depth and the vertical resolution.
 
@@ -225,8 +225,6 @@ Edwards, K.F., Thomas, M.K., Klausmeier, C.A., Litchman, E. (2012) Allometric sc
 Geider, R.J., Maclntyre, H.L., Kana, T.M. (1998) A dynamic regulatory model of phytoplanktonic acclimation to light, nutrients, and temperature. Limnology and Oceanography 43, 679--694. <doi:10.4319/lo.1998.43.4.0679>.
 
 Han, B.-P. (2002) A mechanistic model of algal photoinhibition induced by photodamage to photosystem-II. J. Theor. Biol. 214, 519--527. doi: 10.1006/jtbi.2001.2468.
-
-Marañón, E., Cermeño, P., López-Sandoval, D.C., Rodríguez-Ramos, T., Sobrino, C., Huete-Ortega, M., Blanco, J.M., Rodríguez, J. (2013) Unimodal size scaling of phytoplankton growth and the size dependence of nutrient uptake and use. Ecology Letters 16, 371--379. <doi:10.1111/ele.12052>
 
 Ross, O. N., Geider, R.J., Berdalet, E., Artigas, M.L., Piera, J. (2011) The importance of being mixed part I: A theoretical investigation of potential errors in the determination of in situ phytoplankton growth rates using bottle incubation methods. Mar. Ecol. Prog. Ser. 435: 33--45. <doi:10.3354/meps09194>
 

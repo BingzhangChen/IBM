@@ -2,17 +2,17 @@
 
 !Particle parameters:
    N_pass = 1000,  !Number of passive particles
-   N_par =  50000, !Number of phyto. particles
+   N_par =  20000, !Number of phyto. particles
 
 !Phytoplankton parameters:
-   mu0   = 5.00, !Maximal growth rate [d-1]
+   mu0   = 2.00, !Maximal growth rate [d-1]
    aI0   = 1.20, !Chl-specific slope of P-I curve [(W m-2)-1 (g Chl mol C-1)-1 d-1]
    KN    = 0.50, !Half-saturation constant for nutrient uptake [uM N]
 
 !Zooplankton parameters:
-   gmax  = 3.4, !Maximal zooplankton grazing rate [pmol N m-3]
+   gmax  = 1.6, !Maximal zooplankton grazing rate [d-1]
    Kp    = 0.15, !Half-saturation constant of zooplankton grazing [uM N]
-   mz    = 0.002, !Zooplankton mortality grazing coefficient at 1 um^3 [uM N−1 d-1]
+   mz    = 0.1, !Zooplankton mortality grazing coefficient  [d-1]
    GGE   = 0.30, !Zooplankton Gross Growth Efficiency [pmol N m-3]
    unass = 0.24, !Fraction of unassimilated food ingested by zooplankton [nd]
    SDZoo = 0.5,  !Standard deviation of zooplankton feeding preference [nd]
