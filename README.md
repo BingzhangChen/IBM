@@ -190,25 +190,29 @@ We use both Matlab and R to analyze model outputs and plot figures.
 
 - **FIG03_FitnessLandscapes.m**: Matlab script to plot the fitness landscapes of phytoplankton cells (Fig. 3 in the manuscript).
 
-- **Fig4_BATS_obs_mod_knn.R**: R script to compare observations and model outputs of nitrate, Chl, and net primary production (Fig. 4 in the manuscript).
+- **FIG04_OBSvsMOD_KNN.m**: Matlab script to compare observations and model outputs of nitrate, Chl, and net primary production (Fig. 4 in the manuscript).
 
 - **FIG05_PassiveParticles_vs_SuperIndividuals.m**: Matlab script to plot distributions of passive particles and phytoplankton super-individuals (Fig. 5 in the manuscript).
 
-- **Fig6_Euler_PZD.m**: Matlab script to plot modelled patterns of phytoplankton carbon, nitrogen, total zooplankton nitrogen, and detritus (Fig. 6 in the manuscript). 
+- **FIG06_Euler_PZD.m**: Matlab script to plot modelled patterns of phytoplankton carbon, nitrogen, total zooplankton nitrogen, and detritus (Fig. 6 in the manuscript). 
 
-- **Fig7_Qn_theta1D.R**: R script to plot modelled patterns of phytoplankton Chl:C ratio (g Chl mol C−1) and N:C ratios (Fig. 7 in the manuscript).
+- **FIG07_Euler_QNnTHETA.m**: Matlab script to plot modelled patterns of phytoplankton Chl:C ratio (g Chl mol C−1) and N:C ratios (Fig. 7 in the manuscript).
 
-- **get_FDiv.R**: R script to calculate functional diversity from phytoplankton superindividuals.
+- **Rao2D.R**: R script to calculate 2D Rao index from phytoplankton superindividuals.
 
-- **Fig8_PHY_Trait_final_year.m**: Matlab script to plot modelled patterns of phytoplankton trait distributions (Fig. 8 in the manuscript). 
+- **Rao.cpp**: C++ script to calculate Rao index from phytoplankton superindividuals.
 
-- **Fig9_Phyto_funct_div.R**: R script to plot patterns of phytoplankton functional richness and evenness (Fig. 9 in the manuscript).
+- **FIG08_PHYTO_TRAITS.m**: Matlab script to plot modelled patterns of phytoplankton trait distributions (Fig. 8 in the manuscript). 
 
-- **Fig10Size_spectra.R**: R script to plot plankton size spectra in both summer and winter (Fig. 10 in the manuscript).
+- **FIG09_RAO_INDEX.m**: Matlab script to plot patterns of phytoplankton Rao index (Fig. 9 in the manuscript).
+
+- **FIG10_SizeSpectra.m**: Matlab script to plot plankton size spectra in both summer and winter (Fig. 10 in the manuscript).
 
 - **FIG11_PartProp_DailyVariability.m**: Matlab script to show the trajectories of two randomly selected particles during summer and winter (Fig. 11 in the manuscript).
 
-- **Fig12_Num_particles.R**: R script to compare the simulations of different numbers of phytoplankton superindividuals (Fig. 12 in the manuscript).
+- **FIG12_SIMCOMPARISON.m**: Matlab script to compare the simulations of different numbers of phytoplankton superindividuals (Fig. 12 in the manuscript).
+
+- **FIG13_ModelComparisons.m**: Matlab script to compare PIBM outputs against two simple NPZD models (Fig. 13 in the manuscript).
 
 ## Funding
 
