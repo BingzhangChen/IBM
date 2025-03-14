@@ -8,13 +8,15 @@ warning off
 %--------------------------------------------------------------------------
 % Writen by Iria Sala
 % Created on 29.04.2022
+% Edited on 06.03.2025
 %==========================================================================
 
 %==========================================================================
 %% Load hybrid-model Eulerian fields:
 %==========================================================================
+path = 'G:\My Drive\RESEARCH\PROJECT LEVERHULME\CODE\1D-Model\OUTPUTS\v033_RUN048\';
 %..........................................................................
-EUL  = 'Euler.nc';
+EUL  = fullfile(path,'Euler.nc');
 %==========================================================================
 Z_r  = double(nc_varget(EUL,'Z_r'));  % Depth (m), intermediate point
 Z_w  = double(nc_varget(EUL,'Z_w'));  % Depth (m), limit point
@@ -33,22 +35,18 @@ KPPV  = KPPV(367:731,:);              % Last year
 %==========================================================================
 %% Estimate Mixed Layer Depth (MLD) from Kv data:
 %==========================================================================
-%==========================================================================
-%% Mixed layer depth:
-%==========================================================================
 DMLD = 1:365;
+MLD = zeros(1,365); % Preallocate for performance
 %..........................................................................
-% Find the closest values to 10-4 to define the MLD:
-val = 10e-4;
+% Find the closest values to 1e-4 to define the MLD:
+val = 1e-4;
 %..........................................................................
 for d = 1:365
     
     prof = KPPV(d,:);
-    [nu,ix] = min(abs(prof-val));
+    [~, ix] = min(abs(prof - val)); % Find closest value to val
 
-    zdep = Z_w(ix);
-
-    MLD(d,:) = zdep;
+    MLD(d) = Z_w(ix); % Assign corresponding depth
 
 end
 %==========================================================================
@@ -138,7 +136,7 @@ caxis([log10(0.001) log10(1)]);
 h2 = colorbar('EastOutside');
 set(h2, 'Position', [.634 .15 .015 .71]);
 set(h2,'FontSize',11);
-set(h2,'ytick',[log10(0.001) log10(0.01) log10(0.1) log10(1)],...
+set(h2,'ytick',[log10(0.001) log10(0.1) log10(1)],...
     'yticklabel',{'0.001' '0.01' '0.1' '1.0'}, 'FontSize',11)
 %..........................................................................
 set(gca,'FontSize',11,'FontName','Arial');
