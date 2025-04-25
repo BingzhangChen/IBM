@@ -1,8 +1,10 @@
-# 1D Hybrid Eulerian-Lagrangian model Readme
+# Phytoplankton Individual-Based Model (PIBM) Readme
 
-This file explains how to run the Hybrid Lagrangian-Eulerian Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a one-dimensional (1D) vertical water column. This model consists of an individual-based Lagrangian module, that computes the phytoplankton community, coupled with an Eulerian module that calculates the vertical distribution of the remaining tracers (nutrient, zooplankton and detritus).
+This file explains how to run the Phytoplankton Individual-Based Model (PIBM) in a one-dimensional (1D) vertical water column. This model consists of an individual-based Lagrangian module, that computes the phytoplankton community, coupled with an Eulerian module that calculates the vertical distribution of the remaining tracers (nutrient, zooplankton and detritus).
 
 The model output has been compared and validated against the observations at the Bermuda Atlantic Time-series Study (BATS) station.
+
+The published paper describing the model has been accepted by [Geoscientific Model Development](https://gmd.copernicus.org/preprints/gmd-2024-130/).
 
 ## Authors
 Bingzhang Chen, Iria Sala.
@@ -11,7 +13,7 @@ Bingzhang Chen, Iria Sala.
 [bingzhang.chen\@strath.ac.uk](mailto:bingzhang.chen@strath.ac.uk){.email}
 
 ## Brief summary of the study
-The 1D-Hybrid Lagrangian-Eulerian NPZD model was developed to analyse the effects of phytoplankton acclimation and diversity on primary production. The Eulerian module computes nutrient, zooplankton and detritus with nitrogen as mass unit. Meanwhile, the Lagrangian module computes the carbon, nitrogen and chlorophyll content of each phytoplankton cell.
+The 1D PIBM was developed to analyse the effects of phytoplankton acclimation and diversity on primary production. The Eulerian module computes nutrient, zooplankton and detritus with nitrogen as mass unit. Meanwhile, the Lagrangian module computes the carbon, nitrogen and chlorophyll content of each phytoplankton cell.
 
 The Lagrangian module considers a fixed number of phytoplankton super-individuals, each one associated with a variable number of phytoplankton cells that share identical cell properties (cellular carbon, nitrogen, chlorophyll, etc.). The number of phytoplankton cells per super-individual depends on the associated initial cell size, randomly assigned following a log-uniform distribution between 0.8 and 60 $\mu m$ equivalent spherical diameter (ESD). Then, the number of phytoplankton cells per super-individual varies with time depending on growth and mortality.
 
@@ -25,12 +27,11 @@ Currently, the model is configured to simulate the Bermuda Atlantic Time-series 
 
 The code developed for this study also includes the options for other more or less complex versions (Model_ID), considering the one developed by Geider et al. (1998) as the "base model". For example, to analyse the variability of the phytoplankton community considering only the light limitation (see below).
 
-To speed up the computation, we use openmpi to run the random walk of particles in parallel. In addition, the time step of the biological reaction is set to be 100 times that of random walk. 
+To speed up the computation, we use OpenMPI to run the random walk of particles in parallel. In addition, the time step of the biological reaction is set to be 200 times that of random walk. 
 
 ## Contributor
 
-Bingzhang Chen is responsible for writing the Fortran code.
-
+Bingzhang Chen is responsible for writing the Fortran code and Iria Sala is responsible for writing the Matlab scripts.
 
 ## LICENSE
 
