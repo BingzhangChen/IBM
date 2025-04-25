@@ -31,7 +31,7 @@ To speed up the computation, we use OpenMPI to run the random walk of particles 
 
 ## Contributor
 
-Bingzhang Chen is responsible for writing the Fortran code and Iria Sala is responsible for writing the Matlab scripts.
+Bingzhang Chen is responsible for writing the Fortran code and R scripts. Iria Sala is responsible for writing the Matlab scripts.
 
 ## LICENSE
 
