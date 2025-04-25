@@ -10,7 +10,7 @@ The published paper describing the model has been accepted by [Geoscientific Mod
 Bingzhang Chen, Iria Sala.
 
 ## Contact email
-[bingzhang.chen\@strath.ac.uk](mailto:bingzhang.chen@strath.ac.uk){.email}
+[bingzhang.chen\@strath.ac.uk](mailto:bingzhang.chen@strath.ac.uk)
 
 ## Brief summary of the study
 The 1D PIBM was developed to analyse the effects of phytoplankton acclimation and diversity on primary production. The Eulerian module computes nutrient, zooplankton and detritus with nitrogen as mass unit. Meanwhile, the Lagrangian module computes the carbon, nitrogen and chlorophyll content of each phytoplankton cell.
