@@ -112,7 +112,7 @@ real, intent(in) :: ESD
 !Pmax0: Maximal photosynthesis rate (d-1)
 real, intent(in) :: Pmax0
 
-!Constant in Eqn. 14 of Wirtz (2011) (a' = (rho*/rho)^.333*a)
+!Constant in Eqn. 14 of Wirtz (2011) (a' = (rho*/rho)^.333*a) in which a = 0.34, rho* = 0.25, and rho = 0.5
 real, parameter :: a_p = 0.27
 
 !End of declaration
@@ -168,9 +168,9 @@ real, intent(in) :: Topt_   !Optimal temperature in ºC
 
 real, parameter   :: Ea0   = 0.98  
 real, parameter   :: Ed0   = 2.3
-real, parameter   :: Ei      = 0.22  
+real, parameter   :: Ei    = 0.22  
 real, parameter   :: beta  =-0.2  !Exponent for Ea0
-real, parameter   :: phi    = 0.27  !Exponent for Ed
+real, parameter   :: phi   = 0.27  !Exponent for Ed
 
 real :: Ed, Ea, mumax
 

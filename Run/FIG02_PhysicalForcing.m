@@ -14,22 +14,22 @@ warning off
 %==========================================================================
 %% Load hybrid-model Eulerian fields:
 %==========================================================================
-path = 'G:\My Drive\RESEARCH\PROJECT LEVERHULME\CODE\1D-Model\OUTPUTS\v033_RUN048\';
-%..........................................................................
-EUL  = fullfile(path,'Euler.nc');
+EUL= 'Euler.nc';  
 %==========================================================================
-Z_r  = double(nc_varget(EUL,'Z_r'));  % Depth (m), intermediate point
-Z_w  = double(nc_varget(EUL,'Z_w'));  % Depth (m), limit point
-DAY  = double(nc_varget(EUL,'Day'));  % Time (day)
+Z_r  = ncread(EUL,'Z_r');  % Depth (m), intermediate point
+Z_w  = ncread(EUL,'Z_w');  % Depth (m), limit point
+DAY  = ncread(EUL,'Day');  % Time (day)
+tfin = length(DAY) - 1;
+tini = tfin - 364;
 %--------------------------------------------------------------------------
-TEMP = double(nc_varget(EUL,'Temp')); % Temperature (decree C)
-TEMP = TEMP(367:731,:);               % Last year
+TEMP = ncread(EUL,'Temp'); % Temperature (decree C)
+TEMP = TEMP(:, tini:tfin);               % Last year
 %--------------------------------------------------------------------------
-PAR  = double(nc_varget(EUL,'PAR'));  % PAR (W m-2)
-PAR  = PAR(367:731,:);                % Last year
+PAR  = ncread(EUL,'PAR');  % PAR (W m-2)
+PAR  = PAR(:, tini:tfin);                % Last year
 %--------------------------------------------------------------------------
-KPPV  = double(nc_varget(EUL,'Kv'));  % Kv (m2 s-1)
-KPPV  = KPPV(367:731,:);              % Last year
+KPPV  = ncread(EUL,'Kv');  % Kv (m2 s-1)
+KPPV  = KPPV(:, tini:tfin);              % Last year
 %==========================================================================
 
 %==========================================================================
@@ -43,7 +43,7 @@ val = 1e-4;
 %..........................................................................
 for d = 1:365
     
-    prof = KPPV(d,:);
+    prof = KPPV(:,d);
     [~, ix] = min(abs(prof - val)); % Find closest value to val
 
     MLD(d) = Z_w(ix); % Assign corresponding depth
@@ -89,8 +89,8 @@ F01 = subplot(1,3,1);
 hold on
 box on
 %..........................................................................
-pcolor(TIMEr,Zr_N,TEMP);
-shading interp
+pcolor(TIMEr,Zr_N,TEMP');
+shading flat
 %..........................................................................
 title('(a) Temperature (ºC)')
 %..........................................................................
@@ -116,8 +116,8 @@ F02 = subplot(1,3,2);
 hold on
 box on
 %..........................................................................
-pcolor(TIMEk,Zw_N,log10(KPPV));
-shading interp
+pcolor(TIMEk,Zw_N,log10(KPPV'));
+shading flat
 %..........................................................................
 plot(DMLD,MLD,'Color','w','LineWidth',1);
 %..........................................................................
@@ -146,8 +146,8 @@ F03 = subplot(1,3,3);
 hold on
 box on
 %..........................................................................
-pcolor(TIMEr,Zr_N,log10(PAR));
-shading interp
+pcolor(TIMEr,Zr_N,log10(PAR'));
+shading flat
 %..........................................................................
 title('(c) PAR (W m^{-2})')
 %..........................................................................
@@ -192,6 +192,8 @@ set(gcf, 'PaperUnits', 'inches');
 set(gcf, 'PaperSize', [figPosition(3) figPosition(4)]);
 %..........................................................................
 % Save the figure as a PDF using the print command
-print(gcf, 'FIG02_PhysicalForcing.pdf', '-dpdf', '-bestfit');
+%print(gcf, 'FIG02_PhysicalForcing.pdf', '-dpdf', '-bestfit')
+exportgraphics(gcf, 'FIG02_PhysicalForcing.pdf', 'ContentType', 'vector');
 %==========================================================================
+close all;
 return
