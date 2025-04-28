@@ -9,6 +9,7 @@ warning off
 %--------------------------------------------------------------------------
 % Writen by Iria Sala
 % Created on 09.02.2023
+% Edited by Bingzhang Chen (bingzhang.chen@strath.ac.uk) on 28.04.2025
 %==========================================================================
 
 %==========================================================================
@@ -17,17 +18,17 @@ warning off
 %..........................................................................
 EUL = 'Euler.nc';
 %..........................................................................
-Z_w = double(nc_varget(EUL,'Z_w')); % Depth (m)
-Kv  = double(nc_varget(EUL,'Kv'));  % Vertical diffusivity (Kv, m2 s-1)
+Z_w = double(ncread(EUL,'Z_w')); % Depth (m)
+Kv  = double(ncread(EUL,'Kv'));  % Vertical diffusivity (Kv, m2 s-1)
 %..........................................................................
 DMLD = 1:365; % Time vector (day)
 %..........................................................................
 % Find the closest values to 10-4 to define the MLD:
-val = 10e-4;
+val = 1e-4;
 %..........................................................................
 for d = 1:365
     
-    prof = Kv(d,:);
+    prof = Kv(:,d);
     [nu,ix] = min(abs(prof-val));
 
     zdep = Z_w(ix);
@@ -40,23 +41,23 @@ end
 %==========================================================================
 %% Load Lagrangian fields:
 %==========================================================================
-LAG = 'ParY6.nc';
+LAG = 'ParY6.nc'; %Download from https://strath-my.sharepoint.com/:u:/g/personal/bingzhang_chen_strath_ac_uk/EWzT89WKyYxOg_vAfbnhuzsBGCK371cdqmuk3Zik4-boUQ?e=e6Lb1P
 %..........................................................................
-DAYS  = double(nc_varget(LAG,'DOY'))'; % Time (hours)
+DAYS  = double(ncread(LAG,'DOY'))'; % Time (hours)
 tPART = DAYS;
 %..........................................................................
-zPART  = double(nc_varget(LAG,'Z'))';   % Super-individuals depth position
+zPART  = double(ncread(LAG,'Z'))';   % Super-individuals depth position
 %==========================================================================
 
 %==========================================================================
 %% Load Pasive particles fields:
 %==========================================================================
-PAS = 'PassY6.nc';
+PAS = 'PassY6.nc'; %Download from https://strath-my.sharepoint.com/:u:/g/personal/bingzhang_chen_strath_ac_uk/EUeaWW_WmypMrFoiK5W34tMBVD6wxhtOGFIB6BvpEy94jw?e=Cq4IUb
 %..........................................................................
-DAYS  = double(nc_varget(PAS,'DOY'))'; % Time (days)
+DAYS  = double(ncread(PAS,'DOY'))'; % Time (days)
 tPASS = DAYS;
 %..........................................................................
-zPASS = double(nc_varget(PAS,'Z'))';   % Passive particle depth position
+zPASS = double(ncread(PAS,'Z'))';   % Passive particle depth position
 %==========================================================================
 
 %==========================================================================
@@ -78,8 +79,8 @@ D05 = 1:5*24:8737;
 %==========================================================================
 for j = 1:length(D05)-1
     
-    zSI = zPART(:,D05(j):D05(j)+4);
-    zPP = zPASS(:,D05(j):D05(j)+4);
+    zSI = zPART(D05(j):D05(j)+4,:);
+    zPP = zPASS(D05(j):D05(j)+4,:);
     
     % Select super-individuals by depth level:
     for i = 1:length(Z_w)-1
@@ -208,6 +209,7 @@ set(gcf, 'PaperUnits', 'inches');
 set(gcf, 'PaperSize', [figPosition(3) figPosition(4)]);
 %..........................................................................
 % Save the figure as a PDF using the print command
-print(gcf, 'FIG05_SupIndvsPasPar.pdf', '-dpdf', '-bestfit');
+exportgraphics(gcf, 'FIG05_SupIndvsPasPar.pdf', 'ContentType', 'vector');
+close all;
 %==========================================================================
 return
