@@ -165,6 +165,44 @@ The following files are located in the directory IBM/Run/:
 
 - **BATS_NO3_Jan.dat**: this file contains the vertical profile of nitrate plus nitrite concentration at BATS station in January, extracted from WOA13. This file is used for initializing nutrient data of the model.
 
+## Model outputs
+
+- **Euler.nc**: Eulerian outputs of standard model run.
+
+- **EulerNPZD_EUL.nc**: Model outputs of simple NPZD Eulerian model.
+
+- **EulerNPZD_IBM.nc**: Model outputs of simple NPZD Eulerian-Lagrangian hybrid model with phytoplankton represented by super-individuals.
+
+- **Euler_5K.nc**: Eulerian outputs of model run using 5000 phytoplankton super-individuals.
+
+- **Euler_10K.nc**: Eulerian outputs of model run using 10000 phytoplankton super-individuals.
+
+- **Euler_50K.nc**: Eulerian outputs of model run using 50000 phytoplankton super-individuals.
+
+- **Rao2D.csv**: Computed Rao index for each depth and day of the final-year simulation of the standard model run. 
+
+- **Rao05K.csv**: Computed integrated Rao index for each day of the final-year simulation of the model run with 5000 phytoplankton super-individuals. 
+
+- **Rao10K.csv**: Computed integrated Rao index for each day of the final-year simulation of the model run with 10000 phytoplankton super-individuals. 
+
+- **Rao20K.csv**: Computed integrated Rao index for each day of the final-year simulation of the model run with 20000 phytoplankton super-individuals. 
+
+- **Rao50K.csv**: Computed integrated Rao index for each day of the final-year simulation of the model run with 50000 phytoplankton super-individuals. 
+
+- **Regression_ZOOSUM.csv**: Regression data of Zooplankton during the summer for calculating size spectra.
+
+- **Regression_ZOOWIN.csv**: Regression data of Zooplankton during the winter for calculating size spectra.
+
+- **Regression_PHYSUM.csv**: Regression data of phytoplankton during the summer for calculating size spectra.
+
+- **Regression_PHYWIN.csv**: Regression data of phytoplankton during the winter for calculating size spectra.
+
+- **PlanktonAbundance_SUM.csv**: Plankton abundance data during the summer for calculating size spectra.
+
+- **PlanktonAbundance_WIN.csv**: Plankton abundance data during the winter for calculating size spectra.
+
+- **phyto_fitness_landscape_summer.csv**: Phytoplankton fitness data for FIG.3.
+
 ## Observational data
 
 - **BATS_Primary_Production.csv**: this file contains the measurements of primary production at BATS station.
@@ -186,6 +224,10 @@ The following files are located in the directory IBM/Run/:
 ## R and Matlab scripts to generate figures in the manuscript
 
 We use both Matlab and R to analyze model outputs and plot figures.
+
+- **GMK98_trait_functions.R**: Some R functions to calculate phytoplankton fitness.
+
+- **GMK98_fitness_Landscape.R**: R functions to calculate phytoplankton fitness for FIG.3.
 
 - **FIG02_PhysicalForcing.m**: Matlab script to plot physical forcing (vertical eddy diffusivity, temperature, and light) driving the 1D model (Fig. 2 in the manuscript).
 
