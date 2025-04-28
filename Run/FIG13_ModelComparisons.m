@@ -9,6 +9,7 @@ warning off
 %--------------------------------------------------------------------------
 % Writen by Iria Sala
 % Created on 14.12.2024
+% Edited by Bingzhang Chen on 26/04/2025
 %==========================================================================
 
 %==========================================================================
@@ -18,71 +19,67 @@ warning off
 %==========================================================================
 %% Load PIBM data:
 %==========================================================================
-path = 'G:\My Drive\RESEARCH\PROJECT LEVERHULME\CODE\1D-Model\OUTPUTS\v033_RUN048_20K\';
-%..........................................................................
-EUL = fullfile(path,'Euler.nc');
+EUL = 'Euler.nc';
 %==========================================================================
-Z_r  = double(nc_varget(EUL,'Z_r'));    % Depth (m), intermediate point
-Z_w  = double(nc_varget(EUL,'Z_w'));    % Depth (m), limit point
-ZDEP = repmat(Z_r',365,1);
+Z_r  = double(ncread(EUL,'Z_r'));    % Depth (m), intermediate point
+Z_w  = double(ncread(EUL,'Z_w'));    % Depth (m), limit point
+ZDEP = repmat(Z_r,1,365);
 %--------------------------------------------------------------------------
-DAYS = double(nc_varget(EUL,'Day'));
+DAYS = double(ncread(EUL,'Day'));
 tfin = length(DAYS) - 1;
 tini = tfin - 364;
 %--------------------------------------------------------------------------
-NO3_PIBM = double(nc_varget(EUL,'NO3')); % NO3 (mmol N m-3)
-NO3_PIBM = NO3_PIBM(tini:tfin,:);           % Last year
+NO3_PIBM = double(ncread(EUL,'NO3')); % NO3 (mmol N m-3)
+NO3_PIBM = NO3_PIBM(:,tini:tfin);           % Last year
 %--------------------------------------------------------------------------
-CHL_PIBM = double(nc_varget(EUL,'CHL')); % Chl (mg Chl m-3)
-CHL_PIBM = CHL_PIBM(tini:tfin,:);           % Last year
+CHL_PIBM = double(ncread(EUL,'CHL')); % Chl (mg Chl m-3)
+CHL_PIBM = CHL_PIBM(:,tini:tfin);           % Last year
 %--------------------------------------------------------------------------
-NPP_PIBM = double(nc_varget(EUL,'NPP')); % NPP (mg C m-3 d-1)
-NPP_PIBM = NPP_PIBM(tini:tfin,:);           % Last year
+NPP_PIBM = double(ncread(EUL,'NPP')); % NPP (mg C m-3 d-1)
+NPP_PIBM = NPP_PIBM(:,tini:tfin);           % Last year
 %==========================================================================
 
 %==========================================================================
 %% Load Eulerian NPZD model data:
 %==========================================================================
-path = 'G:\My Drive\RESEARCH\PROJECT LEVERHULME\Manuscripts\1D-Model\03_RESULTS\FIG13_ModelComparisons\';
-%..........................................................................
-EUL = fullfile(path,'EulerNPZD_EUL.nc');
+EUL = 'EulerNPZD_EUL.nc';
 %==========================================================================
-Z_r  = double(nc_varget(EUL,'Z_r'));    % Depth (m), intermediate point
-Z_w  = double(nc_varget(EUL,'Z_w'));    % Depth (m), limit point
+Z_r  = double(ncread(EUL,'Z_r'));    % Depth (m), intermediate point
+Z_w  = double(ncread(EUL,'Z_w'));    % Depth (m), limit point
 %--------------------------------------------------------------------------
-NO3_ENPZD = double(nc_varget(EUL,'NO3')); % NO3 (mmol N m-3)
-NO3_ENPZD = NO3_ENPZD(tini:tfin,:);           % Last year
+NO3_ENPZD = double(ncread(EUL,'NO3')); % NO3 (mmol N m-3)
+NO3_ENPZD = NO3_ENPZD(:,tini:tfin);           % Last year
 %--------------------------------------------------------------------------
-CHL_ENPZD = double(nc_varget(EUL,'CHL')); % Chl (mg Chl m-3)
-CHL_ENPZD = CHL_ENPZD(tini:tfin,:);           % Last year
+CHL_ENPZD = squeeze(ncread(EUL,'CHL')); % Chl (mg Chl m-3)
+CHL_ENPZD = CHL_ENPZD(:,tini:tfin);           % Last year
 %--------------------------------------------------------------------------
-NPP_ENPZD = double(nc_varget(EUL,'NPP')); % NPP (mg C m-3 d-1)
-NPP_ENPZD = NPP_ENPZD(tini:tfin,:);           % Last year
+NPP_ENPZD = double(ncread(EUL,'NPP')); % NPP (mg C m-3 d-1)
+NPP_ENPZD = NPP_ENPZD(:,tini:tfin);           % Last year
 %==========================================================================
 
 %==========================================================================
 %% Load Lagrangian NPZD model data:
 %==========================================================================
-EUL = fullfile(path,'EulerNPZD_IBM.nc');
+EUL = 'EulerNPZD_IBM.nc';
 %==========================================================================
-Z_r  = double(nc_varget(EUL,'Z_r'));    % Depth (m), intermediate point
-Z_w  = double(nc_varget(EUL,'Z_w'));    % Depth (m), limit point
+Z_r  = double(ncread(EUL,'Z_r'));    % Depth (m), intermediate point
+Z_w  = double(ncread(EUL,'Z_w'));    % Depth (m), limit point
 %--------------------------------------------------------------------------
-NO3_LNPZD = double(nc_varget(EUL,'NO3')); % NO3 (mmol N m-3)
-NO3_LNPZD = NO3_LNPZD(tini:tfin,:);           % Last year
+NO3_LNPZD = double(ncread(EUL,'NO3')); % NO3 (mmol N m-3)
+NO3_LNPZD = NO3_LNPZD(:,tini:tfin);           % Last year
 %--------------------------------------------------------------------------
-CHL_LNPZD = double(nc_varget(EUL,'CHL')); % Chl (mg Chl m-3)
-CHL_LNPZD = CHL_LNPZD(tini:tfin,:);           % Last year
+CHL_LNPZD = double(ncread(EUL,'CHL')); % Chl (mg Chl m-3)
+CHL_LNPZD = CHL_LNPZD(:,tini:tfin);           % Last year
 %--------------------------------------------------------------------------
-NPP_LNPZD = double(nc_varget(EUL,'NPP')); % NPP (mg C m-3 d-1)
-NPP_LNPZD = NPP_LNPZD(tini:tfin,:);           % Last year
+NPP_LNPZD = double(ncread(EUL,'NPP')); % NPP (mg C m-3 d-1)
+NPP_LNPZD = NPP_LNPZD(:,tini:tfin);           % Last year
 %==========================================================================
 
 %==========================================================================
 %% Plot time vectors:
 %==========================================================================
 TIME = 1:365;
-TIME = repmat(TIME',1,100);
+TIME = repmat(TIME,100,1);
 Tvec = [1 32 60 91 121 152 182 213 244 274 305 335];       % Time ticks
 Tout = {'J' 'F' 'M' 'A' 'M' 'J' 'J' 'A' 'S' 'O' 'N' 'D'};  % Time labels
 %==========================================================================
@@ -344,5 +341,6 @@ set(gcf, 'PaperSize', [figPosition(3) figPosition(4)]);
 %..........................................................................
 % Save the figure as a PDF using the print command
 print(gcf, 'FIG13_ModelComparisons.pdf', '-dpdf', '-bestfit');
+close all;
 %==========================================================================
 return
