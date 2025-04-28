@@ -6,113 +6,103 @@ format long g
 %==========================================================================
 %% Load data from the 5000 super-individuals simulation:
 %==========================================================================
-path = 'G:\My Drive\RESEARCH\PROJECT LEVERHULME\CODE\1D-Model\OUTPUTS\v033_RUN049_05K\';
+EUL  = 'Euler_5K.nc';
 %..........................................................................
-EUL  = fullfile(path,'Euler.nc');
-%..........................................................................
-DAYS = double(nc_varget(EUL,'Day'));
+DAYS = double(ncread(EUL,'Day'));
 tfin = length(DAYS) - 1;
 tini = tfin - 364;
 %..........................................................................
-ZDEP = double(nc_varget(EUL,'Z_w'));
-ZDIF = diff(ZDEP)';
-ZDIF = repmat(ZDIF,365,1);
+ZDEP = double(ncread(EUL,'Z_w'));
+ZDIF = diff(ZDEP);
+ZDIF = repmat(ZDIF,1,365);
 %..........................................................................
-DINN = double(nc_varget(EUL,'NO3'));
+DINN = double(ncread(EUL,'NO3'));
 %..........................................................................
-PHYN = double(nc_varget(EUL,'PN'));
-PHYC = double(nc_varget(EUL,'PC'));
-PCHL = double(nc_varget(EUL,'CHL'));
+PHYN = double(ncread(EUL,'PN'));
+PHYC = double(ncread(EUL,'PC'));
+PCHL = double(ncread(EUL,'CHL'));
 %..........................................................................
-NPP = double(nc_varget(EUL,'NPP'));
+NPP = double(ncread(EUL,'NPP'));
 %==========================================================================
 % Compute integrated values
-DINN_05K = sum((DINN(tini:tfin,:) .* ZDIF),2);
-PHYC_05K = sum((PHYC(tini:tfin,:) .* ZDIF),2);
-PHYN_05K = sum((PHYN(tini:tfin,:) .* ZDIF),2);
-PCHL_05K = sum((PCHL(tini:tfin,:) .* ZDIF),2);
-NPP_05K  = sum((NPP (tini:tfin,:) .* ZDIF),2);
+DINN_05K = sum((DINN(:,tini:tfin) .* ZDIF),1);
+PHYC_05K = sum((PHYC(:,tini:tfin) .* ZDIF),1);
+PHYN_05K = sum((PHYN(:,tini:tfin) .* ZDIF),1);
+PCHL_05K = sum((PCHL(:,tini:tfin) .* ZDIF),1);
+NPP_05K  = sum(( NPP(:,tini:tfin) .* ZDIF),1);
 %==========================================================================
 % Load Rao index
-RAO_05K  = xlsread('Rao05K.csv');
+RAO_05K  = table2array(readtable('Rao05K.csv'));
 %==========================================================================
-return
+
 %==========================================================================
 %% Load data from the 10000 super-individuals simulation:
-%==========================================================================
-path  = 'G:\My Drive\RESEARCH\PROJECT LEVERHULME\CODE\1D-Model\OUTPUTS\v033_RUN050_10K\';
+EUL  = 'Euler_10K.nc';
 %..........................................................................
-EUL  = fullfile(path,'Euler.nc');
+DINN = double(ncread(EUL,'NO3'));
 %..........................................................................
-DINN = double(nc_varget(EUL,'NO3'));
+PHYN = double(ncread(EUL,'PN'));
+PHYC = double(ncread(EUL,'PC'));
+PCHL = double(ncread(EUL,'CHL'));
 %..........................................................................
-PHYN = double(nc_varget(EUL,'PN'));
-PHYC = double(nc_varget(EUL,'PC'));
-PCHL = double(nc_varget(EUL,'CHL'));
-%..........................................................................
-NPP  = double(nc_varget(EUL,'NPP'));
+NPP  = double(ncread(EUL,'NPP'));
 %==========================================================================
 % Compute integrated values
-DINN_10K = sum((DINN(tini:tfin,:) .* ZDIF),2);
-PHYC_10K = sum((PHYC(tini:tfin,:) .* ZDIF),2);
-PHYN_10K = sum((PHYN(tini:tfin,:) .* ZDIF),2);
-PCHL_10K = sum((PCHL(tini:tfin,:) .* ZDIF),2);
-NPP_10K  = sum((NPP (tini:tfin,:) .* ZDIF),2);
+DINN_10K = sum((DINN(:,tini:tfin) .* ZDIF),1);
+PHYC_10K = sum((PHYC(:,tini:tfin) .* ZDIF),1);
+PHYN_10K = sum((PHYN(:,tini:tfin) .* ZDIF),1);
+PCHL_10K = sum((PCHL(:,tini:tfin) .* ZDIF),1);
+NPP_10K  = sum((NPP (:,tini:tfin) .* ZDIF),1);
 %==========================================================================
 % Load Rao index
-RAO_10K  = xlsread('Rao10K.csv');
+RAO_10K  = table2array(readtable('Rao10K.csv'));
 %==========================================================================
 
 %==========================================================================
 %% Load data from the 20000 super-individuals simulation:
-%==========================================================================
-path  = 'G:\My Drive\RESEARCH\PROJECT LEVERHULME\CODE\1D-Model\OUTPUTS\v033_RUN048_20K\';
+EUL  = 'Euler.nc';
 %..........................................................................
-EUL  = fullfile(path,'Euler.nc');
+DINN = double(ncread(EUL,'NO3'));
 %..........................................................................
-DINN = double(nc_varget(EUL,'NO3'));
+PHYN = double(ncread(EUL,'PN'));
+PHYC = double(ncread(EUL,'PC'));
+PCHL = double(ncread(EUL,'CHL'));
 %..........................................................................
-PHYN = double(nc_varget(EUL,'PN'));
-PHYC = double(nc_varget(EUL,'PC'));
-PCHL = double(nc_varget(EUL,'CHL'));
-%..........................................................................
-NPP  = double(nc_varget(EUL,'NPP'));
+NPP  = double(ncread(EUL,'NPP'));
 %==========================================================================
 % Compute integrated values
-DINN_20K = sum((DINN(tini:tfin,:) .* ZDIF),2);
-PHYC_20K = sum((PHYC(tini:tfin,:) .* ZDIF),2);
-PHYN_20K = sum((PHYN(tini:tfin,:) .* ZDIF),2);
-PCHL_20K = sum((PCHL(tini:tfin,:) .* ZDIF),2);
-NPP_20K  = sum((NPP (tini:tfin,:) .* ZDIF),2);
+DINN_20K = sum((DINN(:,tini:tfin) .* ZDIF),1);
+PHYC_20K = sum((PHYC(:,tini:tfin) .* ZDIF),1);
+PHYN_20K = sum((PHYN(:,tini:tfin) .* ZDIF),1);
+PCHL_20K = sum((PCHL(:,tini:tfin) .* ZDIF),1);
+NPP_20K  = sum((NPP (:,tini:tfin) .* ZDIF),1);
 %==========================================================================
 % Load Rao index
-RAO_20K  = xlsread('Rao20K.csv');
+RAO_20K  = table2array(readtable('Rao20K.csv'));
 %==========================================================================
 
 %==========================================================================
-%% Load data from the 20000 super-individuals simulation:
+%% Load data from the 50000 super-individuals simulation:
 %==========================================================================
-path  = 'G:\My Drive\RESEARCH\PROJECT LEVERHULME\CODE\1D-Model\OUTPUTS\v033_RUN051_50K\';
+EUL  = 'Euler_50K.nc';
 %..........................................................................
-EUL  = fullfile(path,'Euler.nc');
+DINN = double(ncread(EUL,'NO3'));
 %..........................................................................
-DINN = double(nc_varget(EUL,'NO3'));
+PHYN = double(ncread(EUL,'PN'));
+PHYC = double(ncread(EUL,'PC'));
+PCHL = double(ncread(EUL,'CHL'));
 %..........................................................................
-PHYN = double(nc_varget(EUL,'PN'));
-PHYC = double(nc_varget(EUL,'PC'));
-PCHL = double(nc_varget(EUL,'CHL'));
-%..........................................................................
-NPP  = double(nc_varget(EUL,'NPP'));
+NPP  = double(ncread(EUL,'NPP'));
 %==========================================================================
 % Compute integrated values
-DINN_50K = sum((DINN(tini:tfin,:) .* ZDIF),2);
-PHYC_50K = sum((PHYC(tini:tfin,:) .* ZDIF),2);
-PHYN_50K = sum((PHYN(tini:tfin,:) .* ZDIF),2);
-PCHL_50K = sum((PCHL(tini:tfin,:) .* ZDIF),2);
-NPP_50K  = sum((NPP (tini:tfin,:) .* ZDIF),2);
+DINN_50K = sum((DINN(:,tini:tfin) .* ZDIF),1);
+PHYC_50K = sum((PHYC(:,tini:tfin) .* ZDIF),1);
+PHYN_50K = sum((PHYN(:,tini:tfin) .* ZDIF),1);
+PCHL_50K = sum((PCHL(:,tini:tfin) .* ZDIF),1);
+NPP_50K  = sum((NPP (:,tini:tfin) .* ZDIF),1);
 %==========================================================================
 % Load Rao index
-RAO_50K  = xlsread('Rao50K.csv');
+RAO_50K  = table2array(readtable('Rao50K.csv'));
 %==========================================================================
 
 %==========================================================================
@@ -301,5 +291,6 @@ set(gcf, 'PaperSize', [figPosition(3) figPosition(4)]);
 %..........................................................................
 % Save the figure as a PDF using the print command
 print(gcf, 'FIG12_SIMCOMPARISON.pdf', '-dpdf', '-bestfit');
+close all;
 %==========================================================================
 return
