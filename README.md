@@ -1,5 +1,7 @@
 # Phytoplankton Individual-Based Model (PIBM) 1.0 Readme
 
+[![DOI](https://zenodo.org/badge/412396177.svg)](https://doi.org/10.5281/zenodo.12702990)
+
 This file explains how to run the Phytoplankton Individual-Based Model (PIBM) 1.0 in a one-dimensional (1D) vertical water column. This model consists of an individual-based Lagrangian module, that computes the phytoplankton community, coupled with an Eulerian module that calculates the vertical distribution of the remaining tracers (nutrient, zooplankton and detritus).
 
 The model output has been compared and validated against the observations at the Bermuda Atlantic Time-series Study (BATS) station.
